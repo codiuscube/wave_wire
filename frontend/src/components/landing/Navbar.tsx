@@ -15,9 +15,9 @@ export function Navbar() {
           <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-primary hidden md:block">
             Log in
           </Link>
-          <Button asChild size="sm">
-            <Link to="/dashboard">Join Beta</Link>
-          </Button>
+          <Link to="/dashboard">
+            <Button size="sm">Join Beta</Button>
+          </Link>
         </div>
       </div>
     </nav>

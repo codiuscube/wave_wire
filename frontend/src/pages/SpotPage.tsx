@@ -265,7 +265,7 @@ export function SpotPage() {
         <CardHeader>
           <CardTitle>Home Address (Optional)</CardTitle>
           <CardDescription>
-            Used for traffic estimates in morning alerts. We never share this data.
+            Used for traffic estimates in all alerts. We never share this data.
           </CardDescription>
         </CardHeader>
         <CardContent>

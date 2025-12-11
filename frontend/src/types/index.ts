@@ -11,13 +11,15 @@ export interface TriggerTier {
   id: string;
   name: string;
   emoji: string;
+  condition: 'fair' | 'good' | 'epic';
   minHeight: number;
   maxHeight: number;
   minPeriod: number;
   maxPeriod: number;
-  windCondition: 'offshore' | 'light' | 'any';
+  windDirections: string[];
   maxWindSpeed: number;
   swellDirection: string[];
+  spotId: string;
 }
 
 export interface AlertSchedule {

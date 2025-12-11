@@ -2,62 +2,84 @@ import { useState } from 'react';
 import { Plus, Trash2, GripVertical, Info } from 'lucide-react';
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
   Button,
   Input,
   Slider,
   Select,
   Badge,
-  Switch,
 } from '../components/ui';
 import type { TriggerTier } from '../types';
+
+// Mock spots - in real app this would come from context/store
+const userSpots = [
+  { id: 'surfside', name: 'Surfside Beach', buoyId: '42035' },
+  { id: 'galveston', name: 'Galveston (61st St)', buoyId: '42035' },
+  { id: 'bob-hall', name: 'Bob Hall Pier', buoyId: '42020' },
+];
 
 const defaultTriggers: TriggerTier[] = [
   {
     id: '1',
-    name: 'OMFG',
+    name: 'Dawn Patrol',
     emoji: '🔥',
+    condition: 'epic',
     minHeight: 5,
     maxHeight: 15,
     minPeriod: 10,
     maxPeriod: 20,
-    windCondition: 'offshore',
+    windDirections: ['N', 'NNW', 'NW', 'WNW'],
     maxWindSpeed: 12,
     swellDirection: ['SE', 'S', 'SSE'],
+    spotId: 'surfside',
   },
   {
     id: '2',
-    name: 'Fun',
+    name: 'Lunch Session',
     emoji: '🏄',
+    condition: 'good',
     minHeight: 3,
     maxHeight: 6,
     minPeriod: 8,
     maxPeriod: 15,
-    windCondition: 'light',
+    windDirections: ['N', 'NNW', 'NW', 'WNW', 'W', 'NNE'],
     maxWindSpeed: 15,
     swellDirection: ['SE', 'S', 'SSE', 'E'],
+    spotId: 'surfside',
   },
   {
     id: '3',
-    name: 'Worth It',
+    name: 'After Work',
     emoji: '👍',
+    condition: 'fair',
     minHeight: 2,
     maxHeight: 4,
     minPeriod: 6,
     maxPeriod: 12,
-    windCondition: 'any',
+    windDirections: ['N', 'NNW', 'NW', 'WNW', 'W', 'NNE', 'NE', 'WSW'],
     maxWindSpeed: 20,
     swellDirection: ['SE', 'S', 'SSE', 'E', 'ESE'],
+    spotId: 'surfside',
   },
 ];
 
-const windOptions = [
-  { value: 'offshore', label: 'Offshore Only' },
-  { value: 'light', label: 'Light (<10mph)' },
-  { value: 'any', label: 'Any Wind' },
+const emojiOptions = [
+  { value: '🔥', label: '🔥 Fire' },
+  { value: '🏄', label: '🏄 Surfer' },
+  { value: '👍', label: '👍 Thumbs Up' },
+  { value: '🌊', label: '🌊 Wave' },
+  { value: '⚡', label: '⚡ Lightning' },
+  { value: '🚀', label: '🚀 Rocket' },
+  { value: '💎', label: '💎 Diamond' },
+  { value: '🌅', label: '🌅 Sunrise' },
+  { value: '🌴', label: '🌴 Palm' },
+  { value: '☀️', label: '☀️ Sun' },
+];
+
+const conditionOptions = [
+  { value: 'fair', label: 'Fair' },
+  { value: 'good', label: 'Good' },
+  { value: 'epic', label: 'Epic' },
 ];
 
 const directionOptions = [
@@ -79,9 +101,20 @@ const directionOptions = [
   { value: 'NNW', label: 'NNW' },
 ];
 
+const conditionColors = {
+  fair: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  good: 'bg-green-500/20 text-green-400 border-green-500/30',
+  epic: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+};
+
 export function TriggersPage() {
   const [triggers, setTriggers] = useState<TriggerTier[]>(defaultTriggers);
   const [expandedId, setExpandedId] = useState<string | null>('1');
+  const [selectedSpotId, setSelectedSpotId] = useState<string>('surfside');
+
+  const spotOptions = userSpots.map((s) => ({ value: s.id, label: s.name }));
+
+  const filteredTriggers = triggers.filter((t) => t.spotId === selectedSpotId);
 
   const updateTrigger = (id: string, updates: Partial<TriggerTier>) => {
     setTriggers((prev) =>
@@ -89,7 +122,7 @@ export function TriggersPage() {
     );
   };
 
-  const toggleDirection = (triggerId: string, direction: string) => {
+  const toggleSwellDirection = (triggerId: string, direction: string) => {
     const trigger = triggers.find((t) => t.id === triggerId);
     if (!trigger) return;
 
@@ -100,18 +133,31 @@ export function TriggersPage() {
     updateTrigger(triggerId, { swellDirection: newDirections });
   };
 
+  const toggleWindDirection = (triggerId: string, direction: string) => {
+    const trigger = triggers.find((t) => t.id === triggerId);
+    if (!trigger) return;
+
+    const newDirections = trigger.windDirections.includes(direction)
+      ? trigger.windDirections.filter((d) => d !== direction)
+      : [...trigger.windDirections, direction];
+
+    updateTrigger(triggerId, { windDirections: newDirections });
+  };
+
   const addTrigger = () => {
     const newTrigger: TriggerTier = {
       id: Date.now().toString(),
-      name: 'New Tier',
+      name: 'New Trigger',
       emoji: '🌊',
+      condition: 'good',
       minHeight: 2,
       maxHeight: 5,
       minPeriod: 6,
       maxPeriod: 12,
-      windCondition: 'any',
+      windDirections: ['N', 'NW', 'NNW'],
       maxWindSpeed: 15,
       swellDirection: ['SE', 'S'],
+      spotId: selectedSpotId,
     };
     setTriggers([...triggers, newTrigger]);
     setExpandedId(newTrigger.id);
@@ -122,15 +168,50 @@ export function TriggersPage() {
     if (expandedId === id) setExpandedId(null);
   };
 
+  const formatWindSummary = (directions: string[]) => {
+    if (directions.length === 0) return 'No wind selected';
+    if (directions.length <= 3) return directions.join(', ');
+    return `${directions.slice(0, 2).join(', ')} +${directions.length - 2} more`;
+  };
+
+  const selectedSpot = userSpots.find((s) => s.id === selectedSpotId);
+
   return (
     <div className="p-8 max-w-4xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Triggers</h1>
         <p className="text-muted-foreground mt-1">
-          Define what conditions get you out of bed. Create tiers from "OMFG" to "Meh".
+          Define what conditions get you out of bed. Triggers are specific to each spot.
         </p>
       </div>
+
+      {/* Spot Selector */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Select Spot</label>
+              <p className="text-xs text-muted-foreground">
+                Triggers are configured per spot. Select a spot to manage its triggers.
+              </p>
+            </div>
+            <Select
+              options={spotOptions}
+              value={selectedSpotId}
+              onChange={setSelectedSpotId}
+              className="w-64"
+            />
+          </div>
+          {selectedSpot && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground font-mono">
+                Buoy: {selectedSpot.buoyId} • {filteredTriggers.length} trigger{filteredTriggers.length !== 1 ? 's' : ''} configured
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Info Banner */}
       <Card className="mb-8 bg-blue-500/10 border-blue-500/30">
@@ -140,8 +221,8 @@ export function TriggersPage() {
             <div>
               <p className="font-medium text-blue-100">How Triggers Work</p>
               <p className="text-sm text-blue-200/70 mt-1">
-                Triggers are checked in order from top to bottom. When conditions match a tier,
-                you'll get an alert with that tier's vibe. Alerts use your AI personality setting.
+                Triggers are checked in order from top to bottom. When conditions match a trigger,
+                you'll get an alert with that condition level (Fair/Good/Epic). Alerts use your AI personality setting.
               </p>
             </div>
           </div>
@@ -150,187 +231,223 @@ export function TriggersPage() {
 
       {/* Triggers List */}
       <div className="space-y-4">
-        {triggers.map((trigger, index) => (
-          <Card
-            key={trigger.id}
-            className={`transition-all ${
-              expandedId === trigger.id ? 'border-zinc-600' : ''
-            }`}
-          >
-            {/* Collapsed Header */}
-            <button
-              onClick={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
-              className="w-full p-4 flex items-center gap-4 text-left"
+        {filteredTriggers.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="pt-6 pb-6 text-center">
+              <p className="text-muted-foreground">No triggers configured for this spot yet.</p>
+              <Button onClick={addTrigger} variant="outline" className="mt-4">
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Trigger
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredTriggers.map((trigger, index) => (
+            <Card
+              key={trigger.id}
+              className={`transition-all ${
+                expandedId === trigger.id ? 'border-zinc-600' : ''
+              }`}
             >
-              <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-              <div className="flex-1 flex items-center gap-3">
-                <span className="text-2xl">{trigger.emoji}</span>
-                <div>
-                  <p className="font-bold">{trigger.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {trigger.minHeight}-{trigger.maxHeight}ft @ {trigger.minPeriod}s+ •{' '}
-                    {trigger.windCondition === 'offshore'
-                      ? 'Offshore'
-                      : trigger.windCondition === 'light'
-                      ? 'Light wind'
-                      : 'Any wind'}
-                  </p>
-                </div>
-              </div>
-              <Badge variant={index === 0 ? 'success' : 'secondary'}>
-                Priority {index + 1}
-              </Badge>
-            </button>
-
-            {/* Expanded Content */}
-            {expandedId === trigger.id && (
-              <CardContent className="pt-0 pb-6 px-6 border-t border-border mt-2">
-                <div className="space-y-6 pt-6">
-                  {/* Name & Emoji */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Tier Name</label>
-                      <Input
-                        value={trigger.name}
-                        onChange={(e) => updateTrigger(trigger.id, { name: e.target.value })}
-                        placeholder="e.g., OMFG, Fun, Worth It"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Emoji</label>
-                      <Input
-                        value={trigger.emoji}
-                        onChange={(e) => updateTrigger(trigger.id, { emoji: e.target.value })}
-                        placeholder="🔥"
-                        className="text-center text-2xl"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Wave Height */}
+              {/* Collapsed Header */}
+              <button
+                onClick={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
+                className="w-full p-4 flex items-center gap-4 text-left"
+              >
+                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
+                <div className="flex-1 flex items-center gap-3">
+                  <span className="text-2xl">{trigger.emoji}</span>
                   <div>
-                    <label className="text-sm font-medium mb-4 block">
-                      Wave Height: {trigger.minHeight}ft - {trigger.maxHeight}ft
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-muted-foreground w-8">{trigger.minHeight}ft</span>
-                      <div className="flex-1 flex gap-4 items-center">
-                        <Slider
-                          min={1}
-                          max={10}
-                          step={0.5}
-                          value={trigger.minHeight}
-                          onChange={(v) => updateTrigger(trigger.id, { minHeight: v })}
-                          className="flex-1"
-                        />
-                        <span className="text-muted-foreground">to</span>
-                        <Slider
-                          min={2}
-                          max={15}
-                          step={0.5}
-                          value={trigger.maxHeight}
-                          onChange={(v) => updateTrigger(trigger.id, { maxHeight: v })}
-                          className="flex-1"
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold">{trigger.name}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${conditionColors[trigger.condition]}`}>
+                        {trigger.condition.charAt(0).toUpperCase() + trigger.condition.slice(1)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {trigger.minHeight}-{trigger.maxHeight}ft @ {trigger.minPeriod}s+ •{' '}
+                      Wind: {formatWindSummary(trigger.windDirections)} &lt;{trigger.maxWindSpeed}mph
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={index === 0 ? 'success' : 'secondary'}>
+                  Priority {index + 1}
+                </Badge>
+              </button>
+
+              {/* Expanded Content */}
+              {expandedId === trigger.id && (
+                <CardContent className="pt-0 pb-6 px-6 border-t border-border mt-2">
+                  <div className="space-y-6 pt-6">
+                    {/* Name, Emoji & Condition */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Trigger Name</label>
+                        <Input
+                          value={trigger.name}
+                          onChange={(e) => updateTrigger(trigger.id, { name: e.target.value })}
+                          placeholder="e.g., Dawn Patrol, Lunch Session"
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground w-8">{trigger.maxHeight}ft</span>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Emoji</label>
+                        <Select
+                          options={emojiOptions}
+                          value={trigger.emoji}
+                          onChange={(v) => updateTrigger(trigger.id, { emoji: v })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Condition</label>
+                        <Select
+                          options={conditionOptions}
+                          value={trigger.condition}
+                          onChange={(v) => updateTrigger(trigger.id, { condition: v as 'fair' | 'good' | 'epic' })}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Wave Height */}
+                    <div>
+                      <label className="text-sm font-medium mb-4 block">
+                        Wave Height: {trigger.minHeight}ft - {trigger.maxHeight}ft
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-muted-foreground w-8">{trigger.minHeight}ft</span>
+                        <div className="flex-1 flex gap-4 items-center">
+                          <Slider
+                            min={1}
+                            max={10}
+                            step={0.5}
+                            value={trigger.minHeight}
+                            onChange={(v) => updateTrigger(trigger.id, { minHeight: v })}
+                            className="flex-1"
+                          />
+                          <span className="text-muted-foreground">to</span>
+                          <Slider
+                            min={2}
+                            max={15}
+                            step={0.5}
+                            value={trigger.maxHeight}
+                            onChange={(v) => updateTrigger(trigger.id, { maxHeight: v })}
+                            className="flex-1"
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground w-8">{trigger.maxHeight}ft</span>
+                      </div>
+                    </div>
+
+                    {/* Wave Period */}
+                    <div>
+                      <label className="text-sm font-medium mb-4 block">
+                        Minimum Period: {trigger.minPeriod}s
+                      </label>
+                      <Slider
+                        min={4}
+                        max={18}
+                        step={1}
+                        value={trigger.minPeriod}
+                        onChange={(v) => updateTrigger(trigger.id, { minPeriod: v })}
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Longer periods = more powerful waves. Gulf storms usually 6-10s, hurricane swells 12s+.
+                      </p>
+                    </div>
+
+                    {/* Swell Direction */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Acceptable Swell Directions
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {directionOptions.map((dir) => (
+                          <button
+                            key={dir.value}
+                            onClick={() => toggleSwellDirection(trigger.id, dir.value)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              trigger.swellDirection.includes(dir.value)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            }`}
+                          >
+                            {dir.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Select directions that work for your spot. Most Gulf beaches favor SE-S swells.
+                      </p>
+                    </div>
+
+                    {/* Wind Direction */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Acceptable Wind Directions
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {directionOptions.map((dir) => (
+                          <button
+                            key={dir.value}
+                            onClick={() => toggleWindDirection(trigger.id, dir.value)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              trigger.windDirections.includes(dir.value)
+                                ? 'bg-green-500 text-white'
+                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            }`}
+                          >
+                            {dir.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Offshore wind (blowing from land to sea) creates the cleanest conditions. For most Gulf beaches, N/NW winds are offshore.
+                      </p>
+                    </div>
+
+                    {/* Max Wind Speed */}
+                    <div>
+                      <label className="text-sm font-medium mb-4 block">
+                        Max Wind Speed: {trigger.maxWindSpeed}mph
+                      </label>
+                      <Slider
+                        min={5}
+                        max={30}
+                        step={1}
+                        value={trigger.maxWindSpeed}
+                        onChange={(v) => updateTrigger(trigger.id, { maxWindSpeed: v })}
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Even good wind direction gets choppy above 15-20mph. Lower = cleaner conditions.
+                      </p>
+                    </div>
+
+                    {/* Delete Button */}
+                    <div className="pt-4 border-t border-border">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteTrigger(trigger.id)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Trigger
+                      </Button>
                     </div>
                   </div>
-
-                  {/* Wave Period */}
-                  <div>
-                    <label className="text-sm font-medium mb-4 block">
-                      Minimum Period: {trigger.minPeriod}s
-                    </label>
-                    <Slider
-                      min={4}
-                      max={18}
-                      step={1}
-                      value={trigger.minPeriod}
-                      onChange={(v) => updateTrigger(trigger.id, { minPeriod: v })}
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Longer periods = more powerful waves. Gulf storms usually 6-10s, hurricane swells 12s+.
-                    </p>
-                  </div>
-
-                  {/* Wind Condition */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Wind Condition</label>
-                    <Select
-                      options={windOptions}
-                      value={trigger.windCondition}
-                      onChange={(v) =>
-                        updateTrigger(trigger.id, {
-                          windCondition: v as 'offshore' | 'light' | 'any',
-                        })
-                      }
-                    />
-                  </div>
-
-                  {/* Max Wind Speed */}
-                  <div>
-                    <label className="text-sm font-medium mb-4 block">
-                      Max Wind Speed: {trigger.maxWindSpeed}mph
-                    </label>
-                    <Slider
-                      min={5}
-                      max={30}
-                      step={1}
-                      value={trigger.maxWindSpeed}
-                      onChange={(v) => updateTrigger(trigger.id, { maxWindSpeed: v })}
-                    />
-                  </div>
-
-                  {/* Swell Direction */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Acceptable Swell Directions
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {directionOptions.map((dir) => (
-                        <button
-                          key={dir.value}
-                          onClick={() => toggleDirection(trigger.id, dir.value)}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                            trigger.swellDirection.includes(dir.value)
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                          }`}
-                        >
-                          {dir.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Select directions that work for your spot. Most Gulf beaches favor SE-S swells.
-                    </p>
-                  </div>
-
-                  {/* Delete Button */}
-                  <div className="pt-4 border-t border-border">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteTrigger(trigger.id)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Tier
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        ))}
+                </CardContent>
+              )}
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Add Trigger Button */}
-      <Button onClick={addTrigger} variant="outline" className="mt-4 w-full">
-        <Plus className="w-4 h-4 mr-2" />
-        Add Trigger Tier
-      </Button>
+      {filteredTriggers.length > 0 && (
+        <Button onClick={addTrigger} variant="outline" className="mt-4 w-full">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Trigger
+        </Button>
+      )}
 
       {/* Save Button */}
       <div className="mt-8 flex justify-end">

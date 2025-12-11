@@ -30,12 +30,12 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button asChild size="lg">
-                <Link to="/dashboard">
+              <Link to="/dashboard">
+                <Button size="lg">
                   Set Your Break
                   <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
 
             <div className="pt-8 flex items-center gap-4 text-xs text-muted-foreground font-mono">
