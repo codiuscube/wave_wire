@@ -171,9 +171,8 @@ export function TriggersPage() {
   const formatWindSummary = (directions: string[]) => {
     if (directions.length === 0) return "No wind selected";
     if (directions.length <= 3) return directions.join(", ");
-    return `${directions.slice(0, 2).join(", ")} +${
-      directions.length - 2
-    } more`;
+    return `${directions.slice(0, 2).join(", ")} +${directions.length - 2
+      } more`;
   };
 
   const selectedSpot = userSpots.find((s) => s.id === selectedSpotId);
@@ -182,7 +181,7 @@ export function TriggersPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Triggers</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Triggers</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Define what conditions get you out of bed. Triggers are specific to
           each spot.
@@ -256,9 +255,8 @@ export function TriggersPage() {
           filteredTriggers.map((trigger, index) => (
             <Card
               key={trigger.id}
-              className={`transition-all ${
-                expandedId === trigger.id ? "border-zinc-600" : ""
-              }`}
+              className={`transition-all ${expandedId === trigger.id ? "border-zinc-600" : ""
+                }`}
             >
               {/* Collapsed Header */}
               <button
@@ -274,9 +272,8 @@ export function TriggersPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-bold">{trigger.name}</p>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full border ${
-                          conditionColors[trigger.condition]
-                        }`}
+                        className={`text-xs px-2 py-0.5 rounded-full border ${conditionColors[trigger.condition]
+                          }`}
                       >
                         {trigger.condition.charAt(0).toUpperCase() +
                           trigger.condition.slice(1)}
@@ -412,11 +409,10 @@ export function TriggersPage() {
                             onClick={() =>
                               toggleSwellDirection(trigger.id, dir.value)
                             }
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              trigger.swellDirection.includes(dir.value)
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${trigger.swellDirection.includes(dir.value)
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                            }`}
+                              }`}
                           >
                             {dir.label}
                           </button>
@@ -440,11 +436,10 @@ export function TriggersPage() {
                             onClick={() =>
                               toggleWindDirection(trigger.id, dir.value)
                             }
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              trigger.windDirections.includes(dir.value)
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${trigger.windDirections.includes(dir.value)
                                 ? "bg-green-500 text-white"
                                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                            }`}
+                              }`}
                           >
                             {dir.label}
                           </button>

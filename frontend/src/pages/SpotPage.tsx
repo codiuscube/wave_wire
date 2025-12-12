@@ -119,7 +119,7 @@ export function SpotPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Spots</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">My Spots</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Configure your home breaks and nearby buoy for accurate alerts.
         </p>
@@ -222,9 +222,8 @@ export function SpotPage() {
               return (
                 <Card
                   key={spot.id}
-                  className={`transition-all ${
-                    saved ? "border-green-500/50 bg-green-500/5" : "hover:border-zinc-600"
-                  }`}
+                  className={`transition-all ${saved ? "border-green-500/50 bg-green-500/5" : "hover:border-zinc-600"
+                    }`}
                 >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">

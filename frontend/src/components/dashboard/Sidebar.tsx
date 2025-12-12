@@ -34,17 +34,17 @@ export function Sidebar() {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 border-b border-sidebar-border bg-sidebar-background flex items-center justify-between px-4">
         <NavLink to="/" className="flex items-center gap-2">
           <Waves className="w-5 h-5 text-sidebar-primary" />
-          <span className="font-bold tracking-tight text-sm uppercase text-sidebar-foreground">
-            Home Break
+          <span className="font-bold font-display tracking-tighter uppercase text-xl text-sidebar-foreground">
+            HOMEBREAK
           </span>
         </NavLink>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground"
+            className="p-3 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Toggle menu"
           >
-            {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </header>
@@ -70,8 +70,8 @@ export function Sidebar() {
         <div className="p-6 border-b border-sidebar-border hidden lg:block">
           <NavLink to="/" className="flex items-center gap-2">
             <Waves className="w-5 h-5 text-sidebar-primary" />
-            <span className="font-bold tracking-tight text-sm uppercase text-sidebar-foreground">
-              Home Break
+            <span className="font-bold font-display tracking-tighter uppercase text-xl text-sidebar-foreground">
+              HOMEBREAK
             </span>
           </NavLink>
         </div>
@@ -88,10 +88,9 @@ export function Sidebar() {
               end={item.end}
               onClick={() => setIsMobileOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50"
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50"
                 }`
               }
             >

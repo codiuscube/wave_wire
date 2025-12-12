@@ -185,7 +185,7 @@ export function PersonalityPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Message Personality</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Message Personality</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Different vibes for different conditions
         </p>
@@ -200,11 +200,10 @@ export function PersonalityPage() {
             <button
               key={condition}
               onClick={() => setActiveCondition(condition)}
-              className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-medium transition-all text-sm sm:text-base ${
-                isActive
-                  ? `${bgColor} text-white shadow-lg`
-                  : `bg-muted text-muted-foreground hover:bg-accent border-2 border-transparent`
-              }`}
+              className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-medium transition-all text-sm sm:text-base ${isActive
+                ? `${bgColor} text-white shadow-lg`
+                : `bg-muted text-muted-foreground hover:bg-accent border-2 border-transparent`
+                }`}
             >
               <div className="flex items-center justify-center gap-1 sm:gap-2">
                 <span>{label}</span>
@@ -221,7 +220,7 @@ export function PersonalityPage() {
           {/* iOS Messages Style */}
           <div className="bg-muted rounded-2xl p-3 sm:p-4">
             <div className="text-center mb-3 pb-2 border-b border-border">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Text Message</p>
+              <p className="text-[10px] text-muted-foreground uppercase">Text Message</p>
               <p className="font-semibold text-sm text-foreground">Home Break (512) 555-0123</p>
             </div>
 
@@ -254,11 +253,10 @@ export function PersonalityPage() {
                 <button
                   key={personality.id}
                   onClick={() => updatePersonalityForCondition(personality.id)}
-                  className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all ${
-                    isSelected
-                      ? `${activeConfig.borderColor} bg-accent/50`
-                      : "border-border hover:border-muted-foreground"
-                  }`}
+                  className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all ${isSelected
+                    ? `${activeConfig.borderColor} bg-accent/50`
+                    : "border-border hover:border-muted-foreground"
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xl sm:text-2xl">{personality.emoji}</span>

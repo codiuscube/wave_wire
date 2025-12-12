@@ -93,7 +93,7 @@ export function AlertsPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Alert Schedule</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Alert Schedule</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Control when we check conditions. Alerts only fire when triggers are matched.
         </p>
@@ -125,16 +125,14 @@ export function AlertsPage() {
               <CardContent className="pt-4 sm:pt-6">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   <div
-                    className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${
-                      schedule.enabled
+                    className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${schedule.enabled
                         ? 'bg-primary/20'
                         : 'bg-secondary'
-                    }`}
+                      }`}
                   >
                     <Icon
-                      className={`w-6 h-6 ${
-                        schedule.enabled ? 'text-primary' : 'text-muted-foreground'
-                      }`}
+                      className={`w-6 h-6 ${schedule.enabled ? 'text-primary' : 'text-muted-foreground'
+                        }`}
                     />
                   </div>
 
@@ -206,11 +204,10 @@ export function AlertsPage() {
                               <button
                                 key={day}
                                 onClick={() => toggleDay(schedule.id, day)}
-                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-md text-xs font-medium transition-colors ${
-                                  schedule.days.includes(day)
+                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-md text-xs font-medium transition-colors ${schedule.days.includes(day)
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                                }`}
+                                  }`}
                               >
                                 {day}
                               </button>

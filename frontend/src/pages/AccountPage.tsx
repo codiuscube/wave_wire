@@ -37,7 +37,7 @@ export function AccountPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Account</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Account</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Manage your contact info and notification preferences.
         </p>
@@ -200,18 +200,16 @@ export function AccountPage() {
 
       {/* Supporter Status */}
       <Card
-        className={`mb-6 lg:mb-8 ${
-          currentTier === "free"
+        className={`mb-6 lg:mb-8 ${currentTier === "free"
             ? "border-yellow-500/30 bg-yellow-500/5"
             : "border-green-500/30 bg-green-500/5"
-        }`}
+          }`}
       >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard
-              className={`w-5 h-5 ${
-                currentTier === "free" ? "text-yellow-400" : "text-green-400"
-              }`}
+              className={`w-5 h-5 ${currentTier === "free" ? "text-yellow-400" : "text-green-400"
+                }`}
             />
             Subscription
           </CardTitle>
@@ -311,11 +309,10 @@ export function AccountPage() {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Free Tier */}
               <div
-                className={`border rounded-xl p-6 ${
-                  currentTier === "free"
+                className={`border rounded-xl p-6 ${currentTier === "free"
                     ? "border-primary bg-primary/5"
                     : "border-border"
-                }`}
+                  }`}
               >
                 {currentTier === "free" && (
                   <Badge variant="secondary" className="mb-4">

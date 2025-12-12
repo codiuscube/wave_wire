@@ -96,16 +96,16 @@ export function DashboardOverview() {
   const spotsWithBuoy = userSpots.filter((s) => s.buoyId);
   const bestSpot = spotsWithBuoy.length > 0
     ? spotsWithBuoy.reduce((best, spot) => {
-        const statusOrder = { epic: 4, good: 3, fair: 2, poor: 1, unknown: 0 };
-        return statusOrder[spot.status] > statusOrder[best.status] ? spot : best;
-      }, spotsWithBuoy[0])
+      const statusOrder = { epic: 4, good: 3, fair: 2, poor: 1, unknown: 0 };
+      return statusOrder[spot.status] > statusOrder[best.status] ? spot : best;
+    }, spotsWithBuoy[0])
     : null;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Monitor conditions across all your spots.
         </p>
@@ -308,19 +308,18 @@ export function DashboardOverview() {
                           </Link>
                         </div>
                       )}
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-6 flex flex-col sm:flex-row gap-3">
                         <Link
                           to={`/dashboard/triggers?spot=${spot.id}`}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm font-medium py-2.5 px-4 rounded-md text-center transition-colors"
                         >
-                          Edit Triggers →
+                          Edit Triggers
                         </Link>
-                        <span className="text-xs text-muted-foreground">•</span>
                         <Link
                           to={`/dashboard/spot`}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          className="flex-1 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground text-sm font-medium py-2.5 px-4 rounded-md text-center transition-colors"
                         >
-                          Spot Settings →
+                          Spot Settings
                         </Link>
                       </div>
                     </div>
@@ -352,7 +351,7 @@ export function DashboardOverview() {
                       <p className="text-xs font-medium text-muted-foreground">{alert.spotName}</p>
                     </div>
                     <p className="text-sm">{alert.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{alert.time}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 font-medium">{alert.time}</p>
                   </div>
                 </div>
               );
