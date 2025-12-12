@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 export function SignupPage() {
   const [email, setEmail] = useState('');
@@ -44,7 +44,7 @@ export function SignupPage() {
         <div className="w-full max-w-md text-center">
           <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-8">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Waves className="w-8 h-8 text-green-400" />
+              <CheckCircle className="w-8 h-8 text-green-400" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
             <p className="text-slate-400 mb-6">
