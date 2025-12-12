@@ -30,6 +30,16 @@ export function Footer() {
           </a>
         </div>
 
+        <div className="flex flex-col gap-2 border-l border-brand-rogue/30 pl-6">
+          <h4 className="font-mono text-xs text-brand-rogue font-bold mb-2">// OPERATIONAL_DOCTRINE</h4>
+          <ul className="font-mono text-[10px] text-brand-foam/80 space-y-1 uppercase tracking-wider">
+            <li>No Algorithmic Ratings.</li>
+            <li>No Public Feeds.</li>
+            <li>Local Knowledge Is King.</li>
+            <li>Signal Over Noise.</li>
+          </ul>
+        </div>
+
         <div className="text-right">
           <p className="font-mono text-[10px] text-brand-concrete uppercase">
             &copy; 2025 WAVE_WIRE

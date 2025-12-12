@@ -15,10 +15,10 @@ export function Pricing() {
       <div className="container mx-auto px-6 max-w-5xl relative z-10">
         <div className="text-center mb-24">
           {/* Tape Effect Removed */}
-          <h2 className="text-5xl md:text-7xl font-black font-display tracking-tighter text-white uppercase leading-[0.8] mb-6">
+          <h2 className="text-4xl sm:text-6xl md:text-7xl font-black font-display tracking-tighter text-white uppercase leading-[0.8] mb-6">
             SIMPLE<br /><span className="text-brand-concrete">PRICING</span>
           </h2>
-          <p className="font-mono text-brand-foam/80 max-w-lg mx-auto border-t border-white/20 pt-6">
+          <p className="font-mono text-lg md:text-xl text-brand-foam/80 max-w-lg mx-auto border-t border-white/20 pt-6">
             <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 mb-2 font-mono text-xs font-bold tracking-widest tape">
               // STATUS: OPEN_BETA
             </span><br />
@@ -35,7 +35,7 @@ export function Pricing() {
                 ENTRY_LEVEL
               </div>
 
-              <h3 className="text-3xl font-black font-display text-white mb-2">GROM</h3>
+              <h3 className="text-3xl font-black font-display text-white mb-2">MONITOR</h3>
               <div className="text-5xl font-mono text-brand-concrete mb-6 opacity-50">$0</div>
 
               <ul className="space-y-4 mb-8 font-mono text-sm text-brand-foam/60 flex-1">
@@ -75,7 +75,7 @@ export function Pricing() {
                 RECOMMENDED
               </div>
 
-              <h3 className="text-3xl font-black font-display text-white mb-2 text-brand-acid flicker">LOCAL</h3>
+              <h3 className="text-3xl font-black font-display text-white mb-2 text-brand-acid flicker">COMMAND</h3>
               <div className="text-5xl font-mono text-white mb-6">$5<span className="text-lg text-brand-foam/50">/mo</span></div>
 
               <ul className="space-y-4 mb-8 font-mono text-sm text-white flex-1 relative z-10">
@@ -87,6 +87,9 @@ export function Pricing() {
                 </li>
                 <li className="flex items-center gap-3">
                   <Zap className="w-4 h-4 text-brand-acid" /> <span className="font-bold">Unlimited SMS</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Zap className="w-4 h-4 text-brand-acid" /> <span className="font-bold">Buoy Verification</span>
                 </li>
                 <li className="flex items-center gap-3 opacity-60">
                   <Zap className="w-4 h-4 text-brand-acid" /> Early access features

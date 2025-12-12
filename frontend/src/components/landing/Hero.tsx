@@ -60,11 +60,10 @@ export function Hero() {
 
             {/* Decorative Top Label */}
             <div className="font-mono text-brand-acid text-xs tracking-[0.2em] mb-4 border-l-2 border-brand-rogue pl-4 py-1 tape">
-              HARD INTEL. LIVE ALERTS.
+              HARD INTEL. PRIVATE ALERTS.
             </div>
 
-            {/* Massive Glitch Heading */}
-            <h1 className="text-5xl sm:text-8xl leading-[0.8] tracking-tighter text-white font-black mix-blend-difference mb-8 glitch-text select-none font-display uppercase" data-text="SWELL">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl leading-[0.8] tracking-tighter text-white font-black mix-blend-difference mb-8 glitch-text select-none font-display uppercase" data-text="SWELL">
               SWELL<br />
               <span className="text-brand-acid ml-8 sm:ml-24 block translate-x-2 sm:translate-x-4 distressed-text">INCOMING.</span>
             </h1>
@@ -74,8 +73,8 @@ export function Hero() {
               <div className="bg-brand-rogue text-brand-abyss font-bold font-mono text-xs inline-block px-2 py-1 mb-2 transform -rotate-1">
                 // WIRE_RECEIVED
               </div>
-              <p className="font-mono text-sm sm:text-base text-brand-foam leading-relaxed border-l-2 border-brand-acid pl-6">
-                <span className="text-white font-bold text-lg">GO.</span> Direct line to firing surf. We watch the buoy, wind, and tide. You get the signal.
+              <p className="font-mono text-base sm:text-lg text-brand-foam leading-relaxed border-l-2 border-brand-acid pl-6">
+                <span className="text-white font-bold text-lg">SIGNAL DETECTED. SWELL CONFIRMED.</span> We monitor the raw data—buoys, wind, tide. You set the threshold. We send the wire. No noise.
               </p>
             </div>
 

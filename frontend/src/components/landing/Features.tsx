@@ -10,23 +10,23 @@ const features = [
   },
   {
     icon: Orbit,
-    title: "ANY_BREAK",
+    title: "PRIVATE_ALERTS",
     description:
-      'Monitor multiple spots. What fires at the jetty might be trash at the point. Set unique logic for every break.',
+      'Private alerts minimize crowds — we don’t blow it up. Built for true locals.',
     className: "-rotate-2 -ml-8 mt-12 z-20",
   },
   {
     icon: Skull,
-    title: "SURF_BUDDY",
+    title: "ALERT_PROTOCOL",
     description:
-      'Pick your vibe: Stoked Local (hyped), Chill (relaxed), or Just Data. AI generated, but feels like your best friend.',
+      "Configure the output. Choose 'The Local' (Cynical), 'The Frother' (Hyped), or 'Raw Data' (Pure Stats). The intel adapts to your mindset.",
     className: "rotate-2 -mt-12 ml-12 z-30",
   },
   {
     icon: Radio,
-    title: "SIGNAL_ONLY",
+    title: "ZERO_BROADCAST",
     description:
-      "We cross-check forecasts with live buoy data. No false alarms. If we text you, it's actually happening.",
+      "Private alerts only. No public heatmaps. No 'Fair to Good' push notifications sent to 100,000 people. We tell you, not the herd.",
     className: "-rotate-1 -ml-4 -mt-8 z-40",
   },
 ];
@@ -41,16 +41,16 @@ export function Features() {
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="mb-20 border-l-4 border-brand-rogue pl-6">
-          <h2 className="text-4xl sm:text-5xl md:text-8xl font-display font-black tracking-tighter text-white mb-4 uppercase leading-[0.8] break-words">
-            NO_BULLSHIT.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-acid to-white">JUST_WAVES.</span>
+          <h2 className="text-4xl sm:text-6xl md:text-7xl font-display font-black tracking-tighter text-white mb-4 uppercase leading-[0.8] break-words">
+            PURE_SIGNAL.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-acid to-white">ZERO_NOISE.</span>
           </h2>
           <p className="font-mono text-brand-concrete max-w-xl text-sm md:text-base border-t border-dashed border-white/20 pt-4 mt-4">
             <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 mb-2 font-mono text-xs font-bold tracking-widest tape">
               // STATUS: SYSTEM_OPTIMIZED
             </span><br />
-            <span className="text-xl md:text-2xl text-zinc-400 font-mono">
-              WAVE_WIRE lives in the background until the ocean turns on.
+            <span className="text-lg md:text-xl text-zinc-400 font-mono">
+              We leave you alone unless it’s actually surfable.
             </span>
           </p>
         </div>
