@@ -75,8 +75,8 @@ export function SpotCard({ spot }: SpotCardProps) {
               <div className="flex justify-between items-center border-b border-border/10 pb-2">
                 <Select
                   options={[
-                    { value: "primary", label: "Primary" },
-                    { value: "secondary", label: "Secondary" },
+                    { value: "primary", label: "Primary swell", shortLabel: "PRI" },
+                    { value: "secondary", label: "Secondary swell", shortLabel: "SEC" },
                   ]}
                   value={forecastSource}
                   onChange={(val) => setForecastSource(val as "primary" | "secondary")}

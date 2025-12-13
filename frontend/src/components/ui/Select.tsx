@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 interface Option {
   value: string;
   label: string;
+  shortLabel?: string;
 }
 
 interface SelectProps {
@@ -51,7 +52,7 @@ export function Select({
         className={`${baseButtonClasses} ${variantClasses}`}
       >
         <span className={selectedOption ? '' : 'text-muted-foreground'}>
-          {selectedOption?.label || placeholder}
+          {selectedOption?.shortLabel || selectedOption?.label || placeholder}
         </span>
         <ChevronDown className={`h-3 w-3 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
