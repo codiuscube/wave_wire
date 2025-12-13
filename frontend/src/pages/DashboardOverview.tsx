@@ -17,6 +17,7 @@ const userSpots: Spot[] = [
       waterTemp: 72,
       meanWaveDirection: 'SE',
       meanWaveDegrees: 145,
+      timestamp: new Date().toISOString(),
     },
     forecast: {
       primary: {
@@ -51,6 +52,7 @@ const userSpots: Spot[] = [
       waterTemp: 71,
       meanWaveDirection: 'SE',
       meanWaveDegrees: 142,
+      timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
     },
     forecast: {
       primary: {
