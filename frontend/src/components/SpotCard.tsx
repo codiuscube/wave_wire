@@ -7,6 +7,7 @@ export interface BuoyData {
   waterTemp: number;
   meanWaveDirection: string;
   meanWaveDegrees: number;
+  timestamp: string;
 }
 
 export interface SwellComponent {

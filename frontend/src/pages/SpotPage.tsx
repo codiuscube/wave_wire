@@ -22,6 +22,14 @@ const defaultSpot: any = { // Changed type to 'any' or 'Spot' if Spot is defined
   lon: -95.291,
   buoyId: "42035",
   buoyName: "Galveston (22nm SE)",
+  buoy: {
+    waveHeight: 4.2,
+    wavePeriod: 6,
+    waterTemp: 76,
+    meanWaveDirection: "SE",
+    meanWaveDegrees: 135,
+    timestamp: new Date().toISOString(), // Recent data
+  },
   forecast: {
     primary: {
       height: 3.5,
@@ -138,21 +146,31 @@ export function SpotPage() {
                     {spot.buoyId ? (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 overflow-hidden">
-                          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider shrink-0">Signal Source:</span>
-                          <a
-                            href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono text-sm text-primary/80 hover:text-primary transition-colors truncate border-b border-primary/30 hover:border-primary"
-                          >
-                            {spot.buoyName || `Buoy ${spot.buoyId}`}
-                          </a>
+                          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider shrink-0">Buoy:</span>
+                          <div className="flex items-center gap-2">
+                            {/* Stale Data Indicator */}
+                            <div
+                              className={`w-2 h-2 rounded-full ${!spot.buoy?.timestamp || (new Date().getTime() - new Date(spot.buoy.timestamp).getTime() > 24 * 60 * 60 * 1000)
+                                ? "bg-red-500 animate-pulse"
+                                : "bg-green-500 animate-pulse"
+                                }`}
+                              title={spot.buoy?.timestamp ? `Data from: ${new Date(spot.buoy.timestamp).toLocaleString()}` : "No data timestamp"}
+                            />
+                            <a
+                              href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-sm text-primary/80 hover:text-primary transition-colors truncate border-b border-primary/30 hover:border-primary"
+                            >
+                              {spot.buoyName || `Buoy ${spot.buoyId}`}
+                            </a>
+                          </div>
                         </div>
                         <button
                           onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
                           className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider underline underline-offset-4 decoration-dotted"
                         >
-                          [ RECONFIGURE ]
+                          [ RECONFIGURE BUOY ]
                         </button>
                       </div>
                     ) : (
@@ -160,7 +178,7 @@ export function SpotPage() {
                         onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
                         className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn"
                       >
-                        <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">Assign Signal Source</span>
+                        <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">Assign Buoy</span>
                         <ChevronDown className={`w-4 h-4 transition-transform ${expandedSpotId === spot.id ? 'rotate-180' : ''}`} />
                       </button>
                     )}
