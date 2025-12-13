@@ -118,13 +118,13 @@ export function SpotCard({ spot }: SpotCardProps) {
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WAV</span>
                 <span className="font-mono text-base">
-                  {spot.buoy.waveHeight}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.buoy.wavePeriod}s</span>
+                  {spot.buoy.waveHeight}ft <span className="text-base font-normal text-normal">@ {spot.buoy.wavePeriod}s</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">DIR</span>
-                <span className="text-muted-foreground font-mono text-sm">
-                  {spot.buoy.meanWaveDirection} <span className="text-muted-foreground font-normal text-sm">{spot.buoy.meanWaveDegrees}°</span>
+                <span className="text-base font-normal font-mono text-normal">
+                  {spot.buoy.meanWaveDirection} <span className="text-normal">{spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
