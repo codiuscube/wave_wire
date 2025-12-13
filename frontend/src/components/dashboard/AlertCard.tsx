@@ -13,16 +13,7 @@ interface AlertCardProps {
     className?: string; // Allow additional classes if needed
 }
 
-const statusConfig = {
-    epic: { label: 'Epic', color: 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-sm' },
-    good: { label: 'Good', color: 'bg-zinc-100 text-zinc-900 border-zinc-200' },
-    fair: { label: 'Fair', color: 'bg-zinc-800 text-zinc-300 border-zinc-700' },
-    poor: { label: 'Poor', color: 'bg-zinc-900 text-zinc-400 border-zinc-800' },
-    unknown: { label: 'No Buoy', color: 'bg-zinc-900 text-zinc-500 border-zinc-800' },
-};
-
 export function AlertCard({ alert, className = '' }: AlertCardProps) {
-    const conditionStyle = statusConfig[alert.condition];
     const emoji = alert.condition === 'epic' ? '🔥' : '🌊';
 
     const formatTimestamp = (isoString: string) => {
