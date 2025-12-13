@@ -96,28 +96,24 @@ export function SpotCard({ spot }: SpotCardProps) {
 
         {/* MODEL FORECAST (Forecast) */}
         <div className="p-5 bg-background/20">
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-mono text-xs tracking-widest text-muted-foreground/70 border-l-2 border-muted pl-3 uppercase">
-              Model Forecast
-            </p>
-            <div className="w-[140px]">
-              <Select
-                options={[
-                  { value: "primary", label: "Primary" },
-                  { value: "secondary", label: "Secondary" },
-                ]}
-                value={forecastSource}
-                onChange={(val) => setForecastSource(val as "primary" | "secondary")}
-              />
-            </div>
-          </div>
+
+          <p className="font-mono text-xs tracking-widest text-muted-foreground/50 mb-4 border-l-2 border-muted pl-3 uppercase">
+            Model Forecast
+          </p>
 
           {spot.forecast ? (
             <div className="space-y-4">
-              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground uppercase">
-                  {forecastSource.slice(0, 3)}
-                </span>
+              <div className="flex justify-between items-center border-b border-border/10 pb-2">
+                <div className="w-[110px]">
+                  <Select
+                    options={[
+                      { value: "primary", label: "Primary" },
+                      { value: "secondary", label: "Secondary" },
+                    ]}
+                    value={forecastSource}
+                    onChange={(val) => setForecastSource(val as "primary" | "secondary")}
+                  />
+                </div>
                 <span className="font-mono text-base">
                   {spot.forecast[forecastSource].height}ft @ {spot.forecast[forecastSource].period}s{" "}
                   <span className="text-muted-foreground/50 font-normal text-sm">
