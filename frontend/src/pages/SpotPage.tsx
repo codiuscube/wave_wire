@@ -5,6 +5,7 @@ import {
   Badge,
   AddSpotModal,
 } from "../components/ui";
+import { IconPickerModal, AVAILABLE_ICONS } from "../components/ui/IconPickerModal";
 import type { SpotOption } from "../components/ui";
 
 const buoyOptions = [
@@ -55,6 +56,10 @@ export function SpotPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
 
+  // Icon Picker State
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [selectedSpotForIcon, setSelectedSpotForIcon] = useState<string | null>(null);
+
   const isSpotSaved = (spotId: string) => mySpots.some((s) => s.id === spotId);
 
   const addSpot = (spot: SpotOption) => {
@@ -75,6 +80,17 @@ export function SpotPage() {
       )
     );
     setExpandedSpotId(null);
+  };
+
+
+
+  const updateSpotIcon = (iconName: string) => {
+    if (!selectedSpotForIcon) return;
+    setMySpots(
+      mySpots.map((s) =>
+        s.id === selectedSpotForIcon ? { ...s, icon: iconName } : s
+      )
+    );
   };
 
   return (
@@ -122,9 +138,21 @@ export function SpotPage() {
                 >
                   <div className="flex items-center justify-between p-4 gap-4 border-b border-border/30">
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="h-12 w-12 bg-secondary/30 flex items-center justify-center shrink-0 border border-border/30">
-                        <Crosshair className="w-6 h-6 text-primary/80" />
-                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedSpotForIcon(spot.id);
+                          setIsIconModalOpen(true);
+                        }}
+                        className="h-12 w-12 bg-secondary/30 flex items-center justify-center shrink-0 border border-border/30 hover:bg-primary/20 hover:border-primary/50 transition-all group/icon"
+                        title="Change Icon"
+                      >
+                        {(() => {
+                          const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                            ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                            : Crosshair;
+                          return <IconComponent className="w-6 h-6 text-primary/80 group-hover/icon:text-primary transition-colors" />;
+                        })()}
+                      </button>
                       <div className="min-w-0">
                         <h4 className="font-mono font-bold text-lg uppercase tracking-tight text-foreground truncate">{spot.name}</h4>
                         <p className="font-mono text-sm text-muted-foreground/70 uppercase tracking-wide">
@@ -237,6 +265,13 @@ export function SpotPage() {
         onClose={() => setIsModalOpen(false)}
         savedSpots={mySpots}
         onAddSpot={addSpot}
+      />
+
+      <IconPickerModal
+        isOpen={isIconModalOpen}
+        onClose={() => setIsIconModalOpen(false)}
+        onSelectIcon={updateSpotIcon}
+        currentIcon={selectedSpotForIcon ? mySpots.find(s => s.id === selectedSpotForIcon)?.icon : undefined}
       />
     </div>
   );

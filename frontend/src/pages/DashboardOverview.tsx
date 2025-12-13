@@ -3,6 +3,7 @@ import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
 import { AlertsModal } from '../components/dashboard/AlertsModal';
 import { Button } from '../components/ui';
+import { AlertCard } from '../components/dashboard/AlertCard';
 
 // Mock data - would come from API/context in real app
 const userSpots: Spot[] = [
@@ -40,6 +41,7 @@ const userSpots: Spot[] = [
     status: 'good',
     triggersMatched: 2,
     nextCheck: '6:00 AM',
+    icon: 'Star',
   },
   {
     id: 'galveston',
@@ -75,6 +77,7 @@ const userSpots: Spot[] = [
     status: 'fair',
     triggersMatched: 0,
     nextCheck: '6:30 AM',
+    icon: 'Radio',
   },
   {
     id: 'bob-hall',
@@ -101,6 +104,7 @@ const userSpots: Spot[] = [
     status: 'poor',
     triggersMatched: 0,
     nextCheck: '7:00 AM',
+    icon: 'Anchor',
   },
 ];
 
@@ -110,7 +114,7 @@ const recentAlerts = [
     spotName: 'Surfside Beach',
     type: 'Epic',
     message: 'Surfside is firing! 5ft sets, offshore wind. GO NOW!',
-    time: '2 hours ago',
+    time: '2023-10-24T14:32:00Z',
     condition: 'epic' as const,
   },
   {
@@ -118,7 +122,7 @@ const recentAlerts = [
     spotName: 'Galveston (61st St)',
     type: 'Morning Check',
     message: 'Good conditions expected. 4ft @ 11s. Traffic: 45min.',
-    time: 'Yesterday 6:00 AM',
+    time: '2023-10-23T06:15:00Z',
     condition: 'good' as const,
   },
   {
@@ -126,18 +130,12 @@ const recentAlerts = [
     spotName: 'Surfside Beach',
     type: 'Night Forecast',
     message: 'Tomorrow looking fun. Swell building overnight.',
-    time: '2 days ago',
+    time: '2023-10-22T21:45:00Z',
     condition: 'good' as const,
   },
 ];
 
-const statusConfig = {
-  epic: { label: 'Epic', color: 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-sm' },
-  good: { label: 'Good', color: 'bg-zinc-100 text-zinc-900 border-zinc-200' },
-  fair: { label: 'Fair', color: 'bg-zinc-800 text-zinc-300 border-zinc-700' },
-  poor: { label: 'Poor', color: 'bg-zinc-900 text-zinc-400 border-zinc-800' },
-  unknown: { label: 'No Buoy', color: 'bg-zinc-900 text-zinc-500 border-zinc-800' },
-};
+
 
 export function DashboardOverview() {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
@@ -176,27 +174,11 @@ export function DashboardOverview() {
 
           <div className="p-6">
             <div className="space-y-4">
-              {recentAlerts.map((alert) => {
-                const conditionStyle = statusConfig[alert.condition];
-                const emoji = alert.condition === 'epic' ? '🔥' : '🌊';
-                return (
-                  <div key={alert.id} className="flex items-start gap-4 p-5 border border-border/50 bg-secondary/10 transition-colors">
-                    <div className={`mt-1.5 h-2.5 w-2.5 rounded-full ${conditionStyle.color.split(' ')[0].replace('bg-', 'bg-')}`} />
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-sm text-primary/80 uppercase tracking-wider">{alert.spotName}</span>
-                      </div>
-                      <p className="font-mono text-base text-foreground/90 leading-relaxed">
-                        {emoji} {alert.message}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2 font-mono opacity-60">
-                        Sent: {alert.time}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="space-y-4">
+                {recentAlerts.map((alert) => (
+                  <AlertCard key={alert.id} alert={alert} />
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Select } from "./ui/Select";
+import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
+import { Crosshair } from "lucide-react";
 
 export interface BuoyData {
   waveHeight: number;
@@ -39,6 +41,7 @@ export interface Spot {
   status?: "epic" | "good" | "fair" | "poor" | "unknown";
   triggersMatched?: number;
   nextCheck?: string;
+  icon?: string;
 }
 
 interface SpotCardProps {
@@ -48,12 +51,18 @@ interface SpotCardProps {
 export function SpotCard({ spot }: SpotCardProps) {
   const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
 
+  const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+    ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+    : Crosshair;
+
   return (
     <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
       {/* Header Row */}
       <div className="p-4 flex items-start justify-between gap-4 border-b border-border/30">
         <div className="min-w-0 flex items-center gap-3">
-          <div className="w-2 h-2 bg-primary/50 group-hover:bg-primary transition-colors" />
+          <div className="h-6 w-6 flex items-center justify-center">
+            <Icon className="w-5 h-5 text-primary/80 group-hover:text-primary transition-colors" />
+          </div>
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
 
