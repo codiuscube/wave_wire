@@ -12,9 +12,17 @@ interface SelectProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
+  variant?: 'default' | 'ghost';
 }
 
-export function Select({ options, value, onChange, placeholder = 'Select...', className = '' }: SelectProps) {
+export function Select({ 
+  options, 
+  value, 
+  onChange, 
+  placeholder = 'Select...', 
+  className = '',
+  variant = 'default'
+}: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -30,17 +38,22 @@ export function Select({ options, value, onChange, placeholder = 'Select...', cl
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const baseButtonClasses = "flex items-center justify-between transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  const variantClasses = variant === 'default'
+    ? "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
+    : "h-auto p-0 bg-transparent border-0 font-mono text-sm text-muted-foreground hover:text-primary gap-1";
+
   return (
     <div ref={ref} className={`relative ${className}`}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className={`${baseButtonClasses} ${variantClasses}`}
       >
         <span className={selectedOption ? '' : 'text-muted-foreground'}>
           {selectedOption?.label || placeholder}
         </span>
-        <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3 w-3 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
