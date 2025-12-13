@@ -151,7 +151,7 @@ export function DashboardOverview() {
           Dashboard
         </h1>
         <p className="font-mono text-muted-foreground text-base sm:text-lg border-l-2 border-muted pl-4">
-          Monitor raw data feeds across your designated spots!
+          Monitor raw data feeds across your designated spots.
         </p>
       </div>
 

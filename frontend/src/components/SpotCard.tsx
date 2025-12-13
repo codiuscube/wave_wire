@@ -1,4 +1,5 @@
-
+import { useState } from "react";
+import { Select } from "./ui/Select";
 
 export interface BuoyData {
   waveHeight: number;
@@ -44,6 +45,8 @@ interface SpotCardProps {
 }
 
 export function SpotCard({ spot }: SpotCardProps) {
+  const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
+
   return (
     <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
       {/* Header Row */}
@@ -93,22 +96,33 @@ export function SpotCard({ spot }: SpotCardProps) {
 
         {/* MODEL FORECAST (Forecast) */}
         <div className="p-5 bg-background/20">
-          <p className="font-mono text-xs tracking-widest text-muted-foreground/70 mb-4 border-l-2 border-muted pl-3 uppercase">
-            Model Forecast
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-mono text-xs tracking-widest text-muted-foreground/70 border-l-2 border-muted pl-3 uppercase">
+              Model Forecast
+            </p>
+            <div className="w-[140px]">
+              <Select
+                options={[
+                  { value: "primary", label: "Primary" },
+                  { value: "secondary", label: "Secondary" },
+                ]}
+                value={forecastSource}
+                onChange={(val) => setForecastSource(val as "primary" | "secondary")}
+              />
+            </div>
+          </div>
 
           {spot.forecast ? (
             <div className="space-y-4">
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">PRI</span>
-                <span className="font-mono text-base">
-                  {spot.forecast.primary.height}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.forecast.primary.period}s {spot.forecast.primary.direction} {spot.forecast.primary.degrees}°</span>
+                <span className="font-mono text-sm text-muted-foreground uppercase">
+                  {forecastSource.slice(0, 3)}
                 </span>
-              </div>
-              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">SEC</span>
                 <span className="font-mono text-base">
-                  {spot.forecast.secondary.height}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.forecast.secondary.period}s {spot.forecast.secondary.direction} {spot.forecast.secondary.degrees}°</span>
+                  {spot.forecast[forecastSource].height}ft @ {spot.forecast[forecastSource].period}s{" "}
+                  <span className="text-muted-foreground/50 font-normal text-sm">
+                    {spot.forecast[forecastSource].direction} {spot.forecast[forecastSource].degrees}°
+                  </span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
