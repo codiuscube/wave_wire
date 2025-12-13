@@ -57,7 +57,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover p-1 shadow-md">
+        <div className="absolute z-50 mt-1 min-w-[120px] rounded-sm border border-border bg-popover p-1 shadow-md">
           {options.map((option) => (
             <button
               key={option.value}
@@ -66,8 +66,8 @@ export function Select({
                 onChange?.(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground ${
-                option.value === value ? 'bg-accent' : ''
+              className={`w-full rounded-sm px-2 py-1.5 text-left text-sm font-mono hover:bg-accent hover:text-accent-foreground ${
+                option.value === value ? 'bg-accent text-accent-foreground' : 'text-popover-foreground'
               }`}
             >
               {option.label}
