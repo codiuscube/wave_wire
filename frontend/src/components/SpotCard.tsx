@@ -87,7 +87,7 @@ export function SpotCard({ spot }: SpotCardProps) {
                   variant="ghost"
                 />
                 <span className="font-mono text-base font-normal">
-                  {spot.forecast[forecastSource].height}ft <span className="font-normal">@ {spot.forecast[forecastSource].period}s</span>{" "}
+                  {spot.forecast[forecastSource].height}ft <span className="font-mono text-normal">@ {spot.forecast[forecastSource].period}s</span>{" "}
                   <span className="text-muted-foreground/50 font-normal text-sm">
                     ⋅ {spot.forecast[forecastSource].direction} {spot.forecast[forecastSource].degrees}°
                   </span>
@@ -95,7 +95,7 @@ export function SpotCard({ spot }: SpotCardProps) {
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WND</span>
-                <span className="font-mono text-base font-bold">
+                <span className="font-mono text-base font-normal">
                   {spot.forecast.windSpeed}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.forecast.windDirection} {spot.forecast.windDegrees}°</span>
                 </span>
               </div>
@@ -127,7 +127,7 @@ export function SpotCard({ spot }: SpotCardProps) {
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">DIR</span>
-                <span className="font-mono text-base font-bold">
+                <span className="font-mono text-base font-normal">
                   {spot.buoy.windSpeed || '-'}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || spot.buoy.meanWaveDirection} {spot.buoy.windDegrees || spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
