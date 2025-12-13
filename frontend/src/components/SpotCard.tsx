@@ -62,42 +62,10 @@ export function SpotCard({ spot }: SpotCardProps) {
       {/* Data Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/30">
 
-        {/* LIVE SIGNAL (Buoy) */}
+
+        {/* MODEL FORECAST (Forecast) - NOW FIRST & EMPHASIZED */}
         <div className="p-5 bg-background/20">
-          <p className="font-mono text-xs tracking-widest text-muted-foreground/70 mb-4 border-l-2 border-primary/40 pl-3 uppercase truncate">
-            {spot.buoyName || 'NO SIGNAL'}
-          </p>
-
-          {spot.buoy ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">WAV</span>
-                <span className="font-mono text-base font-bold">
-                  {spot.buoy.waveHeight}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.buoy.wavePeriod}s</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">DIR</span>
-                <span className="font-mono text-base">
-                  {spot.buoy.meanWaveDirection} <span className="text-muted-foreground font-normal text-sm">{spot.buoy.meanWaveDegrees}°</span>
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">H2O</span>
-                <span className="font-mono text-base">{spot.buoy.waterTemp}°F</span>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
-              <p className="font-mono text-sm text-muted-foreground/50">NO SIGNAL</p>
-            </div>
-          )}
-        </div>
-
-        {/* MODEL FORECAST (Forecast) */}
-        <div className="p-5 bg-background/20">
-
-          <p className="font-mono text-xs tracking-widest text-muted-foreground/50 mb-4 border-l-2 border-muted pl-3 uppercase">
+          <p className="font-mono text-xs tracking-widest text-muted-foreground/70 mb-4 border-l-2 border-primary/40 pl-3 uppercase">
             Model Forecast
           </p>
 
@@ -113,8 +81,8 @@ export function SpotCard({ spot }: SpotCardProps) {
                   onChange={(val) => setForecastSource(val as "primary" | "secondary")}
                   variant="ghost"
                 />
-                <span className="font-mono text-base">
-                  {spot.forecast[forecastSource].height}ft @ {spot.forecast[forecastSource].period}s{" "}
+                <span className="font-mono text-base font-bold">
+                  {spot.forecast[forecastSource].height}ft <span className="font-normal">@ {spot.forecast[forecastSource].period}s</span>{" "}
                   <span className="text-muted-foreground/50 font-normal text-sm">
                     {spot.forecast[forecastSource].direction} {spot.forecast[forecastSource].degrees}°
                   </span>
@@ -134,6 +102,38 @@ export function SpotCard({ spot }: SpotCardProps) {
           ) : (
             <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
               <p className="font-mono text-sm text-muted-foreground/50">NO FORECAST DATA</p>
+            </div>
+          )}
+        </div>
+
+        {/* LIVE SIGNAL (Buoy) - NOW SECOND & DE-EMPHASIZED */}
+        <div className="p-5 bg-background/20">
+          <p className="font-mono text-xs tracking-widest text-muted-foreground/50 mb-4 border-l-2 border-muted pl-3 uppercase truncate">
+            {spot.buoyName || 'NO SIGNAL'}
+          </p>
+
+          {spot.buoy ? (
+            <div className="space-y-4">
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">WAV</span>
+                <span className="font-mono text-base">
+                  {spot.buoy.waveHeight}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.buoy.wavePeriod}s</span>
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">DIR</span>
+                <span className="font-mono text-base">
+                  {spot.buoy.meanWaveDirection} <span className="text-muted-foreground font-normal text-sm">{spot.buoy.meanWaveDegrees}°</span>
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">H2O</span>
+                <span className="font-mono text-base">{spot.buoy.waterTemp}°F</span>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
+              <p className="font-mono text-sm text-muted-foreground/50">NO SIGNAL</p>
             </div>
           )}
         </div>
