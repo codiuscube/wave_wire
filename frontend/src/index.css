@@ -29,7 +29,7 @@
   /* Custom Surf Tech Colors */
   --color-brand-abyss: #020817;
   --color-brand-foam: #e2e8f0;
-  --color-brand-acid: #00f0ff;
+  --color-brand-acid: #fafafa;
   --color-brand-rogue: #ff3300;
   --color-brand-concrete: #94a3b8;
 }
@@ -49,29 +49,34 @@
     --popover: #020817;
     --popover-foreground: #e2e8f0;
 
-    --primary: #00f0ff;
-    /* Acid Cyan */
-    --primary-foreground: #020817;
+    --primary: #fafafa;
+    /* Acid Cyan -> Monochrome White */
+    --primary-foreground: #18181b;
 
-    --secondary: #ff3300;
-    /* Rogue Orange */
-    --secondary-foreground: #ffffff;
+    --secondary: #e2e8f0;
+    /* Monochrome Foam (was Rogue Orange) */
+    --secondary-foreground: #020817;
 
     --muted: #1e293b;
-    --muted-foreground: #94a3b8;
+    --muted-foreground: #d4d4d8;
 
     --accent: #1e293b;
-    --accent-foreground: #00f0ff;
+    --accent-foreground: #fafafa;
 
-    --destructive: #ff3300;
+    --destructive: #ef4444;
+    /* Standard Red (was Rogue Orange) */
     --destructive-foreground: #ffffff;
 
     --border: #1e293b;
     --input: #1e293b;
-    --ring: #00f0ff;
+    --ring: #d4d4d8;
 
     --radius: 0;
     /* Brutalist sharp edges */
+
+    /* Glitch Effect Colors */
+    --glitch-1: #fafafa;
+    --glitch-2: #e2e8f0;
   }
 
   /* No separate light mode for now, purely dark/surf tech */
@@ -109,12 +114,12 @@ body {
   --secondary-foreground: #fafafa;
 
   --muted: #27272a;
-  --muted-foreground: #a1a1aa;
+  --muted-foreground: #d4d4d8;
 
   --accent: #27272a;
   --accent-foreground: #fafafa;
 
-  --destructive: #7f1d1d;
+  --destructive: #dc2626;
   --destructive-foreground: #fafafa;
 
   --border: #27272a;
@@ -123,8 +128,12 @@ body {
 
   --radius: 0.5rem;
 
-  /* Override fonts for dashboard */
-  font-family: "Inter", system-ui, sans-serif !important;
+  /* Dashboard Glitch Overrides (Strict Monochrome) */
+  --glitch-1: #fafafa;
+  --glitch-2: #27272a;
+
+  /* Override fonts for dashboard - RELAXED for styling */
+  /* font-family: "Inter", system-ui, sans-serif !important; */
 }
 
 /* Make sure dashboard body follows theme */
@@ -246,14 +255,14 @@ body {
 
 .glitch-text::before {
   left: 2px;
-  text-shadow: -1px 0 #ff3300;
+  text-shadow: -1px 0 var(--glitch-2);
   clip: rect(24px, 550px, 90px, 0);
   animation: glitch-anim-2 3s infinite linear alternate-reverse;
 }
 
 .glitch-text::after {
   left: -2px;
-  text-shadow: -1px 0 #00f0ff;
+  text-shadow: -1px 0 var(--glitch-1);
   clip: rect(85px, 550px, 140px, 0);
   animation: glitch-anim 2.5s infinite linear alternate-reverse;
 }
@@ -350,6 +359,8 @@ body {
   color: #fff;
   box-shadow: 2px 2px 0px 0px var(--secondary);
 }
+
+
 
 /* 4. Glass/Border Card */
 .tech-card {

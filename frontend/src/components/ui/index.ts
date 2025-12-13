@@ -7,3 +7,6 @@ export { Switch } from './Switch';
 export { Select } from './Select';
 export { Badge } from './Badge';
 export { ComingSoonModal } from './ComingSoonModal';
+export { AddSpotModal } from './AddSpotModal';
+export type { SpotOption } from './AddSpotModal';
+export { AddTriggerModal } from './AddTriggerModal';

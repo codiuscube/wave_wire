@@ -87,6 +87,66 @@ The project is optimized for deployment on **Vercel**.
 - **Weather API**: Open-Meteo Marine API
 - **Buoy Data**: NOAA Raw Text Files
 
+## Data Models
+
+### Alerts Schema
+The `alerts` table tracks all sent notifications.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Unique identifier. |
+| `spot_id` | `uuid` | Foreign key to `spots` table. |
+| `type` | `string` | Enum: `DAWN_PATROL`, `SWELL_INTEL`, `THE_LOCAL`, etc. |
+| `message` | `text` | The full text content of the alert. |
+| `condition` | `string` | Enum: `epic`, `good`, `fair`, `poor`. |
+| `created_at` | `timestamp` | Time the alert was generated/sent. |
+| `read_status` | `boolean` | Whether the user has viewed this alert. |
+
+### Spots Schema
+The `spots` table defines the surveillance targets.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `uuid` | Unique identifier. |
+| `name` | `string` | Display name (e.g. "Surfside Beach"). |
+| `buoy_id` | `string` | NOAA Station ID (e.g. "42035"). |
+| `buoy_data` | `jsonb` | Live signal data (Wave Height, Period, Direction, Temp). |
+| `forecast_data` | `jsonb` | Model data (Primary/Secondary Swell, Wind, Tide). |
+
+#### JSON Data Structures
+
+**Buoy Data (`buoy_data`)**
+```json
+{
+  "waveHeight": 4.2,      // feet
+  "wavePeriod": 12,       // seconds
+  "waterTemp": 72,        // fahrenheit
+  "meanWaveDirection": "SE",
+  "meanWaveDegrees": 145
+}
+```
+
+**Forecast Data (`forecast_data`)**
+```json
+{
+  "primary": {
+    "height": 3.5,
+    "period": 11,
+    "direction": "SE",
+    "degrees": 140
+  },
+  "secondary": {
+    "height": 1.2,
+    "period": 8,
+    "direction": "E",
+    "degrees": 90
+  },
+  "windSpeed": 8,         // knots
+  "windDirection": "NW",
+  "tide": 1.2             // feet
+}
+```
+
 ## How It Works (Logic)
 
 ### Smart Triggers

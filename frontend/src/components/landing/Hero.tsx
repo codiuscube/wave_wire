@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { Waves } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ComingSoonModal } from "../ui";
 import { useSpotName } from "../../contexts/LocationContext";
@@ -107,7 +106,6 @@ export function Hero() {
                     [{spotName}]
                   </span>
                 </div>
-                <Waves className="w-5 h-5 text-brand-concrete" />
               </div>
 
               {/* Messages Area */}
@@ -124,7 +122,6 @@ export function Hero() {
                       }`}
                   >
                     {/* Avatar/Indicator */}
-                    <span className="absolute -left-[1.6rem] top-2 w-2 h-2 bg-brand-acid rounded-none rotate-45"></span>
 
                     <div className={`p-3 sm:p-4 text-xs sm:text-sm font-mono leading-tight border ${idx === currentIndex
                       ? 'bg-brand-acid text-brand-abyss border-brand-acid shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]'

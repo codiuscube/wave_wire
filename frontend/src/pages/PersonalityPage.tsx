@@ -47,9 +47,9 @@ const personalities: Personality[] = [
 ];
 
 const triggerConfig: { condition: TriggerCondition; label: string; color: string; bgColor: string; borderColor: string; description: string }[] = [
-  { condition: "fair", label: "Fair", color: "text-muted-foreground", bgColor: "bg-muted", borderColor: "border-border", description: "Met minimum threshold" },
-  { condition: "good", label: "Good", color: "text-foreground", bgColor: "bg-secondary", borderColor: "border-secondary", description: "Solid, worth the drive" },
-  { condition: "epic", label: "Epic", color: "text-primary-foreground", bgColor: "bg-primary", borderColor: "border-primary", description: "Drop everything" },
+  { condition: "fair", label: "Fair", color: "text-zinc-400", bgColor: "bg-zinc-900", borderColor: "border-zinc-800", description: "Met minimum threshold" },
+  { condition: "good", label: "Good", color: "text-zinc-200", bgColor: "bg-zinc-800", borderColor: "border-zinc-700", description: "Solid, worth the drive" },
+  { condition: "epic", label: "Epic", color: "text-zinc-950", bgColor: "bg-zinc-100", borderColor: "border-white", description: "Drop everything" },
 ];
 
 export function PersonalityPage() {
@@ -62,6 +62,17 @@ export function PersonalityPage() {
     good: "stoked_local",
     epic: "hype_beast",
   });
+
+  // Enable/Disable specific conditions
+  const [enabledConditions, setEnabledConditions] = useState<Record<TriggerCondition, boolean>>({
+    fair: true,
+    good: true,
+    epic: true,
+  });
+
+  const toggleConditionEnabled = (condition: TriggerCondition) => {
+    setEnabledConditions(prev => ({ ...prev, [condition]: !prev[condition] }));
+  };
 
   const [includeEmoji, setIncludeEmoji] = useState(true);
   const [includeBuoyData, setIncludeBuoyData] = useState(false);
@@ -193,83 +204,112 @@ export function PersonalityPage() {
 
       {/* Condition Tabs - Large, Primary Navigation */}
       <div className="flex gap-2 mb-4">
-        {triggerConfig.map(({ condition, label, bgColor }) => {
+        {triggerConfig.map(({ condition, label }) => {
           const isActive = activeCondition === condition;
+          const isEnabled = enabledConditions[condition];
           const emoji = personalities.find(p => p.id === personalityByCondition[condition])?.emoji;
           return (
             <button
               key={condition}
               onClick={() => setActiveCondition(condition)}
-              className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-medium transition-all text-sm sm:text-base ${isActive
-                ? `${bgColor} text-white shadow-lg`
-                : `bg-muted text-muted-foreground hover:bg-accent border-2 border-transparent`
+              className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-medium transition-all text-sm sm:text-base flex items-center justify-center gap-1 sm:gap-2 ${isActive
+                ? `bg-primary text-primary-foreground shadow-lg`
+                : isEnabled
+                  ? `bg-muted text-muted-foreground hover:bg-accent border-2 border-transparent`
+                  : `bg-muted/30 text-muted-foreground/40 border-2 border-transparent hover:bg-muted/40` // Disabled look
                 }`}
             >
-              <div className="flex items-center justify-center gap-1 sm:gap-2">
-                <span>{label}</span>
-                <span className="text-base sm:text-lg">{emoji}</span>
-              </div>
+              <span>{label}</span>
+              <span className={`text-base sm:text-lg ${!isEnabled && 'opacity-50 grayscale'}`}>{emoji}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Preview - Prominent, Updates Live */}
-      <Card className={`mb-4 sm:mb-6 border-2 ${activeConfig.borderColor} bg-card`}>
-        <CardContent className="pt-3 sm:pt-4">
-          {/* iOS Messages Style */}
-          <div className="bg-muted rounded-2xl p-3 sm:p-4">
-            <div className="text-center mb-3 pb-2 border-b border-border">
-              <p className="text-[10px] text-muted-foreground uppercase">Text Message</p>
-              <p className="font-semibold text-sm text-foreground">WAVE_WIRE (512) 555-0123</p>
-            </div>
+      {/* Enable Toggle for Active Condition */}
+      <div className="flex items-center justify-between mb-4 px-1">
+        <span className="text-sm font-medium text-muted-foreground">
+          Enable Alerts for <span className="text-foreground font-bold">{activeConfig.label}</span> Conditions
+        </span>
+        <Switch
+          checked={enabledConditions[activeCondition]}
+          onChange={() => toggleConditionEnabled(activeCondition)}
+        />
+      </div>
 
-            <div className="flex justify-start">
-              <div className="bg-primary text-primary-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl rounded-bl-md shadow-sm max-w-[98%] sm:max-w-[95%]">
-                <p className="text-[13px] sm:text-[14px] leading-snug">{getPreviewMessage()}</p>
-              </div>
-            </div>
+      {enabledConditions[activeCondition] ? (
+        <>
+          {/* Preview - Prominent, Updates Live */}
+          <Card className={`mb-4 sm:mb-6 border-2 ${activeConfig.borderColor} bg-card`}>
+            <CardContent className="pt-3 sm:pt-4">
+              {/* iOS Messages Style */}
+              <div className="bg-muted rounded-2xl p-3 sm:p-4">
+                <div className="text-center mb-3 pb-2 border-b border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase">Text Message</p>
+                  <p className="font-semibold text-sm text-foreground">WAVE_WIRE (512) 555-0123</p>
+                </div>
 
-            <div className="text-center mt-2">
-              <span className="text-[11px] text-muted-foreground">Just now</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Personality Selection for Active Condition */}
-      <Card className="mb-4 sm:mb-6">
-        <CardHeader className="pb-3 px-4 sm:px-6">
-          <CardTitle className="text-sm sm:text-base flex flex-wrap items-center gap-1 sm:gap-2">
-            <span className={activeConfig.color}>When {activeConfig.label}:</span>
-            <span className="text-muted-foreground font-normal text-xs sm:text-sm">use this voice</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-            {personalities.map((personality) => {
-              const isSelected = personalityByCondition[activeCondition] === personality.id;
-              return (
-                <button
-                  key={personality.id}
-                  onClick={() => updatePersonalityForCondition(personality.id)}
-                  className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all ${isSelected
-                    ? `${activeConfig.borderColor} bg-accent/50`
-                    : "border-border hover:border-muted-foreground"
-                    }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xl sm:text-2xl">{personality.emoji}</span>
-                    {isSelected && <Check className={`w-4 h-4 ${activeConfig.color}`} />}
+                <div className="flex justify-start">
+                  <div className="bg-primary text-primary-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl rounded-bl-md shadow-sm max-w-[98%] sm:max-w-[95%]">
+                    <p className="text-[13px] sm:text-[14px] leading-snug">{getPreviewMessage()}</p>
                   </div>
-                  <p className="font-medium text-xs sm:text-sm">{personality.name}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">{personality.description}</p>
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                </div>
+
+                <div className="text-center mt-2">
+                  <span className="text-[11px] text-muted-foreground">Just now</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Personality Selection for Active Condition */}
+          <Card className="mb-4 sm:mb-6">
+            <CardHeader className="pb-3 px-4 sm:px-6">
+              <CardTitle className="text-sm sm:text-base flex flex-wrap items-center gap-1 sm:gap-2">
+                <span className={activeConfig.color}>When {activeConfig.label}:</span>
+                <span className="text-muted-foreground font-normal text-xs sm:text-sm">use this voice</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+                {personalities.map((personality) => {
+                  const isSelected = personalityByCondition[activeCondition] === personality.id;
+                  return (
+                    <button
+                      key={personality.id}
+                      onClick={() => updatePersonalityForCondition(personality.id)}
+                      className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all ${isSelected
+                        ? `${activeConfig.borderColor} bg-accent/50`
+                        : "border-border hover:border-muted-foreground"
+                        }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xl sm:text-2xl">{personality.emoji}</span>
+                        {isSelected && <Check className={`w-4 h-4 ${activeConfig.color}`} />}
+                      </div>
+                      <p className="font-medium text-xs sm:text-sm">{personality.name}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">{personality.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        /* Disabled State */
+        <Card className="mb-4 sm:mb-6 border-dashed border-2">
+          <CardContent className="py-12 flex flex-col items-center text-center text-muted-foreground">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <span className="text-2xl opacity-50">🔕</span>
+            </div>
+            <p className="font-medium">Alerts Disabled for {activeConfig.label}</p>
+            <p className="text-sm mt-1 max-w-xs mx-auto">
+              You won't receive notifications for {activeConfig.label.toLowerCase()} conditions. Enable this above to configure a personality.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Message Options */}
       <Card className="mb-4 sm:mb-6">

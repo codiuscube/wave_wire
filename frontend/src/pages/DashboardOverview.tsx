@@ -1,25 +1,42 @@
 import { useState } from 'react';
-import { Waves, TrendingUp, Clock, Zap, ArrowRight, MapPin, Wind, Thermometer } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '../components/ui';
+import { SpotCard } from '../components/SpotCard';
+import type { Spot } from '../components/SpotCard';
+import { AlertsModal } from '../components/dashboard/AlertsModal';
+import { Button } from '../components/ui';
 
 // Mock data - would come from API/context in real app
-const userSpots = [
+const userSpots: Spot[] = [
   {
     id: 'surfside',
     name: 'Surfside Beach',
     buoyId: '42035',
-    buoyName: 'Galveston',
-    currentConditions: {
+    buoyName: 'Galveston (22nm SE)',
+    buoy: {
       waveHeight: 4.2,
       wavePeriod: 12,
-      swellDirection: 'SE',
-      swellDegrees: 145,
+      waterTemp: 72,
+      meanWaveDirection: 'SE',
+      meanWaveDegrees: 145,
+    },
+    forecast: {
+      primary: {
+        height: 3.5,
+        period: 11,
+        direction: 'SE',
+        degrees: 140,
+      },
+      secondary: {
+        height: 1.2,
+        period: 8,
+        direction: 'E',
+        degrees: 90,
+      },
       windSpeed: 8,
       windDirection: 'NW',
-      waterTemp: 72,
+      tide: 1.2,
+      airTemp: 78,
     },
-    status: 'good' as const,
+    status: 'good',
     triggersMatched: 2,
     nextCheck: '6:00 AM',
   },
@@ -27,29 +44,61 @@ const userSpots = [
     id: 'galveston',
     name: 'Galveston (61st St)',
     buoyId: '42035',
-    buoyName: 'Galveston',
-    currentConditions: {
+    buoyName: 'Galveston (22nm SE)',
+    buoy: {
       waveHeight: 3.8,
       wavePeriod: 11,
-      swellDirection: 'SE',
-      swellDegrees: 140,
-      windSpeed: 12,
-      windDirection: 'E',
-      waterTemp: 73,
+      waterTemp: 71,
+      meanWaveDirection: 'SE',
+      meanWaveDegrees: 142,
     },
-    status: 'fair' as const,
-    triggersMatched: 1,
-    nextCheck: '6:00 AM',
+    forecast: {
+      primary: {
+        height: 3.2,
+        period: 10,
+        direction: 'SE',
+        degrees: 135,
+      },
+      secondary: {
+        height: 1.0,
+        period: 7,
+        direction: 'E',
+        degrees: 85,
+      },
+      windSpeed: 12,
+      windDirection: 'SE',
+      tide: 0.8,
+      airTemp: 76,
+    },
+    status: 'fair',
+    triggersMatched: 0,
+    nextCheck: '6:30 AM',
   },
   {
     id: 'bob-hall',
     name: 'Bob Hall Pier',
-    buoyId: null, // No buoy assigned yet
-    buoyName: null,
-    currentConditions: null, // No conditions without buoy
-    status: 'unknown' as const,
+    // No buoy assigned for this one to test "No Signal"
+    forecast: {
+      primary: {
+        height: 2.1,
+        period: 8,
+        direction: 'E',
+        degrees: 95,
+      },
+      secondary: {
+        height: 0.8,
+        period: 5,
+        direction: 'SE',
+        degrees: 120,
+      },
+      windSpeed: 4,
+      windDirection: 'W',
+      tide: -0.2,
+      airTemp: 82,
+    },
+    status: 'poor',
     triggersMatched: 0,
-    nextCheck: '6:00 AM',
+    nextCheck: '7:00 AM',
   },
 ];
 
@@ -81,328 +130,107 @@ const recentAlerts = [
 ];
 
 const statusConfig = {
-  epic: { label: 'Epic', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dotColor: 'bg-emerald-500' },
-  good: { label: 'Good', color: 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10', dotColor: 'bg-emerald-900' },
-  fair: { label: 'Fair', color: 'bg-blue-500/5 text-blue-400 border-blue-500/10', dotColor: 'bg-blue-900' },
-  poor: { label: 'Poor', color: 'bg-zinc-500/5 text-zinc-400 border-zinc-500/10', dotColor: 'bg-zinc-800' },
-  unknown: { label: 'No Buoy', color: 'bg-zinc-500/5 text-zinc-500 border-zinc-500/10', dotColor: 'bg-zinc-900' },
+  epic: { label: 'Epic', color: 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-sm' },
+  good: { label: 'Good', color: 'bg-zinc-100 text-zinc-900 border-zinc-200' },
+  fair: { label: 'Fair', color: 'bg-zinc-800 text-zinc-300 border-zinc-700' },
+  poor: { label: 'Poor', color: 'bg-zinc-900 text-zinc-400 border-zinc-800' },
+  unknown: { label: 'No Buoy', color: 'bg-zinc-900 text-zinc-500 border-zinc-800' },
 };
 
 export function DashboardOverview() {
-  const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
-
-  // Calculate aggregate stats
-  const totalAlerts = 3; // This week
-  const spotsWithBuoy = userSpots.filter((s) => s.buoyId);
-  const bestSpot = spotsWithBuoy.length > 0
-    ? spotsWithBuoy.reduce((best, spot) => {
-      const statusOrder = { epic: 4, good: 3, fair: 2, poor: 1, unknown: 0 };
-      return statusOrder[spot.status] > statusOrder[best.status] ? spot : best;
-    }, spotsWithBuoy[0])
-    : null;
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Monitor conditions across all your spots.
+      <div className="mb-8 lg:mb-12">
+        <div className="inline-block bg-brand-rogue text-brand-abyss font-bold font-mono text-xs px-2 py-1 mb-4 transform -rotate-1 tracking-widest tape">
+          // OPERATIONAL_OVERVIEW
+        </div>
+        <h1 className="text-5xl sm:text-6xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="DASHBOARD">
+          Dashboard
+        </h1>
+        <p className="font-mono text-muted-foreground text-base sm:text-lg border-l-2 border-muted pl-4">
+          Monitor raw data feeds across your designated spots.
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 lg:mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{userSpots.length}</p>
-                <p className="text-xs text-muted-foreground">Active Spots</p>
-              </div>
+      {/* Recent Alerts */}
+      <div className="mb-8 lg:mb-12">
+        <div className="tech-card rounded-lg bg-card/50 backdrop-blur-md">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 bg-destructive animate-pulse" />
+              <h2 className="font-mono text-base tracking-widest text-muted-foreground uppercase">Recent Wire Intercepts</h2>
             </div>
-          </CardContent>
-        </Card>
+            <Button
+              onClick={() => setShowAlertsModal(true)}
+              variant="rogue-secondary"
+              className="px-4 py-2"
+            >
+              VIEW_LOGS
+            </Button>
+          </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              {bestSpot ? (
-                <>
-                  <div className={`h-10 w-10 rounded-lg ${statusConfig[bestSpot.status].color.split(' ')[0]} flex items-center justify-center`}>
-                    <Waves className={`w-5 h-5 ${statusConfig[bestSpot.status].color.split(' ')[1]}`} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{bestSpot.currentConditions?.waveHeight}ft</p>
-                    <p className="text-xs text-muted-foreground">Best: {bestSpot.name.split(' ')[0]}</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                    <Waves className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">--</p>
-                    <p className="text-xs text-muted-foreground">No buoys configured</p>
-                  </div>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          <div className="p-6">
+            <div className="space-y-4">
+              {recentAlerts.map((alert) => {
+                const conditionStyle = statusConfig[alert.condition];
+                const emoji = alert.condition === 'epic' ? '🔥' : '🌊';
+                return (
+                  <div key={alert.id} className="flex items-start gap-4 p-5 border border-border/50 bg-secondary/10 transition-colors">
+                    <div className={`mt-1.5 h-2.5 w-2.5 rounded-full ${conditionStyle.color.split(' ')[0].replace('bg-', 'bg-')}`} />
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                <Clock className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">6:00 AM</p>
-                <p className="text-xs text-muted-foreground">Next Check</p>
-              </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-mono text-sm text-primary/80 uppercase tracking-wider">{alert.spotName}</span>
+                      </div>
+                      <p className="font-mono text-base text-foreground/90 leading-relaxed">
+                        {emoji} {alert.message}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2 font-mono opacity-60">
+                        Sent: {alert.time}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-                <Zap className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalAlerts}</p>
-                <p className="text-xs text-muted-foreground">Alerts This Week</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* All Spots Status */}
-      <Card className="mb-6 lg:mb-8">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">All Spots</CardTitle>
-          <CardDescription className="text-sm">Current conditions across your configured spots</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {userSpots.map((spot) => {
-              const status = statusConfig[spot.status];
-              const isExpanded = expandedSpotId === spot.id;
-
-              return (
-                <div key={spot.id} className="border border-border rounded-lg overflow-hidden">
-                  {/* Spot Row */}
-                  <button
-                    onClick={() => setExpandedSpotId(isExpanded ? null : spot.id)}
-                    className="w-full p-4 flex items-center gap-4 hover:bg-secondary/30 transition-colors text-left"
-                  >
-                    {/* Status Indicator */}
-                    <div className={`h-3 w-3 rounded-full ${status.dotColor}`} />
-
-                    {/* Spot Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{spot.name}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${status.color}`}>
-                          {status.label}
-                        </span>
-                      </div>
-                      {spot.buoyId ? (
-                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                          Buoy: {spot.buoyId} ({spot.buoyName})
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          No buoy assigned - select one to get conditions
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Quick Stats - only show if buoy assigned */}
-                    {spot.currentConditions ? (
-                      <div className="hidden md:flex items-center gap-6 text-sm">
-                        <div className="text-center">
-                          <p className="font-mono font-bold">{spot.currentConditions.waveHeight}ft</p>
-                          <p className="text-xs text-muted-foreground">Height</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="font-mono font-bold">{spot.currentConditions.wavePeriod}s</p>
-                          <p className="text-xs text-muted-foreground">Period</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="font-mono font-bold">{spot.currentConditions.windSpeed}mph</p>
-                          <p className="text-xs text-muted-foreground">{spot.currentConditions.windDirection}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="hidden md:flex items-center">
-                        <p className="text-sm text-muted-foreground">No data</p>
-                      </div>
-                    )}
-
-                    {/* Triggers Matched */}
-                    <Badge variant={spot.triggersMatched > 0 ? 'success' : 'secondary'}>
-                      {spot.triggersMatched} trigger{spot.triggersMatched !== 1 ? 's' : ''}
-                    </Badge>
-                  </button>
-
-                  {/* Expanded Details */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-2 border-t border-border bg-secondary/10">
-                      {spot.currentConditions ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="p-3 border border-border rounded-lg bg-background">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Waves className="w-3 h-3 text-muted-foreground" />
-                              <p className="text-xs text-muted-foreground">Wave Height</p>
-                            </div>
-                            <p className="text-lg font-mono font-bold">
-                              {spot.currentConditions.waveHeight}ft @ {spot.currentConditions.wavePeriod}s
-                            </p>
-                          </div>
-                          <div className="p-3 border border-border rounded-lg bg-background">
-                            <div className="flex items-center gap-2 mb-1">
-                              <TrendingUp className="w-3 h-3 text-muted-foreground" />
-                              <p className="text-xs text-muted-foreground">Swell Direction</p>
-                            </div>
-                            <p className="text-lg font-mono font-bold">
-                              {spot.currentConditions.swellDirection} ({spot.currentConditions.swellDegrees}°)
-                            </p>
-                          </div>
-                          <div className="p-3 border border-border rounded-lg bg-background">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Wind className="w-3 h-3 text-muted-foreground" />
-                              <p className="text-xs text-muted-foreground">Wind</p>
-                            </div>
-                            <p className="text-lg font-mono font-bold">
-                              {spot.currentConditions.windSpeed}mph {spot.currentConditions.windDirection}
-                            </p>
-                          </div>
-                          <div className="p-3 border border-border rounded-lg bg-background">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Thermometer className="w-3 h-3 text-muted-foreground" />
-                              <p className="text-xs text-muted-foreground">Water Temp</p>
-                            </div>
-                            <p className="text-lg font-mono font-bold">
-                              {spot.currentConditions.waterTemp}°F
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-4 border border-border bg-secondary/10 rounded-lg">
-                          <p className="text-sm text-muted-foreground">
-                            No buoy assigned to this spot. Assign a buoy to see real-time conditions and enable alerts.
-                          </p>
-                          <Link
-                            to="/dashboard/spot"
-                            className="inline-block mt-2 text-sm text-primary hover:underline font-medium"
-                          >
-                            Assign Buoy →
-                          </Link>
-                        </div>
-                      )}
-                      <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                        <Link
-                          to={`/dashboard/triggers?spot=${spot.id}`}
-                          className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm font-medium py-2.5 px-4 rounded-md text-center transition-colors"
-                        >
-                          Edit Triggers
-                        </Link>
-                        <Link
-                          to={`/dashboard/spot`}
-                          className="flex-1 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground text-sm font-medium py-2.5 px-4 rounded-md text-center transition-colors"
-                        >
-                          Spot Settings
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+      <div>
+        <div className="tech-card rounded-lg bg-card/50 backdrop-blur-md">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 bg-primary animate-pulse" />
+              <h2 className="font-mono text-base tracking-widest text-muted-foreground uppercase">YOUR_SPOTS</h2>
+            </div>
+            <div className="flex gap-4">
+              <Button variant="rogue-secondary" className="px-4 py-2">
+                EDIT_SPOTS
+              </Button>
+              <Button variant="rogue-secondary" className="px-4 py-2">
+                EDIT_TRIGGERS
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Recent Alerts */}
-      <Card className="mb-6 lg:mb-8">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Recent Alerts</CardTitle>
-          <CardDescription className="text-sm">Your last notifications across all spots</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentAlerts.map((alert) => {
-              const conditionStyle = statusConfig[alert.condition];
-              return (
-                <div key={alert.id} className="flex items-start gap-3 p-3 border border-border rounded-lg">
-                  <span className={`text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ${conditionStyle.color}`}>
-                    {alert.type}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-xs font-medium text-muted-foreground">{alert.spotName}</p>
-                    </div>
-                    <p className="text-sm">{alert.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1.5 font-medium">{alert.time}</p>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="p-6">
+            <div className="space-y-4">
+              {userSpots.map((spot) => (
+                <SpotCard key={spot.id} spot={spot} />
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <Link to="/dashboard/triggers">
-          <Card className="group hover:border-primary/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Configure Triggers</p>
-                  <p className="text-sm text-muted-foreground">Set conditions per spot</p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/dashboard/spot">
-          <Card className="group hover:border-primary/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Manage Spots</p>
-                  <p className="text-sm text-muted-foreground">Add or edit your breaks</p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/dashboard/alerts" className="sm:col-span-2 lg:col-span-1">
-          <Card className="group hover:border-primary/50 transition-colors cursor-pointer h-full">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Alert Schedule</p>
-                  <p className="text-sm text-muted-foreground">Manage notification times</p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        </div>
+        <AlertsModal
+          isOpen={showAlertsModal}
+          onClose={() => setShowAlertsModal(false)}
+          initialAlerts={recentAlerts}
+        />
       </div>
     </div>
   );

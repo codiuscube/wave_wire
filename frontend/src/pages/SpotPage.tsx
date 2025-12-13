@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Navigation, Search, Check, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { Crosshair, Plus, Trash2, Waves, ChevronDown } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -7,84 +7,50 @@ import {
   CardDescription,
   CardContent,
   Button,
-  Input,
-  Select,
   Badge,
+  AddSpotModal,
 } from "../components/ui";
-
-interface SpotOption {
-  id: string;
-  name: string;
-  region: string;
-  buoyId: string;
-  buoyName: string;
-  lat: number;
-  lon: number;
-}
-
-const popularSpots: SpotOption[] = [
-  {
-    id: "1",
-    name: "Surfside Beach",
-    region: "Texas Gulf Coast",
-    buoyId: "42035",
-    buoyName: "Galveston",
-    lat: 29.0469,
-    lon: -95.2882,
-  },
-  {
-    id: "2",
-    name: "Galveston (61st St)",
-    region: "Texas Gulf Coast",
-    buoyId: "42035",
-    buoyName: "Galveston",
-    lat: 29.2874,
-    lon: -94.8031,
-  },
-  {
-    id: "3",
-    name: "South Padre Island",
-    region: "Texas Gulf Coast",
-    buoyId: "42020",
-    buoyName: "South Padre",
-    lat: 26.1118,
-    lon: -97.1681,
-  },
-  {
-    id: "4",
-    name: "Bob Hall Pier",
-    region: "Texas Gulf Coast",
-    buoyId: "42020",
-    buoyName: "Corpus Christi",
-    lat: 27.5816,
-    lon: -97.2185,
-  },
-];
+import type { SpotOption } from "../components/ui";
 
 const buoyOptions = [
-  { value: "42035", label: "42035 - Galveston (22nm SE)" },
-  { value: "42020", label: "42020 - Corpus Christi (50nm SE)" },
-  { value: "42019", label: "42019 - Freeport (60nm S)" },
-  { value: "42001", label: "42001 - Mid Gulf (180nm S)" },
+  { value: "42035", label: "Galveston (22nm SE)" },
+  { value: "42020", label: "Corpus Christi (50nm SE)" },
+  { value: "42019", label: "Freeport (60nm S)" },
+  { value: "42001", label: "Mid Gulf (180nm S)" },
 ];
 
+const defaultSpot: any = { // Changed type to 'any' or 'Spot' if Spot is defined elsewhere
+  id: "surfside",
+  name: "Surfside Beach",
+  region: "Texas Gulf Coast",
+  lat: 28.944,
+  lon: -95.291,
+  buoyId: "42035",
+  buoyName: "Galveston (22nm SE)",
+  forecast: {
+    primary: {
+      height: 3.5,
+      period: 11,
+      direction: "SE",
+      degrees: 140,
+    },
+    secondary: {
+      height: 1.2,
+      period: 8,
+      direction: "E",
+      degrees: 90,
+    },
+    windSpeed: 8,
+    windDirection: "NW",
+    tide: 1.2,
+    airTemp: 78,
+  }
+};
+
 export function SpotPage() {
-  const [mySpots, setMySpots] = useState<SpotOption[]>([popularSpots[0]]);
-  const [customMode, setCustomMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const [customSpot, setCustomSpot] = useState({
-    name: "",
-    lat: "",
-    lon: "",
-    buoyId: "42035",
-  });
-
-  const filteredSpots = popularSpots.filter(
-    (spot) =>
-      spot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      spot.region.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [mySpots, setMySpots] = useState<SpotOption[]>([defaultSpot]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
 
   const isSpotSaved = (spotId: string) => mySpots.some((s) => s.id === spotId);
 
@@ -98,241 +64,167 @@ export function SpotPage() {
     setMySpots(mySpots.filter((s) => s.id !== spotId));
   };
 
-  const addCustomSpot = () => {
-    if (!customSpot.name || !customSpot.lat || !customSpot.lon) return;
-    const buoy = buoyOptions.find((b) => b.value === customSpot.buoyId);
-    const newSpot: SpotOption = {
-      id: `custom-${Date.now()}`,
-      name: customSpot.name,
-      region: "Custom Location",
-      buoyId: customSpot.buoyId,
-      buoyName: buoy?.label.split(" - ")[1]?.split(" (")[0] || customSpot.buoyId,
-      lat: parseFloat(customSpot.lat),
-      lon: parseFloat(customSpot.lon),
-    };
-    setMySpots([...mySpots, newSpot]);
-    setCustomSpot({ name: "", lat: "", lon: "", buoyId: "42035" });
-    setCustomMode(false);
+  const assignBuoy = (spotId: string, buoyId: string) => {
+    const buoy = buoyOptions.find((b) => b.value === buoyId);
+    setMySpots(
+      mySpots.map((s) =>
+        s.id === spotId ? { ...s, buoyId, buoyName: buoy?.label || buoyId } : s
+      )
+    );
+    setExpandedSpotId(null);
   };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">My Spots</h1>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Configure your home breaks and nearby buoy for accurate alerts.
-        </p>
-      </div>
-
-      {/* My Saved Spots */}
-      {mySpots.length > 0 && (
-        <Card className="mb-6 border-border bg-secondary/10">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-foreground" />
-              My Saved Spots
-              <Badge variant="secondary">{mySpots.length}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Your spots will receive alerts based on your triggers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {mySpots.map((spot) => (
-              <div
-                key={spot.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-border rounded-lg bg-background gap-3"
-              >
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5 text-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-medium truncate">{spot.name}</h4>
-                    <p className="text-xs text-muted-foreground">{spot.region}</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-1">
-                      Buoy: {spot.buoyId}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <a
-                    href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                  >
-                    View Buoy <ExternalLink className="w-3 h-3" />
-                  </a>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeSpot(spot.id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Mode Toggle */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8 lg:mb-12">
+        <div>
+          <div className="inline-block bg-brand-rogue text-brand-abyss font-bold font-mono text-xs px-2 py-1 mb-4 transform -rotate-1 tracking-widest tape">
+            // MY_SPOTS
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="HOME BREAK CONFIG">
+            HOME BREAK CONFIG
+          </h1>
+          <p className="font-mono text-muted-foreground text-base max-w-xl border-l-2 border-muted pl-4">
+            Configure your spots and buoy sources.
+          </p>
+        </div>
         <Button
-          variant={!customMode ? "default" : "outline"}
-          onClick={() => setCustomMode(false)}
-          size="sm"
-          className="flex-1 sm:flex-none"
+          onClick={() => setIsModalOpen(true)}
+          variant="rogue"
+          className="shrink-0 h-auto py-3 px-6"
         >
-          <MapPin className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Popular </span>Spots
-        </Button>
-        <Button
-          variant={customMode ? "default" : "outline"}
-          onClick={() => setCustomMode(true)}
-          size="sm"
-          className="flex-1 sm:flex-none"
-        >
-          <Navigation className="w-4 h-4 mr-2" />
-          Custom<span className="hidden sm:inline"> Location</span>
+          <Plus className="w-4 h-4 mr-2" />
+          ADD A SPOT
         </Button>
       </div>
 
-      {!customMode ? (
-        <>
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search spots..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+      {/* Saved Spots */}
+      {mySpots.length > 0 ? (
+        <div className="tech-card rounded-lg bg-card/50 backdrop-blur-md">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 bg-primary animate-pulse" />
+              <h2 className="font-mono text-base tracking-widest text-muted-foreground uppercase">Your Spots</h2>
+            </div>
+            <Badge variant="outline" className="font-mono rounded-none border-primary/50 text-primary">{mySpots.length}</Badge>
           </div>
 
-          {/* Spots Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredSpots.map((spot) => {
-              const saved = isSpotSaved(spot.id);
-              return (
-                <Card
+          <div className="p-6">
+            <div className="space-y-4">
+              {mySpots.map((spot) => (
+                <div
                   key={spot.id}
-                  className={`transition-all ${saved ? "border-primary bg-secondary/20" : "hover:border-zinc-600"
-                    }`}
+                  className="border border-border/50 bg-secondary/10 hover:bg-secondary/20 transition-colors group"
                 >
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-bold">{spot.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">
+                  <div className="flex items-center justify-between p-4 gap-4 border-b border-border/30">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="h-12 w-12 bg-secondary/30 flex items-center justify-center shrink-0 border border-border/30">
+                        <Crosshair className="w-6 h-6 text-primary/80" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-mono font-bold text-lg uppercase tracking-tight text-foreground truncate">{spot.name}</h4>
+                        <p className="font-mono text-sm text-muted-foreground/70 uppercase tracking-wide">
                           {spot.region}
                         </p>
-                        <p className="text-xs text-muted-foreground font-mono mt-2">
-                          Buoy: {spot.buoyId}
-                        </p>
                       </div>
-                      {saved ? (
-                        <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-4 h-4 text-primary-foreground" />
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => addSpot(spot)}
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add
-                        </Button>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    <button
+                      onClick={() => removeSpot(spot.id)}
+                      className="p-3 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      title="Remove target"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Buoy Assignment */}
+                  <div className="p-4 bg-background/20">
+                    {spot.buoyId ? (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider shrink-0">Signal Source:</span>
+                          <a
+                            href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-sm text-primary/80 hover:text-primary transition-colors truncate border-b border-primary/30 hover:border-primary"
+                          >
+                            {spot.buoyName || `Buoy ${spot.buoyId}`}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
+                          className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider underline underline-offset-4 decoration-dotted"
+                        >
+                          [ RECONFIGURE ]
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn"
+                      >
+                        <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">Assign Signal Source</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedSpotId === spot.id ? 'rotate-180' : ''}`} />
+                      </button>
+                    )}
+
+                    {/* Buoy Selector Dropdown */}
+                    {expandedSpotId === spot.id && (
+                      <div className="mt-4 p-1 border border-border/50 bg-background/50 backdrop-blur-sm">
+                        {buoyOptions.map((buoy) => (
+                          <button
+                            key={buoy.value}
+                            onClick={() => assignBuoy(spot.id, buoy.value)}
+                            className={`w-full text-left px-4 py-3 text-sm transition-colors border-l-2 ${spot.buoyId === buoy.value
+                              ? "bg-primary/10 text-primary border-primary"
+                              : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground border-transparent hover:border-primary/50"
+                              }`}
+                          >
+                            <span className="font-mono font-bold mr-3">{buoy.value}</span>
+                            <span className="font-mono text-xs uppercase opacity-80">
+                              {buoy.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </>
+        </div>
       ) : (
-        /* Custom Location Form */
-        <Card>
-          <CardHeader>
-            <CardTitle>Custom Location</CardTitle>
-            <CardDescription>
-              Enter coordinates for any surf spot and assign a nearby buoy.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Spot Name
-              </label>
-              <Input
-                placeholder="e.g., My Secret Spot"
-                value={customSpot.name}
-                onChange={(e) =>
-                  setCustomSpot({ ...customSpot, name: e.target.value })
-                }
-              />
+        /* Empty State */
+        <div className="tech-card border-dashed border-border p-12">
+          <div className="text-center max-w-md mx-auto">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/20 mb-6 border border-border/50">
+              <Waves className="w-8 h-8 text-muted-foreground" />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Latitude
-                </label>
-                <Input
-                  placeholder="29.0469"
-                  value={customSpot.lat}
-                  onChange={(e) =>
-                    setCustomSpot({ ...customSpot, lat: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Longitude
-                </label>
-                <Input
-                  placeholder="-95.2882"
-                  value={customSpot.lon}
-                  onChange={(e) =>
-                    setCustomSpot({ ...customSpot, lon: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Nearest Buoy
-              </label>
-              <Select
-                options={buoyOptions}
-                value={customSpot.buoyId}
-                onChange={(v) => setCustomSpot({ ...customSpot, buoyId: v })}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Choose the buoy closest to your spot for accurate swell data.
-              </p>
-            </div>
-
+            <h3 className="font-mono text-xl font-bold uppercase mb-3 text-foreground">No Spots</h3>
+            <p className="text-muted-foreground text-base mb-8 leading-relaxed">
+              Configure your first spots to begin intercepting swell signals.
+            </p>
             <Button
-              className="mt-4"
-              onClick={addCustomSpot}
-              disabled={!customSpot.name || !customSpot.lat || !customSpot.lon}
+              onClick={() => setIsModalOpen(true)}
+              className="btn-brutal bg-transparent text-primary hover:bg-primary hover:text-background border-primary rounded-none h-auto py-3 px-8"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Custom Spot
+              INITIATE TARGET
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
+      {/* Add Spot Modal */}
+      <AddSpotModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        savedSpots={mySpots}
+        onAddSpot={addSpot}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Trash2, GripVertical, Info } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Trash2, GripVertical, Info, Radar, MapPin } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,11 +9,13 @@ import {
   Slider,
   Select,
   Badge,
+  AddTriggerModal,
 } from "../components/ui";
 import type { TriggerTier } from "../types";
 
 // Mock spots - in real app this would come from context/store
-const userSpots = [
+// Set to empty array to test no-spots state, or use the array below for normal state
+const userSpots: { id: string; name: string; buoyId: string }[] = [
   { id: "surfside", name: "Surfside Beach", buoyId: "42035" },
   { id: "galveston", name: "Galveston (61st St)", buoyId: "42035" },
   { id: "bob-hall", name: "Bob Hall Pier", buoyId: "42020" },
@@ -102,19 +105,25 @@ const directionOptions = [
 ];
 
 const conditionColors = {
-  fair: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  good: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  epic: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 ring-1 ring-emerald-500/20",
+  fair: "bg-zinc-900 text-zinc-300 border-zinc-800",
+  good: "bg-zinc-100 text-zinc-900 border-zinc-200",
+  epic: "bg-white text-black border-white ring-1 ring-zinc-200 shadow-sm",
 };
 
 export function TriggersPage() {
   const [triggers, setTriggers] = useState<TriggerTier[]>(defaultTriggers);
   const [expandedId, setExpandedId] = useState<string | null>("1");
-  const [selectedSpotId, setSelectedSpotId] = useState<string>("surfside");
+  const [selectedSpotId, setSelectedSpotId] = useState<string>(
+    userSpots.length > 0 ? userSpots[0].id : ""
+  );
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  const hasSpots = userSpots.length > 0;
   const spotOptions = userSpots.map((s) => ({ value: s.id, label: s.name }));
 
-  const filteredTriggers = triggers.filter((t) => t.spotId === selectedSpotId);
+  const filteredTriggers = selectedSpotId
+    ? triggers.filter((t) => t.spotId === selectedSpotId)
+    : [];
 
   const updateTrigger = (id: string, updates: Partial<TriggerTier>) => {
     setTriggers((prev) =>
@@ -144,21 +153,7 @@ export function TriggersPage() {
     updateTrigger(triggerId, { windDirections: newDirections });
   };
 
-  const addTrigger = () => {
-    const newTrigger: TriggerTier = {
-      id: Date.now().toString(),
-      name: "New Trigger",
-      emoji: "🌊",
-      condition: "good",
-      minHeight: 2,
-      maxHeight: 5,
-      minPeriod: 6,
-      maxPeriod: 12,
-      windDirections: ["N", "NW", "NNW"],
-      maxWindSpeed: 15,
-      swellDirection: ["SE", "S"],
-      spotId: selectedSpotId,
-    };
+  const addTrigger = (newTrigger: TriggerTier) => {
     setTriggers([...triggers, newTrigger]);
     setExpandedId(newTrigger.id);
   };
@@ -191,68 +186,99 @@ export function TriggersPage() {
       {/* Spot Selector */}
       <Card className="mb-6">
         <CardContent className="pt-4 sm:pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
-            <div>
-              <label className="text-sm font-medium mb-1 block">
-                Select Spot
-              </label>
-              <p className="text-xs text-muted-foreground">
-                Triggers are configured per spot. Select a spot to manage its
-                triggers.
+          {hasSpots ? (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Select Spot
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Triggers are configured per spot. Select a spot to manage
+                    its triggers.
+                  </p>
+                </div>
+                <Select
+                  options={spotOptions}
+                  value={selectedSpotId}
+                  onChange={setSelectedSpotId}
+                  className="w-full sm:w-64"
+                />
+              </div>
+              {selectedSpot && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground font-mono">
+                    Buoy: {selectedSpot.buoyId} • {filteredTriggers.length}{" "}
+                    trigger
+                    {filteredTriggers.length !== 1 ? "s" : ""} configured
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-800 mb-3">
+                <MapPin className="w-6 h-6 text-zinc-400" />
+              </div>
+              <p className="font-medium text-foreground mb-1">No spots saved yet</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create a spot first to start defining triggers.
               </p>
-            </div>
-            <Select
-              options={spotOptions}
-              value={selectedSpotId}
-              onChange={setSelectedSpotId}
-              className="w-full sm:w-64"
-            />
-          </div>
-          {selectedSpot && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground font-mono">
-                Buoy: {selectedSpot.buoyId} • {filteredTriggers.length} trigger
-                {filteredTriggers.length !== 1 ? "s" : ""} configured
-              </p>
+              <Link to="/dashboard/spots">
+                <Button variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create a Spot
+                </Button>
+              </Link>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Info Banner */}
-      <Card className="mb-6 lg:mb-8 bg-primary/10 border-primary/30">
-        <CardContent className="pt-4 sm:pt-6">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">How Triggers Work</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Triggers are checked in order from top to bottom. When
-                conditions match a trigger, you'll get an alert with that
-                condition level (Fair/Good/Epic). Alerts use your Personality
-                setting.
-              </p>
+      {/* Info Banner - Only show when no triggers */}
+      {hasSpots && filteredTriggers.length === 0 && (
+        <Card className="mb-6 lg:mb-8 bg-primary/10 border-primary/30">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">How Triggers Work</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Triggers are checked in order from top to bottom. When
+                  conditions match a trigger, you'll get an alert with that
+                  condition level (Fair/Good/Epic). Alerts use your Personality
+                  setting.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Triggers List */}
-      <div className="space-y-4">
-        {filteredTriggers.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="pt-6 pb-6 text-center">
-              <p className="text-muted-foreground">
-                No triggers configured for this spot yet.
-              </p>
-              <Button onClick={addTrigger} variant="outline" className="mt-4">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Trigger
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredTriggers.map((trigger, index) => (
+      {/* Triggers List - Only show when spots exist */}
+      {hasSpots && (
+        <div className="space-y-4">
+          {filteredTriggers.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="pt-6 pb-6 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 mb-4">
+                  <Radar className="w-8 h-8 text-zinc-400" />
+                </div>
+                <p className="text-muted-foreground">
+                  No triggers configured for this spot yet.
+                </p>
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Trigger
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredTriggers.map((trigger, index) => (
             <Card
               key={trigger.id}
               className={`transition-all ${expandedId === trigger.id ? "border-zinc-600" : ""
@@ -488,22 +514,37 @@ export function TriggersPage() {
                 </CardContent>
               )}
             </Card>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Add Trigger Button */}
-      {filteredTriggers.length > 0 && (
-        <Button onClick={addTrigger} variant="outline" className="mt-4 w-full">
+      {hasSpots && filteredTriggers.length > 0 && (
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          variant="outline"
+          className="mt-4 w-full"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Trigger
         </Button>
       )}
 
       {/* Save Button */}
-      <div className="mt-8 flex justify-end">
-        <Button size="lg">Save Changes</Button>
-      </div>
+      {hasSpots && (
+        <div className="mt-8 flex justify-end">
+          <Button size="lg">Save Changes</Button>
+        </div>
+      )}
+
+      {/* Add Trigger Modal */}
+      <AddTriggerModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddTrigger={addTrigger}
+        spotId={selectedSpotId}
+      />
     </div>
   );
 }

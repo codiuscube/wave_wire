@@ -1,11 +1,11 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  MapPin,
-  Sliders,
-  Bell,
-  User,
-  MessageSquare,
+  Activity,
+  Crosshair,
+  Radar,
+  Radio,
+  Fingerprint,
+  Terminal,
   Menu,
   X,
   LogOut,
@@ -15,16 +15,16 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Logo } from "../ui/Logo";
 
 const navItems = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Overview", end: true },
-  { to: "/dashboard/spot", icon: MapPin, label: "My Spots" },
-  { to: "/dashboard/triggers", icon: Sliders, label: "Triggers" },
-  { to: "/dashboard/alerts", icon: Bell, label: "Alerts" },
+  { to: "/dashboard", icon: Activity, label: "Overview", end: true },
+  { to: "/dashboard/spot", icon: Crosshair, label: "My Spots" },
+  { to: "/dashboard/triggers", icon: Radar, label: "Triggers" },
+  { to: "/dashboard/alerts", icon: Radio, label: "Alerts" },
   {
     to: "/dashboard/personality",
-    icon: MessageSquare,
+    icon: Terminal,
     label: "Personality",
   },
-  { to: "/dashboard/account", icon: User, label: "Account" },
+  { to: "/dashboard/account", icon: Fingerprint, label: "Account" },
 ];
 
 export function Sidebar() {
@@ -96,9 +96,7 @@ export function Sidebar() {
         {/* Navigation */}
         <div className="flex-1 flex flex-col justify-between py-6 px-4 overflow-y-auto">
           <nav className="space-y-1">
-            <div className="px-3 mb-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Menu</span>
-            </div>
+
             {mainNavItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -107,12 +105,12 @@ export function Sidebar() {
                 onClick={() => setIsMobileOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                    ? "bg-secondary text-primary shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   }`
                 }
               >
-                <item.icon className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <item.icon className="w-4 h-4 group-hover:text-foreground transition-colors" />
                 {item.label}
               </NavLink>
             ))}
@@ -129,12 +127,12 @@ export function Sidebar() {
                 onClick={() => setIsMobileOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                    ? "bg-secondary text-primary shadow-sm"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                   }`
                 }
               >
-                <accountItem.icon className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <accountItem.icon className="w-4 h-4 group-hover:text-foreground transition-colors" />
                 {accountItem.label}
               </NavLink>
             )}
@@ -142,7 +140,7 @@ export function Sidebar() {
               onClick={handleLogout}
               className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:text-red-400 hover:bg-red-500/10 w-full"
             >
-              <LogOut className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+              <LogOut className="w-4 h-4 group-hover:text-red-400 transition-colors" />
               Log Out
             </button>
           </div>
