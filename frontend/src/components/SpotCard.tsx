@@ -33,7 +33,7 @@ export interface Spot {
   buoyId?: string;
   buoyName?: string;
   buoy?: BuoyData;
-  forecast: ForecastData;
+  forecast?: ForecastData;
   status?: "epic" | "good" | "fair" | "poor" | "unknown";
   triggersMatched?: number;
   nextCheck?: string;
@@ -97,32 +97,37 @@ export function SpotCard({ spot }: SpotCardProps) {
             Model Forecast
           </p>
 
-          <div className="space-y-4">
-            <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-              <span className="font-mono text-sm text-muted-foreground">PRI</span>
-              <span className="font-mono text-base">
-                {spot.forecast.primary.height}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.forecast.primary.period}s {spot.forecast.primary.direction} {spot.forecast.primary.degrees}°</span>
-              </span>
+          {spot.forecast ? (
+            <div className="space-y-4">
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">PRI</span>
+                <span className="font-mono text-base">
+                  {spot.forecast.primary.height}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.forecast.primary.period}s {spot.forecast.primary.direction} {spot.forecast.primary.degrees}°</span>
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">SEC</span>
+                <span className="font-mono text-base">
+                  {spot.forecast.secondary.height}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.forecast.secondary.period}s {spot.forecast.secondary.direction} {spot.forecast.secondary.degrees}°</span>
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">WND</span>
+                <span className="font-mono text-base">
+                  {spot.forecast.windSpeed}kt <span className="text-muted-foreground font-normal text-sm">{spot.forecast.windDirection}</span>
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">TDE</span>
+                <span className="font-mono text-base">{spot.forecast.tide}ft</span>
+              </div>
             </div>
-            <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-              <span className="font-mono text-sm text-muted-foreground">SEC</span>
-              <span className="font-mono text-base">
-                {spot.forecast.secondary.height}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.forecast.secondary.period}s {spot.forecast.secondary.direction} {spot.forecast.secondary.degrees}°</span>
-              </span>
+          ) : (
+            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
+              <p className="font-mono text-sm text-muted-foreground/50">NO FORECAST DATA</p>
             </div>
-            <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-              <span className="font-mono text-sm text-muted-foreground">WND</span>
-              <span className="font-mono text-base">
-                {spot.forecast.windSpeed}kt <span className="text-muted-foreground font-normal text-sm">{spot.forecast.windDirection}</span>
-              </span>
-            </div>
-            <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-              <span className="font-mono text-sm text-muted-foreground">TDE</span>
-              <span className="font-mono text-base">{spot.forecast.tide}ft</span>
-            </div>
-          </div>
+          )}
         </div>
-
       </div>
     </div>
   );

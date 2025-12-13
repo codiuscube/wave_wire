@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Crosshair, Plus, Trash2, Waves, ChevronDown } from "lucide-react";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
   Button,
   Badge,
   AddSpotModal,
