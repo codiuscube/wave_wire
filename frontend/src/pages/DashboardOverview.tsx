@@ -18,7 +18,10 @@ const userSpots: Spot[] = [
       waterTemp: 72,
       meanWaveDirection: 'SE',
       meanWaveDegrees: 145,
-      timestamp: new Date().toISOString(),
+      timestamp: 'Just now',
+      windSpeed: 12,
+      windDirection: 'SE',
+      windDegrees: 140,
     },
     forecast: {
       primary: {
@@ -35,6 +38,7 @@ const userSpots: Spot[] = [
       },
       windSpeed: 8,
       windDirection: 'NW',
+      windDegrees: 315,
       tide: 1.2,
       airTemp: 78,
     },
@@ -54,7 +58,10 @@ const userSpots: Spot[] = [
       waterTemp: 71,
       meanWaveDirection: 'SE',
       meanWaveDegrees: 142,
-      timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
+      timestamp: '15m ago',
+      windSpeed: 10,
+      windDirection: 'SE',
+      windDegrees: 138,
     },
     forecast: {
       primary: {
@@ -71,6 +78,7 @@ const userSpots: Spot[] = [
       },
       windSpeed: 12,
       windDirection: 'SE',
+      windDegrees: 135,
       tide: 0.8,
       airTemp: 76,
     },
@@ -98,6 +106,7 @@ const userSpots: Spot[] = [
       },
       windSpeed: 4,
       windDirection: 'W',
+      windDegrees: 270,
       tide: -0.2,
       airTemp: 82,
     },

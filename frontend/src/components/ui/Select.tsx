@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 interface Option {
   value: string;
   label: string;
+  shortLabel?: string;
 }
 
 interface SelectProps {
@@ -41,7 +42,7 @@ export function Select({
   const baseButtonClasses = "flex items-center justify-between transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const variantClasses = variant === 'default'
     ? "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
-    : "h-auto p-0 bg-transparent border-0 font-mono text-sm text-muted-foreground hover:text-primary gap-1";
+    : "h-auto p-0 bg-transparent border-0 !font-mono text-sm text-muted-foreground hover:text-primary gap-1";
 
   return (
     <div ref={ref} className={`relative ${className}`}>
@@ -51,13 +52,13 @@ export function Select({
         className={`${baseButtonClasses} ${variantClasses}`}
       >
         <span className={selectedOption ? '' : 'text-muted-foreground'}>
-          {selectedOption?.label || placeholder}
+          {selectedOption?.shortLabel || selectedOption?.label || placeholder}
         </span>
         <ChevronDown className={`h-3 w-3 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 min-w-[120px] rounded-sm border border-border bg-popover p-1 shadow-md">
+        <div className="absolute z-50 mt-1 min-w-[160px] rounded-sm border border-border bg-popover p-1 shadow-md">
           {options.map((option) => (
             <button
               key={option.value}
@@ -66,7 +67,7 @@ export function Select({
                 onChange?.(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full rounded-sm px-2 py-1.5 text-left text-sm font-mono hover:bg-accent hover:text-accent-foreground ${
+              className={`w-full rounded-sm px-2 py-1.5 text-left text-sm !font-mono whitespace-nowrap hover:bg-accent hover:text-accent-foreground ${
                 option.value === value ? 'bg-accent text-accent-foreground' : 'text-popover-foreground'
               }`}
             >

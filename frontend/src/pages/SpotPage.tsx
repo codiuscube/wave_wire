@@ -25,11 +25,14 @@ const defaultSpot: any = { // Changed type to 'any' or 'Spot' if Spot is defined
   buoyName: "Galveston (22nm SE)",
   buoy: {
     waveHeight: 4.2,
-    wavePeriod: 6,
-    waterTemp: 76,
-    meanWaveDirection: "SE",
-    meanWaveDegrees: 135,
-    timestamp: new Date().toISOString(), // Recent data
+    wavePeriod: 12,
+    waterTemp: 72,
+    meanWaveDirection: 'SE',
+    meanWaveDegrees: 145,
+    timestamp: 'Just now',
+    windSpeed: 12,
+    windDirection: 'SE',
+    windDegrees: 140,
   },
   forecast: {
     primary: {
@@ -46,6 +49,7 @@ const defaultSpot: any = { // Changed type to 'any' or 'Spot' if Spot is defined
     },
     windSpeed: 8,
     windDirection: "NW",
+    windDegrees: 315,
     tide: 1.2,
     airTemp: 78,
   }

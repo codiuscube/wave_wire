@@ -10,6 +10,9 @@ export interface BuoyData {
   meanWaveDirection: string;
   meanWaveDegrees: number;
   timestamp: string;
+  windSpeed?: number;
+  windDirection?: string;
+  windDegrees?: number;
 }
 
 export interface SwellComponent {
@@ -24,6 +27,7 @@ export interface ForecastData {
   secondary: SwellComponent;
   windSpeed: number;
   windDirection: string;
+  windDegrees: number;
   tide: number;
   airTemp: number;
 }
@@ -84,24 +88,24 @@ export function SpotCard({ spot }: SpotCardProps) {
               <div className="flex justify-between items-center border-b border-border/10 pb-2">
                 <Select
                   options={[
-                    { value: "primary", label: "PRI" },
-                    { value: "secondary", label: "SEC" },
+                    { value: "primary", label: "Primary swell", shortLabel: "PRI" },
+                    { value: "secondary", label: "Secondary swell", shortLabel: "SEC" },
                   ]}
                   value={forecastSource}
                   onChange={(val) => setForecastSource(val as "primary" | "secondary")}
                   variant="ghost"
                 />
-                <span className="font-mono text-base font-bold">
-                  {spot.forecast[forecastSource].height}ft <span className="font-normal">@ {spot.forecast[forecastSource].period}s</span>{" "}
+                <span className="font-mono text-base font-normal">
+                  {spot.forecast[forecastSource].height}ft <span className="font-mono text-normal">@ {spot.forecast[forecastSource].period}s</span>{" "}
                   <span className="text-muted-foreground/50 font-normal text-sm">
-                    {spot.forecast[forecastSource].direction} {spot.forecast[forecastSource].degrees}°
+                    ⋅ {spot.forecast[forecastSource].direction} {spot.forecast[forecastSource].degrees}°
                   </span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WND</span>
-                <span className="font-mono text-base">
-                  {spot.forecast.windSpeed}kt <span className="text-muted-foreground font-normal text-sm">{spot.forecast.windDirection}</span>
+                <span className="font-mono text-base font-normal">
+                  {spot.forecast.windSpeed}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.forecast.windDirection} {spot.forecast.windDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
@@ -132,13 +136,13 @@ export function SpotCard({ spot }: SpotCardProps) {
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">DIR</span>
-                <span className="font-mono text-base">
-                  {spot.buoy.meanWaveDirection} <span className="text-muted-foreground font-normal text-sm">{spot.buoy.meanWaveDegrees}°</span>
+                <span className="font-mono text-base font-normal">
+                  {spot.buoy.windSpeed || '-'}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || spot.buoy.meanWaveDirection} {spot.buoy.windDegrees || spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">H2O</span>
-                <span className="font-mono text-base">{spot.buoy.waterTemp}°F</span>
+                <span className="font-mono text-base font-normal">{spot.buoy.waterTemp}°F</span>
               </div>
             </div>
           ) : (
