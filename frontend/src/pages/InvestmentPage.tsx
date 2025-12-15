@@ -130,7 +130,7 @@ export function InvestmentPage() {
                         </div>
                         <div className="flex flex-col md:items-end">
                             <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">6 MONTH TARGET</span>
-                            <span className="text-white text-xl sm:text-2xl">1,000 active users</span>
+                            <span className="text-white text-xl sm:text-2xl">1k MAU (Beta)</span>
                         </div>
                     </div>
                 </div>
