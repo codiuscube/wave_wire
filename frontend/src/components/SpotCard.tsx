@@ -6,6 +6,42 @@ import { fetchForecastDataForTime, getTidePredictionsForDay, type ForecastTime }
 import { useTideData } from "../hooks/useTideData";
 import { TideChart } from "./TideChart";
 
+// Scrambled placeholder text generator for skeleton loading
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const useScrambledText = (length: number, interval = 50) => {
+  const [text, setText] = useState(() =>
+    Array.from({ length }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join("")
+  );
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setText(Array.from({ length }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join(""));
+    }, interval);
+    return () => clearInterval(id);
+  }, [length, interval]);
+
+  return text;
+};
+
+// Skeleton row component
+const SkeletonRow = ({ label, format }: { label: string; format: "value" | "value-unit" | "value-at-unit" | "value-dir" }) => {
+  const v1 = useScrambledText(3, 80);
+  const v2 = useScrambledText(2, 90);
+  const v3 = useScrambledText(3, 70);
+
+  return (
+    <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+      <span className="font-mono text-sm text-muted-foreground">{label}</span>
+      <span className="font-mono text-base font-normal text-muted-foreground/30">
+        {format === "value" && <>{v1}</>}
+        {format === "value-unit" && <>{v1}°F</>}
+        {format === "value-at-unit" && <>{v1}ft @ {v2}s</>}
+        {format === "value-dir" && <>{v1}kt ⋅ {v3} {v2}°</>}
+      </span>
+    </div>
+  );
+};
+
 export interface BuoyData {
   waveHeight: number;
   wavePeriod: number;
@@ -57,9 +93,10 @@ export interface Spot {
 
 interface SpotCardProps {
   spot: Spot;
+  buoyLoading?: boolean;
 }
 
-export function SpotCard({ spot }: SpotCardProps) {
+export function SpotCard({ spot, buoyLoading = false }: SpotCardProps) {
   const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
   const [forecastTime, setForecastTime] = useState<ForecastTime>("now");
   const [activeForecast, setActiveForecast] = useState<ForecastData | null | undefined>(spot.forecast);
@@ -194,8 +231,15 @@ export function SpotCard({ spot }: SpotCardProps) {
           </div>
 
           {isLoadingForecast ? (
-            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
-              <p className="font-mono text-sm text-muted-foreground/50 animate-pulse">LOADING...</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20 animate-pulse" />
+                <span>Loading...</span>
+              </div>
+              <SkeletonRow label="PRI" format="value-at-unit" />
+              <SkeletonRow label="WND" format="value-dir" />
+              <SkeletonRow label="AIR" format="value-unit" />
+              <SkeletonRow label="TDE" format="value-at-unit" />
             </div>
           ) : activeForecast ? (
             <div className="space-y-4">
@@ -260,18 +304,18 @@ export function SpotCard({ spot }: SpotCardProps) {
                   <TideChart
                     hourly={
                       forecastTime === 'now' ? tideDays.today.hourly :
-                      forecastTime === 'tomorrow' ? tideDays.tomorrow.hourly :
-                      tideDays.nextDay.hourly
+                        forecastTime === 'tomorrow' ? tideDays.tomorrow.hourly :
+                          tideDays.nextDay.hourly
                     }
                     hiLo={
                       forecastTime === 'now' ? tideDays.today.hiLo :
-                      forecastTime === 'tomorrow' ? tideDays.tomorrow.hiLo :
-                      tideDays.nextDay.hiLo
+                        forecastTime === 'tomorrow' ? tideDays.tomorrow.hiLo :
+                          tideDays.nextDay.hiLo
                     }
                     label={
                       forecastTime === 'now' ? "TIDE TODAY" :
-                      forecastTime === 'tomorrow' ? "TIDE TOMORROW" :
-                      "TIDE NEXT DAY"
+                        forecastTime === 'tomorrow' ? "TIDE TOMORROW" :
+                          "TIDE NEXT DAY"
                     }
                   />
                 </div>
@@ -293,7 +337,19 @@ export function SpotCard({ spot }: SpotCardProps) {
             {spot.buoyName || 'NO SIGNAL'}
           </p>
 
-          {spot.buoy ? (
+          {buoyLoading && !spot.buoy ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20 animate-pulse" />
+                <span>Connecting...</span>
+              </div>
+              <SkeletonRow label="SWL" format="value-at-unit" />
+              <SkeletonRow label="WND" format="value-dir" />
+              <SkeletonRow label="AIR" format="value-unit" />
+              <SkeletonRow label="H2O" format="value-unit" />
+              <SkeletonRow label="PRS" format="value" />
+            </div>
+          ) : spot.buoy ? (
             <div className="space-y-4">
               {/* Last reading timestamp */}
               {spot.buoy.timestamp && (
@@ -305,7 +361,7 @@ export function SpotCard({ spot }: SpotCardProps) {
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">SWL</span>
                 <span className="font-mono text-base">
-                  {spot.buoy.waveHeight}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.buoy.wavePeriod}s</span>{" "}
+                  {spot.buoy.waveHeight}ft @ {spot.buoy.wavePeriod}s
                   <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.meanWaveDirection} {spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
@@ -336,6 +392,6 @@ export function SpotCard({ spot }: SpotCardProps) {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

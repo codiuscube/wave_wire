@@ -215,7 +215,7 @@ export function DashboardOverview() {
             )}
             <div className="space-y-4">
               {userSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} />
+                <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} />
               ))}
             </div>
           </div>
