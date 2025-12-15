@@ -64,8 +64,11 @@ interface ParsedBuoyRow {
   wavePeriod: number | null;      // DPD in seconds
   meanWaveDirection: number | null; // MWD in degrees
   windSpeed: number | null;       // WSPD in m/s
+  windGust: number | null;        // GST in m/s
   windDirection: number | null;   // WDIR in degrees
   waterTemp: number | null;       // WTMP in Celsius
+  airTemp: number | null;         // ATMP in Celsius
+  pressure: number | null;        // PRES in hPa
 }
 
 // Parse a single value, returning null if it's "MM" (missing) or invalid
@@ -107,8 +110,11 @@ const parseNOAAText = (text: string): ParsedBuoyRow[] => {
       wavePeriod: parseValue(parts[NOAA_COLUMNS.DPD]),
       meanWaveDirection: parseValue(parts[NOAA_COLUMNS.MWD]),
       windSpeed: parseValue(parts[NOAA_COLUMNS.WSPD]),
+      windGust: parseValue(parts[NOAA_COLUMNS.GST]),
       windDirection: parseValue(parts[NOAA_COLUMNS.WDIR]),
       waterTemp: parseValue(parts[NOAA_COLUMNS.WTMP]),
+      airTemp: parseValue(parts[NOAA_COLUMNS.ATMP]),
+      pressure: parseValue(parts[NOAA_COLUMNS.PRES]),
     });
   }
 
@@ -134,10 +140,17 @@ const transformToBuoyData = (row: ParsedBuoyRow): BuoyData | null => {
     windSpeed: row.windSpeed !== null
       ? round(row.windSpeed * MS_TO_KNOTS, 0)
       : undefined,
+    windGust: row.windGust !== null
+      ? round(row.windGust * MS_TO_KNOTS, 0)
+      : undefined,
     windDirection: row.windDirection !== null
       ? degreesToCardinal(row.windDirection)
       : undefined,
     windDegrees: row.windDirection ?? undefined,
+    airTemp: row.airTemp !== null
+      ? round(celsiusToFahrenheit(row.airTemp), 0)
+      : undefined,
+    pressure: row.pressure ?? undefined,
   };
 };
 

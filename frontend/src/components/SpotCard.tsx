@@ -14,8 +14,11 @@ export interface BuoyData {
   meanWaveDegrees: number;
   timestamp: string;
   windSpeed?: number;
+  windGust?: number;
   windDirection?: string;
   windDegrees?: number;
+  airTemp?: number;
+  pressure?: number;
 }
 
 export interface SwellComponent {
@@ -300,20 +303,30 @@ export function SpotCard({ spot }: SpotCardProps) {
                 </div>
               )}
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">WAV</span>
+                <span className="font-mono text-sm text-muted-foreground">SWL</span>
                 <span className="font-mono text-base">
-                  {spot.buoy.waveHeight}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.buoy.wavePeriod}s</span>
+                  {spot.buoy.waveHeight}ft <span className="text-muted-foreground font-normal text-sm">@ {spot.buoy.wavePeriod}s</span>{" "}
+                  <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.meanWaveDirection} {spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WND</span>
                 <span className="font-mono text-base font-normal">
-                  {spot.buoy.windSpeed ? `${spot.buoy.windSpeed}kt` : 'N/A'} <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || spot.buoy.meanWaveDirection} {spot.buoy.windDegrees ?? spot.buoy.meanWaveDegrees}°</span>
+                  {spot.buoy.windGust ? `${spot.buoy.windGust}kt gust` : (spot.buoy.windSpeed ? `${spot.buoy.windSpeed}kt` : 'N/A')}{" "}
+                  <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || 'N/A'} {spot.buoy.windDegrees ?? '-'}°</span>
                 </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">AIR</span>
+                <span className="font-mono text-base font-normal">{spot.buoy.airTemp ? `${spot.buoy.airTemp}°F` : 'N/A'}</span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">H2O</span>
                 <span className="font-mono text-base font-normal">{spot.buoy.waterTemp}°F</span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">PRS</span>
+                <span className="font-mono text-base font-normal">{spot.buoy.pressure ? `${spot.buoy.pressure} hPa` : 'N/A'}</span>
               </div>
             </div>
           ) : (
