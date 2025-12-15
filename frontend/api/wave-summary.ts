@@ -141,9 +141,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ summary: null, localKnowledge: null });
     }
 
-    // Parse JSON response
+    // Parse JSON response - strip markdown code fences if present
     try {
-      const parsed = JSON.parse(responseText);
+      let jsonStr = responseText;
+      // Remove markdown code fences
+      if (jsonStr.includes('```')) {
+        jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      }
+      const parsed = JSON.parse(jsonStr);
       res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
       return res.status(200).json({
         summary: parsed.summary || null,
