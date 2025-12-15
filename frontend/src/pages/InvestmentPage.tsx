@@ -48,7 +48,8 @@ export function InvestmentPage() {
     };
 
     return (
-        <div className="min-h-screen bg-brand-abyss flex flex-col font-sans text-brand-foam selection:bg-brand-acid selection:text-brand-abyss">
+        <div className="min-h-screen bg-brand-abyss flex flex-col font-sans text-brand-foam selection:bg-brand-acid selection:text-brand-abyss relative">
+            <div className="grunge-overlay opacity-20 pointer-events-none"></div>
             <Navbar />
 
             <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
@@ -56,139 +57,140 @@ export function InvestmentPage() {
                 <div className="mb-12 border-b-2 border-dashed border-white/10 pb-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                         <div>
-                            <div className="font-mono text-brand-rogue text-xs tracking-wider uppercase mb-2">
+                            <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mb-3 tape">
                                 CONFIDENTIAL // INTERNAL USE ONLY
-                            </div>
-                            <h1 className="text-4xl md:text-6xl font-black text-white font-display tracking-tight uppercase glitch-text" data-text="INTERNAL DEAL SHEET">
+                            </span>
+                            <h1 className="text-5xl md:text-7xl font-black text-white font-display tracking-tight uppercase glitch-text" data-text="INTERNAL DEAL SHEET">
                                 INTERNAL DEAL SHEET
                             </h1>
                         </div>
                         <div className="text-right hidden md:block">
-                            <div className="font-mono text-sm text-brand-acid">financial_model_v2.exe</div>
-                            <div className="font-mono text-xs text-brand-foam/60">LAST UPDATED: 2024-12-14</div>
+                            <div className="font-mono text-base text-brand-acid">financial_model_v2.exe</div>
+                            <div className="font-mono text-sm text-brand-foam/60">LAST UPDATED: 2024-12-14</div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-mono text-xs border-t border-white/10 pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-mono text-sm border-t border-white/10 pt-6">
                         <div className="flex flex-col">
                             <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">PARTNERSHIP</span>
-                            <span className="text-white text-lg">3 Partners</span>
+                            <span className="text-white text-xl sm:text-2xl">3 Partners</span>
                         </div>
                         <div className="flex flex-col md:items-center">
                             <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">SPLIT</span>
-                            <span className="text-white text-lg">33% Each</span>
+                            <span className="text-white text-xl sm:text-2xl">33% Each</span>
                         </div>
                         <div className="flex flex-col md:items-center">
                             <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">CAPITAL NEEDED</span>
-                            <span className="text-white text-lg">$750</span>
+                            <span className="text-white text-xl sm:text-2xl">$750</span>
                         </div>
                         <div className="flex flex-col md:items-end">
                             <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">1 YEAR TARGET</span>
-                            <span className="text-white text-lg">2,000 active users</span>
+                            <span className="text-white text-xl sm:text-2xl">2,000 active users</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Financial Core Section */}
                 <div className="mb-16">
-                    <h2 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-display font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
                         <span className="w-2 h-2 bg-brand-acid"></span>
                         GO-TO-MARKET:
                     </h2>
 
                     {/* Summary */}
-                    <div className="bg-brand-rogue/10 border border-brand-rogue/30 p-6 mb-8 relative">
-                        <div className="absolute top-0 right-0 p-2 text-brand-rogue/60 font-mono text-xs tracking-widest uppercase">// MISSION_PROFILE</div>
-                        <h3 className="font-bold text-white mb-4 text-lg">SUMMARY</h3>
-                        <p className="text-brand-foam/90 text-sm leading-relaxed mb-6 max-w-4xl">
+                    <div className="bg-brand-rogue/10 border border-brand-rogue/30 p-6 sm:p-8 mb-8 relative">
+                        <span className="absolute top-0 right-0 -translate-y-1/2 translate-x-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-xs font-bold tracking-widest tape">
+                            // MISSION_PROFILE
+                        </span>
+                        <h3 className="font-bold text-white mb-4 text-xl sm:text-2xl font-display">SUMMARY</h3>
+                        <p className="text-brand-foam/90 text-base sm:text-lg leading-relaxed mb-6 max-w-4xl">
                             Deploy a precision-engineered, low-overhead intelligence tool for core surfers. We filter raw buoy and weather data to deliver private, threshold-based alerts ("The Wire")—ensuring zero crowds and pure signal. Built primarily for the specific needs of the founding team; scaled to a capped userbase to fund operations without diluting the product's "Secret Weapon" status.
                         </p>
 
                         <div className="border-t border-brand-rogue/20 pt-6 mt-6">
-                            <h4 className="text-brand-acid font-bold uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-brand-acid rounded-full"></span>
-                                Strategic Viability
-                            </h4>
+                            <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mb-4 tape">
+                                STRATEGIC VIABILITY
+                            </span>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                 <div className="group">
-                                    <strong className="text-white block mb-1 font-display tracking-wide text-sm group-hover:text-brand-acid transition-colors">› BREAK-EVEN THRESHOLD</strong>
-                                    <span className="text-brand-foam/80 text-sm leading-relaxed block pl-4 border-l border-brand-rogue/30">System achieves self-sustainment at ~150 subscribers. Current architecture supports 50k+ users with no fixed cost increase.</span>
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› BREAK-EVEN THRESHOLD</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">System achieves self-sustainment at ~150 subscribers. Current architecture supports 50k+ users with no fixed cost increase.</span>
                                 </div>
                                 <div className="group">
-                                    <strong className="text-white block mb-1 font-display tracking-wide text-sm group-hover:text-brand-acid transition-colors">› INFINITE RUNWAY</strong>
-                                    <span className="text-brand-foam/80 text-sm leading-relaxed block pl-4 border-l border-brand-rogue/30">With $5/mo pricing and minimal OpEx ($25/mo base), the project funds its own growth indefinitely once Phase 2 activates.</span>
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› INFINITE RUNWAY</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">With $5/mo pricing and minimal OpEx ($25/mo base), the project funds its own growth indefinitely once Phase 2 activates.</span>
                                 </div>
                                 <div className="group">
-                                    <strong className="text-white block mb-1 font-display tracking-wide text-sm group-hover:text-brand-acid transition-colors">› SUPPLY CONSTRAINT</strong>
-                                    <span className="text-brand-foam/80 text-sm leading-relaxed block pl-4 border-l border-brand-rogue/30">By capping at 1,000 users, we artificially constrain supply, maintaining "Private Intel" branding and eliminating complex support overhead.</span>
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› SUPPLY CONSTRAINT</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">By capping at 1,000 users, we artificially constrain supply, maintaining "Private Intel" branding and eliminating complex support overhead.</span>
                                 </div>
                                 <div className="group">
-                                    <strong className="text-white block mb-1 font-display tracking-wide text-sm group-hover:text-brand-acid transition-colors">› ASSET RETENTION</strong>
-                                    <span className="text-brand-foam/80 text-sm leading-relaxed block pl-4 border-l border-brand-rogue/30">The core IP (alert algorithms) remains proprietary. No external equity. 100% internal ownership.</span>
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› ASSET RETENTION</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">The core IP (alert algorithms) remains proprietary. No external equity. 100% internal ownership.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Timeline Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
                         {/* Part 1 */}
-                        <div className="bg-white/5 border border-brand-concrete p-5 relative overflow-hidden group hover:border-brand-acid transition-colors">
-                            <div className="absolute top-0 right-0 p-2 text-brand-rogue/10 text-4xl font-black">01</div>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide">PART 1: THE_INPUT</h3>
-                            <div className="font-mono text-xs text-brand-rogue mb-3 uppercase tracking-wider">Seed_Fund</div>
-                            <p className="text-brand-foam/80 text-sm leading-relaxed">
+                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
+                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-2 font-mono text-sm font-bold tracking-widest tape">01</span>
+                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 1: THE_INPUT</h3>
+                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Seed_Fund</div>
+                            <p className="text-brand-foam/80 text-base leading-relaxed">
                                 Establish legal entity (DE/TX/CA). Secure $750 seed capital for initial infrastructure and accountability.
                             </p>
                         </div>
 
                         {/* Part 2 */}
-                        <div className="bg-white/5 border border-brand-concrete p-5 relative overflow-hidden group hover:border-brand-acid transition-colors">
-                            <div className="absolute top-0 right-0 p-2 text-brand-rogue/10 text-4xl font-black">02</div>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide">PART 2: THE_BUILD</h3>
-                            <div className="font-mono text-xs text-brand-rogue mb-3 uppercase tracking-wider">Jan 1, 2026</div>
-                            <p className="text-brand-foam/80 text-sm leading-relaxed">
+                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
+                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-sm font-bold tracking-widest tape">02</span>
+                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 2: THE_BUILD</h3>
+                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Jan 1, 2026</div>
+                            <p className="text-brand-foam/80 text-base leading-relaxed">
                                 Develop MVP for internal stakeholders. Alpha testing with trusted circle. Target Launch: Jan 1, 2026.
                             </p>
                         </div>
 
                         {/* Part 3 */}
-                        <div className="bg-white/5 border border-brand-concrete p-5 relative overflow-hidden group hover:border-brand-acid transition-colors">
-                            <div className="absolute top-0 right-0 p-2 text-brand-rogue/10 text-4xl font-black">03</div>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide">PART 3: THE_SCALE</h3>
-                            <div className="font-mono text-xs text-brand-rogue mb-3 uppercase tracking-wider">Open Beta</div>
-                            <p className="text-brand-foam/80 text-sm leading-relaxed">
+                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
+                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-sm font-bold tracking-widest tape">03</span>
+                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 3: THE_SCALE</h3>
+                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Open Beta</div>
+                            <p className="text-brand-foam/80 text-base leading-relaxed">
                                 Initiate US-only Open Beta. Free tier entry via waitlist. Controlled, incremental user onboarding.
                             </p>
                         </div>
 
                         {/* Part 4 */}
-                        <div className="bg-white/5 border border-brand-concrete p-5 relative overflow-hidden group hover:border-brand-acid transition-colors">
-                            <div className="absolute top-0 right-0 p-2 text-brand-rogue/10 text-4xl font-black">04</div>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide">PART 4: CAP</h3>
-                            <div className="font-mono text-xs text-brand-rogue mb-3 uppercase tracking-wider">1000 Users</div>
-                            <p className="text-brand-foam/80 text-sm leading-relaxed">
+                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
+                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-2 font-mono text-sm font-bold tracking-widest tape">04</span>
+                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 4: CAP</h3>
+                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">1000 Users</div>
+                            <p className="text-brand-foam/80 text-base leading-relaxed">
                                 Cap active users at 1,000. Pause acquisition to integrate payment infrastructure (Stripe) and validate stability.
                             </p>
                         </div>
 
                         {/* Part 5 */}
-                        <div className="bg-white/5 border border-brand-concrete p-5 relative overflow-hidden group hover:border-brand-acid transition-colors">
-                            <div className="absolute top-0 right-0 p-2 text-brand-rogue/10 text-4xl font-black">05</div>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide">PART 5: REVENUE</h3>
-                            <div className="font-mono text-xs text-brand-rogue mb-3 uppercase tracking-wider">Paid Launch</div>
-                            <p className="text-brand-foam/80 text-sm leading-relaxed">
+                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
+                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-sm font-bold tracking-widest tape">05</span>
+                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 5: REVENUE</h3>
+                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Paid Launch</div>
+                            <p className="text-brand-foam/80 text-base leading-relaxed">
                                 Activate monetization. $5/mo premium tier with limited freemium access. US market focus.
                             </p>
                         </div>
 
                         {/* Part 6 */}
-                        <div className="bg-white/5 border border-brand-concrete p-5 relative overflow-hidden group hover:border-brand-acid transition-colors">
-                            <div className="absolute top-0 right-0 p-2 text-brand-rogue/10 text-4xl font-black">06</div>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide">PART 6: SCALE_UP</h3>
-                            <div className="font-mono text-xs text-brand-rogue mb-3 uppercase tracking-wider">5000 Users</div>
-                            <p className="text-brand-foam/80 text-sm leading-relaxed">
+                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
+                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-sm font-bold tracking-widest tape">06</span>
+                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 6: SCALE_UP</h3>
+                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">5000 Users</div>
+                            <p className="text-brand-foam/80 text-base leading-relaxed">
                                 Expand to 5,000 users. Evaluate architecture for mass-scale (50k+) and potential contraction of external dev resources.
                             </p>
                         </div>
@@ -198,22 +200,22 @@ export function InvestmentPage() {
 
                 {/* Roles Section */}
                 <div className="mb-16">
-                    <h2 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-display font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
                         <span className="w-2 h-2 bg-brand-acid"></span>
                         THE 33% SPLIT
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
                         {/* SHAUN */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 hover:border-brand-acid transition-colors group">
+                        <div className="bg-white/5 border border-brand-concrete p-6 hover:border-brand-acid transition-colors group relative shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
                             <div className="mb-4">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">SHAUN</h3>
+                                    <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">SHAUN</h3>
                                     <Check className="text-white mt-1 bg-brand-rogue p-1 rounded-full font-bold" />
                                 </div>
-                                <p className="font-mono text-xs text-brand-rogue pt-2 uppercase tracking-wide">OPS & COMPLIANCE</p>
+                                <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mt-2 tape">OPS & COMPLIANCE</span>
                             </div>
-                            <ul className="space-y-3 text-brand-foam/80 text-sm">
+                            <ul className="space-y-3 text-brand-foam/80 text-base">
                                 <li className="flex items-start gap-2">
                                     <span className="text-brand-acid mt-1">›</span> User Support & Community
                                 </li>
@@ -226,21 +228,19 @@ export function InvestmentPage() {
                                 <li className="flex items-start gap-2">
                                     <span className="text-brand-acid mt-1">›</span> Non-Profit Partnerships
                                 </li>
-
                             </ul>
                         </div>
 
                         {/* CODY */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 hover:border-brand-acid transition-colors group">
+                        <div className="bg-white/5 border border-brand-concrete p-6 hover:border-brand-acid transition-colors group relative shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
                             <div className="mb-4">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">CODY</h3>
+                                    <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">CODY</h3>
                                     <Check className="text-white mt-1 bg-brand-rogue p-1 rounded-full font-bold" />
-
                                 </div>
-                                <p className="font-mono text-xs text-brand-rogue pt-2 uppercase tracking-wide">TECHNICAL LEAD</p>
+                                <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-xs font-bold tracking-widest mt-2 tape">TECHNICAL LEAD</span>
                             </div>
-                            <ul className="space-y-3 text-brand-foam/80 text-sm">
+                            <ul className="space-y-3 text-brand-foam/80 text-base">
                                 <li className="flex items-start gap-2">
                                     <span className="text-brand-acid mt-1">›</span> Build & Maintain App
                                 </li>
@@ -250,19 +250,16 @@ export function InvestmentPage() {
                             </ul>
                         </div>
 
-
-
                         {/* PARTNER 3 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 hover:border-brand-acid transition-colors group">
+                        <div className="bg-white/5 border border-brand-concrete p-6 hover:border-brand-acid transition-colors group relative shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
                             <div className="mb-4">
                                 <div className="flex items-center gap-2">
-
-                                    <h3 className="text-xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">PARTNER 3</h3>
+                                    <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">PARTNER 3</h3>
                                     <CircleQuestionMark className="text-white mt-1 bg-brand-rogue/50 p-1 rounded-full font-bold" />
                                 </div>
-                                <p className="font-mono text-xs text-brand-rogue pt-2 uppercase tracking-wide">MARKETING LEAD</p>
+                                <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mt-2 tape">MARKETING LEAD</span>
                             </div>
-                            <ul className="space-y-3 text-brand-foam/80 text-sm">
+                            <ul className="space-y-3 text-brand-foam/80 text-base">
                                 <li className="flex items-start gap-2">
                                     <span className="text-brand-acid mt-1">›</span> Instagram Content (Hype Texts)
                                 </li>
@@ -276,35 +273,38 @@ export function InvestmentPage() {
 
                 {/* Live Ledger Table */}
                 <div className="mb-12">
-                    <h2 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-display font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-tight">
                         <span className="w-2 h-2 bg-brand-acid"></span>
                         LIVE LEDGER
                     </h2>
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-2 bg-brand-rogue animate-pulse"></div>
-                        <h3 className="text-brand-rogue font-mono text-xs tracking-wider uppercase">Adjust Assumptions</h3>
+                    <div className="mb-4">
+                        <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest tape">
+                            ADJUST ASSUMPTIONS
+                        </span>
                     </div>
 
                     <div className="overflow-x-auto border border-brand-concrete">
-                        <table className="w-full text-left font-mono text-xs">
+                        <table className="w-full text-left font-mono text-sm">
                             <thead className="bg-white/5 text-brand-rogue uppercase tracking-wider border-b border-brand-concrete">
                                 <tr>
                                     <th className="p-4 font-bold border-r border-brand-concrete/30 w-1/4">Line Item</th>
                                     <th className="p-4 font-bold border-r border-brand-concrete/30 w-1/3">
                                         Phase 1: Beta
-                                        <span className="block text-xs text-brand-foam normal-case mt-1 opacity-80">Donation Model</span>
+                                        <span className="block text-sm text-brand-foam normal-case mt-1 opacity-80">Donation Model</span>
                                     </th>
                                     <th className="p-4 font-bold w-1/3">
                                         Phase 2: Launch
-                                        <span className="block text-xs text-brand-foam normal-case mt-1 opacity-80">Freemium Model</span>
+                                        <span className="block text-sm text-brand-foam normal-case mt-1 opacity-80">Freemium Model</span>
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-brand-concrete/30 text-sm">
+                            <tbody className="divide-y divide-brand-concrete/30 text-sm sm:text-base">
 
                                 {/* REVENUE SECTION HEADER */}
-                                <tr className="bg-brand-concrete/20 border-b border-brand-concrete text-brand-acid uppercase text-xs tracking-widest font-bold">
-                                    <td colSpan={3} className="p-2 pl-4">Incomes</td>
+                                <tr className="bg-brand-concrete/20 border-b border-brand-concrete">
+                                    <td colSpan={3} className="p-2 pl-4">
+                                        <span className="inline-block bg-brand-acid text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest tape">INCOMES</span>
+                                    </td>
                                 </tr>
 
                                 {/* Users Row */}
@@ -409,8 +409,10 @@ export function InvestmentPage() {
                                 </tr>
 
                                 {/* EXPENSES SECTION HEADER */}
-                                <tr className="bg-brand-concrete/20 border-b border-brand-concrete text-red-400 uppercase text-xs tracking-widest font-bold">
-                                    <td colSpan={3} className="p-2 pl-4">Expenses</td>
+                                <tr className="bg-brand-concrete/20 border-b border-brand-concrete">
+                                    <td colSpan={3} className="p-2 pl-4">
+                                        <span className="inline-block bg-red-500 text-white px-2 py-0.5 transform rotate-1 font-mono text-xs font-bold tracking-widest tape">EXPENSES</span>
+                                    </td>
                                 </tr>
 
                                 {/* Variable SMS Row (Interactive) */}
@@ -476,34 +478,36 @@ export function InvestmentPage() {
                                 </tr>
 
                                 {/* PROFIT SECTION HEADER */}
-                                <tr className="bg-brand-acid text-brand-abyss uppercase text-xs tracking-widest font-bold border-b border-brand-abyss">
-                                    <td colSpan={3} className="p-2 pl-4">Net Outcome</td>
+                                <tr className="bg-brand-acid/20 border-b border-brand-acid">
+                                    <td colSpan={3} className="p-2 pl-4">
+                                        <span className="inline-block bg-brand-acid text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest tape">NET OUTCOME</span>
+                                    </td>
                                 </tr>
 
                                 {/* Net Profit (Result) */}
                                 <tr className="bg-white/10 transition-colors font-bold border-b border-brand-concrete">
-                                    <td className="p-6 text-white border-r border-brand-concrete/30 align-middle">Net Profit (Monthly)</td>
-                                    <td className={`p-6 border-r border-brand-concrete/30 align-middle text-lg ${p1_net_profit >= 0 ? 'text-brand-acid' : 'text-red-400'}`}>
-                                        <div className="flex flex-row gap-1 justify-between">
+                                    <td className="p-6 text-white border-r border-brand-concrete/30 align-middle text-base">Net Profit (Monthly)</td>
+                                    <td className={`p-6 border-r border-brand-concrete/30 align-middle text-xl sm:text-2xl ${p1_net_profit >= 0 ? 'text-brand-acid' : 'text-red-400'}`}>
+                                        <div className="flex flex-row gap-1 justify-between items-center">
                                             {formatCurrency(p1_net_profit)}
                                             {p1_net_profit < 0 && (
-                                                <div className="text-xs text-brand-foam/60 mt-1 uppercase tracking-wide">
+                                                <div className="text-sm text-brand-foam/60 uppercase tracking-wide">
                                                     RUNWAY: <span className="text-white font-bold">{p1_runway_days} days</span>
                                                 </div>
                                             )}
                                         </div>
                                     </td>
-                                    <td className={`p-6 align-middle text-lg ${p2_net_profit >= 0 ? 'text-brand-acid' : 'text-red-400'}`}>{formatCurrency(p2_net_profit)}</td>
+                                    <td className={`p-6 align-middle text-xl sm:text-2xl ${p2_net_profit >= 0 ? 'text-brand-acid' : 'text-red-400'}`}>{formatCurrency(p2_net_profit)}</td>
                                 </tr>
 
                                 {/* Payoff (Result) */}
                                 <tr className="bg-brand-acid/10 hover:bg-brand-acid/20 transition-colors">
-                                    <td className="p-6 font-black text-brand-acid border-r border-brand-concrete/30 uppercase align-middle">Your Payoff (33%)</td>
+                                    <td className="p-6 font-black text-brand-acid border-r border-brand-concrete/30 uppercase align-middle text-base">Your Payoff (33%)</td>
                                     <td className="p-6 text-brand-foam/30 border-r border-brand-concrete/30"></td>
                                     <td className="p-6 align-middle">
                                         <div className="flex items-baseline gap-2">
-                                            <span className="font-black text-brand-acid text-xl">{formatCurrency(p2_payoff)}</span>
-                                            <span className="text-xs font-normal text-brand-foam uppercase">/ MO</span>
+                                            <span className="font-black text-brand-acid text-2xl sm:text-3xl">{formatCurrency(p2_payoff)}</span>
+                                            <span className="text-sm font-normal text-brand-foam uppercase">/ MO</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -511,10 +515,12 @@ export function InvestmentPage() {
                         </table>
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-2 font-mono text-sm text-brand-rogue border-t border-dashed border-white/10 pt-4">
-                        <div className="font-bold uppercase tracking-wider text-xs mb-1">ROI Analysis</div>
+                    <div className="mt-6 flex flex-col gap-3 font-mono text-base sm:text-lg text-brand-rogue border-t border-dashed border-white/10 pt-6">
+                        <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-xs font-bold tracking-widest mb-2 tape w-fit">
+                            ROI ANALYSIS
+                        </span>
                         {p2_payoff > 0 ? (
-                            <ul className="space-y-1 list-none">
+                            <ul className="space-y-2 list-none">
                                 <li className="flex gap-2">
                                     <span className="text-brand-acid">›</span>
                                     <span>At Phase 2 scale, you earn back your initial $250 investment in <span className="text-white font-bold">{roi_days} days</span>.</span>
