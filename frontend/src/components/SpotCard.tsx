@@ -30,6 +30,7 @@ export interface ForecastData {
   windDegrees: number;
   tide: number;
   airTemp: number;
+  tideDirection: string;
 }
 
 export interface Spot {
@@ -54,6 +55,7 @@ interface SpotCardProps {
 
 export function SpotCard({ spot }: SpotCardProps) {
   const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
+  const [forecastTime, setForecastTime] = useState<"now" | "tomorrow" | "next_day">("now");
 
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
@@ -79,9 +81,18 @@ export function SpotCard({ spot }: SpotCardProps) {
 
         {/* MODEL FORECAST (Forecast) - NOW FIRST & EMPHASIZED */}
         <div className="p-5 bg-background/20">
-          <p className="font-mono text-xs tracking-widest text-muted-foreground/70 mb-4 border-l-2 border-primary/40 pl-3 uppercase">
-            Model Forecast
-          </p>
+          <div className="mb-4 border-l-2  border-muted pl-3">
+            <Select
+              options={[
+                { value: "now", label: "MODEL FORECAST NOW", shortLabel: "FORECAST NOW" },
+                { value: "tomorrow", label: "MODEL FORECAST TOMORROW", shortLabel: "FORECAST TOMORROW" },
+                { value: "next_day", label: "MODEL FORECAST THE NEXT DAY", shortLabel: "FORECAST NEXT DAY" },
+              ]}
+              value={forecastTime}
+              onChange={(val) => setForecastTime(val as "now" | "tomorrow" | "next_day")}
+              variant="model"
+            />
+          </div>
 
           {spot.forecast ? (
             <div className="space-y-4">
@@ -110,7 +121,13 @@ export function SpotCard({ spot }: SpotCardProps) {
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">TDE</span>
-                <span className="font-mono text-base">{spot.forecast.tide}ft</span>
+                <span className="font-mono text-base">
+                  {spot.forecast.tide}ft {spot.forecast.tideDirection && (
+                    <span className="text-muted-foreground/50 font-normal text-sm uppercase">
+                      ⋅ {spot.forecast.tideDirection === 'rising' ? '↑' : spot.forecast.tideDirection === 'falling' ? '↓' : '→'} {spot.forecast.tideDirection}
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
           ) : (
