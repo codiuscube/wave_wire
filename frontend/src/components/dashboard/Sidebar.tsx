@@ -1,32 +1,35 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  Activity,
-  Crosshair,
-  Radar,
-  Radio,
-  Fingerprint,
-  Terminal,
-  Menu,
-  X,
-  LogOut,
-  Shield,
-  TrendingUp,
-} from "lucide-react";
+  Water,
+  MapPoint,
+  Bolt,
+  ChatRoundDots,
+  Scanner,
+  Database,
+  ChartSquare,
+  MenuDots,
+  CloseCircle,
+  Logout,
+  EmojiFunnySquare
+} from "@solar-icons/react";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Logo } from "../ui/Logo";
 
+// Icon configuration for consistent styling
+const ICON_SIZE = 24;
+
 const navItems = [
-  { to: "/dashboard", icon: Activity, label: "Overview", end: true },
-  { to: "/dashboard/spot", icon: Crosshair, label: "My Spots" },
-  { to: "/dashboard/triggers", icon: Radar, label: "Triggers" },
-  { to: "/dashboard/alerts", icon: Radio, label: "Alerts" },
+  { to: "/dashboard", icon: Water, label: "Overview", end: true },
+  { to: "/dashboard/spot", icon: MapPoint, label: "My Spots" },
+  { to: "/dashboard/triggers", icon: Bolt, label: "Triggers" },
+  { to: "/dashboard/alerts", icon: ChatRoundDots, label: "Alerts" },
   {
     to: "/dashboard/personality",
-    icon: Terminal,
+    icon: EmojiFunnySquare,
     label: "Personality",
   },
-  { to: "/dashboard/account", icon: Fingerprint, label: "Account" },
+  { to: "/dashboard/account", icon: Scanner, label: "Account" },
 ];
 
 export function Sidebar() {
@@ -61,7 +64,7 @@ export function Sidebar() {
             className="p-2.5 rounded-lg hover:bg-secondary/50 text-foreground/80 hover:text-foreground touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
             aria-label="Toggle menu"
           >
-            {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileOpen ? <CloseCircle size={ICON_SIZE} weight="BoldDuotone" /> : <MenuDots size={ICON_SIZE} weight="BoldDuotone" />}
           </button>
         </div>
       </header>
@@ -85,11 +88,11 @@ export function Sidebar() {
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border/50">
-          <NavLink to="/" className="flex items-center gap-2.5 group">
-            <div className="p-1.5 rounded-lg bg-secondary group-hover:bg-muted transition-colors">
-              <Logo className="w-5 h-5 text-foreground" />
+          <NavLink to="/" className="flex items-center gap-3 text-brand-acid group">
+            <div className="transform -rotate-6 transition-transform group-hover:rotate-0 duration-300">
+              <Logo className="w-10 h-10" style={{ filter: 'drop-shadow(0 0 2px rgba(226,253,92,0.5))' }} />
             </div>
-            <span className="font-bold text-lg tracking-tight text-white/90">
+            <span className="font-display font-bold text-lg tracking-wider text-white">
               WAVE_WIRE
             </span>
           </NavLink>
@@ -112,7 +115,7 @@ export function Sidebar() {
                   }`
                 }
               >
-                <item.icon className="w-4 h-4 group-hover:text-foreground transition-colors" />
+                <item.icon size={ICON_SIZE} weight="BoldDuotone" className="group-hover:text-foreground transition-colors" />
                 {item.label}
               </NavLink>
             ))}
@@ -133,7 +136,7 @@ export function Sidebar() {
                     }`
                   }
                 >
-                  <Shield className="w-4 h-4" />
+                  <Database size={ICON_SIZE} weight="BoldDuotone" />
                   Spot Management
                 </NavLink>
                 <NavLink
@@ -146,7 +149,7 @@ export function Sidebar() {
                     }`
                   }
                 >
-                  <TrendingUp className="w-4 h-4" />
+                  <ChartSquare size={ICON_SIZE} weight="BoldDuotone" />
                   Investment
                 </NavLink>
               </div>
@@ -169,7 +172,7 @@ export function Sidebar() {
                   }`
                 }
               >
-                <accountItem.icon className="w-4 h-4 group-hover:text-foreground transition-colors" />
+                <accountItem.icon size={ICON_SIZE} weight="BoldDuotone" className="group-hover:text-foreground transition-colors" />
                 {accountItem.label}
               </NavLink>
             )}
@@ -177,7 +180,7 @@ export function Sidebar() {
               onClick={handleLogout}
               className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:text-red-400 hover:bg-red-500/10 w-full"
             >
-              <LogOut className="w-4 h-4 group-hover:text-red-400 transition-colors" />
+              <Logout size={ICON_SIZE} weight="BoldDuotone" className="group-hover:text-red-400 transition-colors" />
               Log Out
             </button>
           </div>
