@@ -204,6 +204,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             spotName: spot.name,
+            region: spot.region,
             buoy: spot.buoy,
             forecast: spot.forecast,
             tide: tideData ? {
@@ -258,15 +259,13 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
           </div>
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
-        {/* Claude Wave Summary */}
-        {!summaryFailed && (
+        {/* Claude Wave Summary - only show if loading or has valid summary */}
+        {!summaryFailed && (summaryLoading || waveSummary) && (
           <div className="pl-9">
             {summaryLoading ? (
               <p className="font-mono text-xs text-muted-foreground/40 animate-pulse">ANALYZING CONDITIONS...</p>
             ) : waveSummary ? (
               <p className="font-mono text-xs text-muted-foreground/70 leading-relaxed">{waveSummary}</p>
-            ) : (spot.buoy || spot.forecast) ? (
-              <p className="font-mono text-xs text-muted-foreground/30">AWAITING ANALYSIS...</p>
             ) : null}
           </div>
         )}
