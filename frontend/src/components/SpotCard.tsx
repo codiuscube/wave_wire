@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Select } from "./ui/Select";
 import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
 import { Crosshair } from "lucide-react";
-import { fetchForecastDataForTime, getTidePredictionsForDay, formatNextTideEvent, type ForecastTime } from "../services/api";
+import { fetchForecastDataForTime, getTidePredictionsForDay, type ForecastTime } from "../services/api";
 import { useTideData } from "../hooks/useTideData";
 import { TideChart } from "./TideChart";
 
@@ -137,10 +137,20 @@ export function SpotCard({ spot }: SpotCardProps) {
   // Get tide direction arrow
   const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
     switch (direction) {
-      case 'rising': return '↑';
-      case 'falling': return '↓';
+      case 'rising': return '→';
+      case 'falling': return '→';
       default: return '→';
     }
+  };
+
+  // Format tide time for display
+  const formatTideTime = (date: Date): string => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    return `${displayHour}:${displayMinutes} ${ampm}`;
   };
 
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
@@ -224,13 +234,18 @@ export function SpotCard({ spot }: SpotCardProps) {
                 <span className="font-mono text-sm text-muted-foreground">TDE</span>
                 {tideLoading ? (
                   <span className="font-mono text-sm text-muted-foreground/50 animate-pulse">...</span>
-                ) : tideData ? (
+                ) : tideData && tideData.nextEvent ? (
                   <span className="font-mono text-base">
                     {tideData.currentHeight.toFixed(1)}ft{' '}
                     <span className="text-muted-foreground/50 font-normal text-sm">
                       {getTideArrow(tideData.currentDirection)}{' '}
-                      {tideData.nextEvent && formatNextTideEvent(tideData.nextEvent)}
+                      {tideData.nextEvent.type === 'H' ? 'High' : 'Low'}{' '}
+                      {tideData.nextEvent.height.toFixed(1)}ft @ {formatTideTime(tideData.nextEvent.time)}
                     </span>
+                  </span>
+                ) : tideData ? (
+                  <span className="font-mono text-base">
+                    {tideData.currentHeight.toFixed(1)}ft
                   </span>
                 ) : (
                   <span className="font-mono text-sm text-muted-foreground/50">N/A</span>
