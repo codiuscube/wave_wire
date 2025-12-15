@@ -7,13 +7,11 @@ import {
 } from "../components/ui";
 import { IconPickerModal, AVAILABLE_ICONS } from "../components/ui/IconPickerModal";
 import type { SpotOption } from "../components/ui";
-
-const buoyOptions = [
-  { value: "42035", label: "Galveston (22nm SE)" },
-  { value: "42020", label: "Corpus Christi (50nm SE)" },
-  { value: "42019", label: "Freeport (60nm S)" },
-  { value: "42001", label: "Mid Gulf (180nm S)" },
-];
+import {
+  getRecommendedBuoysWithScoring,
+  formatDistance,
+  type BuoyRecommendation,
+} from "../data/noaaBuoys";
 
 const defaultSpot: any = { // Changed type to 'any' or 'Spot' if Spot is defined elsewhere
   id: "surfside",
@@ -76,14 +74,29 @@ export function SpotPage() {
     setMySpots(mySpots.filter((s) => s.id !== spotId));
   };
 
-  const assignBuoy = (spotId: string, buoyId: string) => {
-    const buoy = buoyOptions.find((b) => b.value === buoyId);
+  const assignBuoy = (spotId: string, buoy: BuoyRecommendation) => {
     setMySpots(
       mySpots.map((s) =>
-        s.id === spotId ? { ...s, buoyId, buoyName: buoy?.label || buoyId } : s
+        s.id === spotId ? { ...s, buoyId: buoy.id, buoyName: buoy.name } : s
       )
     );
     setExpandedSpotId(null);
+  };
+
+  // Get recommended buoys for a specific spot using swell-aware scoring
+  const getSpotBuoys = (spot: SpotOption): BuoyRecommendation[] => {
+    if (spot.lat === undefined || spot.lon === undefined) {
+      return [];
+    }
+    // Pass region and country for exposure-based scoring
+    return getRecommendedBuoysWithScoring(
+      spot.lat,
+      spot.lon,
+      spot.region || '',
+      (spot as any).country || '',
+      500,
+      10
+    );
   };
 
 
@@ -217,22 +230,47 @@ export function SpotPage() {
 
                     {/* Buoy Selector Dropdown */}
                     {expandedSpotId === spot.id && (
-                      <div className="mt-4 p-1 border border-border/50 bg-background/50 backdrop-blur-sm">
-                        {buoyOptions.map((buoy) => (
+                      <div className="mt-4 p-1 border border-border/50 bg-background/50 backdrop-blur-sm max-h-80 overflow-y-auto">
+                        <div className="px-4 py-2 border-b border-border/30">
+                          <span className="font-mono text-xs text-muted-foreground/60 uppercase tracking-wider">
+                            Nearest Buoys to {spot.name}
+                          </span>
+                        </div>
+                        {getSpotBuoys(spot).map((buoy, index) => (
                           <button
-                            key={buoy.value}
-                            onClick={() => assignBuoy(spot.id, buoy.value)}
-                            className={`w-full text-left px-4 py-3 text-sm transition-colors border-l-2 ${spot.buoyId === buoy.value
+                            key={buoy.id}
+                            onClick={() => assignBuoy(spot.id, buoy)}
+                            className={`w-full text-left px-4 py-3 text-sm transition-colors border-l-2 ${spot.buoyId === buoy.id
                               ? "bg-primary/10 text-primary border-primary"
                               : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground border-transparent hover:border-primary/50"
                               }`}
                           >
-                            <span className="font-mono font-bold mr-3">{buoy.value}</span>
-                            <span className="font-mono text-xs uppercase opacity-80">
-                              {buoy.label}
-                            </span>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-xs text-muted-foreground/50 w-4">
+                                  {index + 1}.
+                                </span>
+                                <div>
+                                  <span className="font-mono font-bold mr-2">{buoy.id}</span>
+                                  <span className="font-mono text-xs uppercase opacity-80">
+                                    {buoy.name}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="font-mono text-xs text-muted-foreground/60 shrink-0 ml-2">
+                                {formatDistance(buoy.distance)}
+                              </span>
+                            </div>
+                            <div className="font-mono text-xs text-muted-foreground/40 mt-1 ml-7">
+                              {buoy.region}
+                            </div>
                           </button>
                         ))}
+                        {getSpotBuoys(spot).length === 0 && (
+                          <div className="px-4 py-6 text-center text-muted-foreground/50 font-mono text-xs">
+                            No buoys found within range
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

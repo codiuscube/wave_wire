@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -7,67 +7,18 @@ import {
   Search,
   Plus,
   Check,
-  Star,
-  Palmtree,
-  Waves,
-  Sun,
-  Cloud,
+  CheckCircle,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import type { Spot } from "../SpotCard";
-
-const popularSpots: Spot[] = [
-  {
-    id: "1",
-    name: "Surfside Beach",
-    region: "Texas Gulf Coast",
-    lat: 29.0469,
-    lon: -95.2882,
-  },
-  {
-    id: "2",
-    name: "Galveston (61st St)",
-    region: "Texas Gulf Coast",
-    lat: 29.2874,
-    lon: -94.8031,
-  },
-  {
-    id: "3",
-    name: "South Padre Island",
-    region: "Texas Gulf Coast",
-    lat: 26.1118,
-    lon: -97.1681,
-  },
-  {
-    id: "4",
-    name: "Malibu (Surfrider)",
-    region: "Southern California",
-    lat: 34.0381,
-    lon: -118.682,
-  },
-  {
-    id: "5",
-    name: "Ocean Beach (SF)",
-    region: "Northern California",
-    lat: 37.7594,
-    lon: -122.5107,
-  },
-  {
-    id: "6",
-    name: "Pipeline",
-    region: "Oahu, Hawaii",
-    lat: 21.664,
-    lon: -158.053,
-  },
-  {
-    id: "7",
-    name: "Cocoa Beach",
-    region: "Florida",
-    lat: 28.32,
-    lon: -80.6076,
-  },
-];
+import {
+  getSurfSpots,
+  COUNTRY_GROUP_LABELS,
+  type CountryGroup,
+  type SurfSpot,
+} from "../../data/surfSpots";
 
 interface AddSpotModalProps {
   isOpen: boolean;
@@ -78,6 +29,9 @@ interface AddSpotModalProps {
 
 export type SpotOption = Spot;
 
+// Minimum characters before showing search results
+const MIN_SEARCH_LENGTH = 2;
+
 export function AddSpotModal({
   isOpen,
   onClose,
@@ -86,46 +40,51 @@ export function AddSpotModal({
 }: AddSpotModalProps) {
   const [activeTab, setActiveTab] = useState<"popular" | "custom">("popular");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState<CountryGroup>("USA");
+  const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
   const [customSpot, setCustomSpot] = useState({
     name: "",
     lat: "",
     lon: "",
   });
 
-  const filteredSpots = popularSpots.filter(
-    (spot) =>
-      spot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (spot.region?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-  );
+  // Get spots from centralized data
+  const allSpots = useMemo(() => getSurfSpots(), []);
+
+  // Filter by region first, then by search query
+  const filteredSpots = useMemo(() => {
+    // Filter by selected region
+    const regionSpots = allSpots.filter(
+      (spot) => spot.countryGroup === selectedRegion
+    );
+
+    // Only show results if search query meets minimum length
+    if (searchQuery.length < MIN_SEARCH_LENGTH) {
+      return [];
+    }
+
+    const query = searchQuery.toLowerCase();
+    return regionSpots.filter(
+      (spot) =>
+        spot.name.toLowerCase().includes(query) ||
+        spot.region.toLowerCase().includes(query)
+    );
+  }, [allSpots, selectedRegion, searchQuery]);
+
+  // Convert SurfSpot to Spot format for compatibility
+  const convertToSpot = (surfSpot: SurfSpot): Spot => ({
+    id: surfSpot.id,
+    name: surfSpot.name,
+    region: surfSpot.region,
+    lat: surfSpot.lat,
+    lon: surfSpot.lon,
+  });
 
   const isSpotSaved = (spotId: string) =>
     savedSpots.some((s) => s.id === spotId);
 
-  const getSpotIcon = (spot: Spot) => {
-    const region = spot.region?.toLowerCase() || "";
-    const name = spot.name.toLowerCase();
-
-    if (region.includes("texas")) return <Star className="w-4 h-4 text-foreground" />;
-    if (region.includes("hawaii")) return <Waves className="w-4 h-4 text-foreground" />;
-    if (region.includes("florida")) return <Sun className="w-4 h-4 text-foreground" />;
-
-    if (region.includes("california")) {
-      if (
-        name.includes("sf") ||
-        name.includes("francisco") ||
-        name.includes("ocean beach") ||
-        region.includes("northern")
-      ) {
-        return <Cloud className="w-4 h-4 text-foreground" />;
-      }
-      return <Palmtree className="w-4 h-4 text-foreground" />;
-    }
-
-    return <MapPin className="w-4 h-4 text-foreground" />;
-  };
-
-  const handleAddSpot = (spot: Spot) => {
-    onAddSpot(spot);
+  const handleAddSpot = (surfSpot: SurfSpot) => {
+    onAddSpot(convertToSpot(surfSpot));
   };
 
   const handleAddCustomSpot = () => {
@@ -145,8 +104,11 @@ export function AddSpotModal({
   const resetAndClose = () => {
     setSearchQuery("");
     setActiveTab("popular");
+    setRegionDropdownOpen(false);
     onClose();
   };
+
+  const currentRegionLabel = COUNTRY_GROUP_LABELS[selectedRegion];
 
   if (!isOpen) return null;
 
@@ -209,72 +171,143 @@ export function AddSpotModal({
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === "popular" ? (
             <>
-              {/* Search */}
-              <div className="relative mb-6">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="SEARCH DATABASE..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 font-mono text-sm"
-                />
-              </div>
+              {/* Region Filter + Search */}
+              <div className="flex gap-3 mb-6">
+                {/* Region Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setRegionDropdownOpen(!regionDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-2 bg-secondary/20 border border-border/50 rounded-sm hover:bg-secondary/30 transition-colors font-mono text-sm"
+                  >
+                    <span>{currentRegionLabel.flag}</span>
+                    <span className="uppercase tracking-wider">{currentRegionLabel.label}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${regionDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-              {/* 
-                TODO: BACKEND: The "Popular Spots" list should be populated based on a geospatial lookup 
-                relative to the user's assigned "Home Base" location coordinates.
-                If the user has not completed onboarding/set a home location, this list might be empty or default to a global list.
-              */}
-
-              {/* Spots List */}
-              <div className="space-y-3">
-                {filteredSpots.map((spot) => {
-                  const saved = isSpotSaved(spot.id);
-                  return (
-                    <div
-                      key={spot.id}
-                      className={`flex items-center justify-between p-4 rounded-sm border transition-all ${saved
-                        ? "border-primary/50 bg-primary/5"
-                        : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
-                        }`}
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className={`h-10 w-10 rounded-sm flex items-center justify-center shrink-0 ${saved ? "bg-primary/20" : "bg-card border border-border/50"
-                          }`}>
-                          {getSpotIcon(spot)}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
-                            {spot.name}
-                          </h4>
-                          <p className="font-mono text-xs text-muted-foreground/60 uppercase">
-                            {spot.region}
-                          </p>
-                        </div>
-                      </div>
-                      {saved ? (
-                        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/50">
-                          <Check className="w-4 h-4 text-primary" />
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAddSpot(spot)}
-                          className="shrink-0 font-mono text-xs uppercase"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add
-                        </Button>
+                  {regionDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-56 bg-card border border-border/50 rounded-sm shadow-lg z-20">
+                      {(Object.entries(COUNTRY_GROUP_LABELS) as [CountryGroup, typeof currentRegionLabel][]).map(
+                        ([key, { label, flag, count }]) => (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setSelectedRegion(key);
+                              setRegionDropdownOpen(false);
+                              setSearchQuery("");
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors font-mono text-sm ${
+                              selectedRegion === key ? 'bg-primary/10 text-primary' : ''
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span>{flag}</span>
+                              <span className="uppercase tracking-wider">{label}</span>
+                            </span>
+                            <span className="text-muted-foreground/60 text-xs">
+                              {count} spots
+                            </span>
+                          </button>
+                        )
                       )}
                     </div>
-                  );
-                })}
-                {filteredSpots.length === 0 && (
+                  )}
+                </div>
+
+                {/* Search Input */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder={`SEARCH ${currentRegionLabel.count} SPOTS...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 font-mono text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Search Results or Prompt */}
+              <div className="space-y-3">
+                {searchQuery.length < MIN_SEARCH_LENGTH ? (
+                  // Show search prompt before user types
+                  <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
+                    <Search className="w-8 h-8 mx-auto mb-4 text-muted-foreground/30" />
+                    <p className="font-mono text-sm text-muted-foreground/70">
+                      Start typing to search {currentRegionLabel.count} spots...
+                    </p>
+                    <p className="font-mono text-xs mt-3 text-muted-foreground/50">
+                      <span className="text-primary">TIP:</span> Try "Malibu", "Pipeline", or a state name
+                    </p>
+                  </div>
+                ) : filteredSpots.length > 0 ? (
+                  // Show search results
+                  <>
+                    <p className="font-mono text-xs text-muted-foreground/60 uppercase mb-4">
+                      Showing {filteredSpots.length} result{filteredSpots.length !== 1 ? 's' : ''} for "{searchQuery}"
+                    </p>
+                    {filteredSpots.slice(0, 50).map((spot) => {
+                      const saved = isSpotSaved(spot.id);
+                      return (
+                        <div
+                          key={spot.id}
+                          className={`flex items-center justify-between p-4 rounded-sm border transition-all ${
+                            saved
+                              ? "border-primary/50 bg-primary/5"
+                              : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div
+                              className={`h-10 w-10 rounded-sm flex items-center justify-center shrink-0 ${
+                                saved ? "bg-primary/20" : "bg-card border border-border/50"
+                              }`}
+                            >
+                              {spot.verified ? (
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                              ) : (
+                                <MapPin className="w-4 h-4 text-foreground" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
+                                  {spot.name}
+                                </h4>
+                              </div>
+                              <p className="font-mono text-xs text-muted-foreground/60 uppercase">
+                                {spot.region}
+                              </p>
+                            </div>
+                          </div>
+                          {saved ? (
+                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/50">
+                              <Check className="w-4 h-4 text-primary" />
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAddSpot(spot)}
+                              className="shrink-0 font-mono text-xs uppercase"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {filteredSpots.length > 50 && (
+                      <p className="font-mono text-xs text-muted-foreground/50 text-center py-2">
+                        Showing first 50 results. Refine your search for more specific results.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  // No results found
                   <div className="text-center py-12 text-muted-foreground/50 border border-dashed border-border/50 rounded-sm">
                     <p className="font-mono text-sm uppercase">No signals found</p>
                     <p className="font-mono text-xs mt-2 opacity-60">
-                      Try different coordinates
+                      Try a different search term or region
                     </p>
                   </div>
                 )}
