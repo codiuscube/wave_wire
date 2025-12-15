@@ -71,18 +71,18 @@ const SYSTEM_PROMPT = `You are a knowledgeable local surfer who knows the breaks
 
 ## Response Format
 
-Respond in JSON format with two fields:
-1. "summary": Your punchy 10-20 word assessment. Use surfer speak but be clear. NO emoji.
-2. "localKnowledge": Include BUOY sweet spot, TIDE preference, and WIND direction. Format: "Buoy: X-Xft @ X-Xs from DIR. Tide: X-Xft (low/mid/high). Wind: DIR offshore."
+IMPORTANT: Output ONLY valid JSON. No markdown, no code fences, no extra text. Just the raw JSON object.
 
-If you don't have reliable local knowledge about a specific spot, respond with exactly: NO_SUMMARY
+Two fields:
+- "summary": 10-20 words max. Punchy assessment. Surfer speak. NO emoji.
+- "localKnowledge": Format exactly as "Buoy: X-Xft @ X-Xs from DIR. Tide: X-Xft. Wind: DIR offshore."
 
-Example responses (as JSON):
-{"summary": "Overhead and offshore. Hanalei is firing. Paddle out now.", "localKnowledge": "Buoy: 6-12ft @ 14-20s from N-NW. Tide: mid (1-2ft). Wind: S/SW offshore."}
-{"summary": "Small but clean 2-3ft. Fun longboard session.", "localKnowledge": "Buoy: 2-4ft @ 8-14s from SW. Tide: low-mid (1-3ft). Wind: E offshore."}
-{"summary": "Junky onshore wind chop. Wait for the glass-off.", "localKnowledge": "Buoy: 3-5ft @ 8-14s. Tide: mid works. Wind: NE offshore - onshore kills it."}
-{"summary": "Swell too small and wrong direction for this spot.", "localKnowledge": "Buoy: 4-8ft @ 12-18s from SW-NW. Tide: med-high (3-5ft). Wind: NE/E offshore."}
-{"summary": "Tide's too low - closeout city. Wait for incoming.", "localKnowledge": "Buoy: 3-6ft @ 10-16s from SW. Tide: mid (2-4ft) ideal. Wind: E/NE offshore."}`;
+If you don't know the spot, respond with exactly: NO_SUMMARY
+
+Examples (output exactly like this, no extra text):
+{"summary":"Overhead and offshore. Hanalei firing. Go now.","localKnowledge":"Buoy: 6-12ft @ 14-20s from N-NW. Tide: 1-2ft. Wind: S/SW offshore."}
+{"summary":"Small but clean. Fun longboard session.","localKnowledge":"Buoy: 2-4ft @ 8-14s from SW. Tide: 1-3ft. Wind: E offshore."}
+{"summary":"Period too short for this reef. Wait for longer lines.","localKnowledge":"Buoy: 4-8ft @ 14-18s from SW. Tide: 2-4ft. Wind: NE offshore."}`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -124,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 150,
+      max_tokens: 200,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -141,13 +141,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ summary: null, localKnowledge: null });
     }
 
-    // Parse JSON response - strip markdown code fences if present
+    // Parse JSON response - extract JSON object even if there's extra text
     try {
       let jsonStr = responseText;
+
       // Remove markdown code fences
-      if (jsonStr.includes('```')) {
-        jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+
+      // Extract just the JSON object (find first { to last })
+      const firstBrace = jsonStr.indexOf('{');
+      const lastBrace = jsonStr.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
       }
+
       const parsed = JSON.parse(jsonStr);
       res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
       return res.status(200).json({
