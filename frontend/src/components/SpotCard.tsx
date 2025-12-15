@@ -225,67 +225,67 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     return `${displayHour}:${displayMinutes} ${ampm}`;
   };
 
-  // Fetch Claude wave summary when data is ready
-  useEffect(() => {
-    // Only fetch when we have data, not loading, not already fetched, and not failed
-    if ((!spot.buoy && !spot.forecast) || summaryLoading || summaryFailed) return;
+  // Fetch Claude wave summary when data is ready - DISABLED
+  // useEffect(() => {
+  //   // Only fetch when we have data, not loading, not already fetched, and not failed
+  //   if ((!spot.buoy && !spot.forecast) || summaryLoading || summaryFailed) return;
 
-    // Skip if we already have a summary that's less than 1 hour old
-    const ONE_HOUR_MS = 60 * 60 * 1000;
-    if (waveSummary && summaryFetchedAt && (Date.now() - summaryFetchedAt) < ONE_HOUR_MS) {
-      return;
-    }
+  //   // Skip if we already have a summary that's less than 1 hour old
+  //   const ONE_HOUR_MS = 60 * 60 * 1000;
+  //   if (waveSummary && summaryFetchedAt && (Date.now() - summaryFetchedAt) < ONE_HOUR_MS) {
+  //     return;
+  //   }
 
-    const fetchSummary = async () => {
-      setSummaryLoading(true);
-      try {
-        const response = await fetch('/api/wave-summary', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            spotName: spot.name,
-            region: spot.region,
-            buoy: spot.buoy,
-            forecast: spot.forecast,
-            tide: tideData ? {
-              currentHeight: tideData.currentHeight,
-              currentDirection: tideData.currentDirection,
-              nextEventType: tideData.nextEvent?.type === 'H' ? 'high' : 'low',
-              nextEventHeight: tideData.nextEvent?.height,
-              nextEventTime: tideData.nextEvent ? formatTideTime(tideData.nextEvent.time) : undefined,
-            } : undefined,
-          }),
-        });
+  //   const fetchSummary = async () => {
+  //     setSummaryLoading(true);
+  //     try {
+  //       const response = await fetch('/api/wave-summary', {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify({
+  //           spotName: spot.name,
+  //           region: spot.region,
+  //           buoy: spot.buoy,
+  //           forecast: spot.forecast,
+  //           tide: tideData ? {
+  //             currentHeight: tideData.currentHeight,
+  //             currentDirection: tideData.currentDirection,
+  //             nextEventType: tideData.nextEvent?.type === 'H' ? 'high' : 'low',
+  //             nextEventHeight: tideData.nextEvent?.height,
+  //             nextEventTime: tideData.nextEvent ? formatTideTime(tideData.nextEvent.time) : undefined,
+  //           } : undefined,
+  //         }),
+  //       });
 
-        if (response.ok) {
-          const data = await response.json();
-          const now = Date.now();
-          setWaveSummary(data.summary);
-          setLocalKnowledge(data.localKnowledge);
-          setSummaryFetchedAt(now);
-          // Persist to localStorage
-          try {
-            localStorage.setItem(summaryKey, JSON.stringify({
-              summary: data.summary,
-              localKnowledge: data.localKnowledge,
-              fetchedAt: now
-            }));
-          } catch {}
-        } else {
-          // Mark as failed to prevent retries (e.g., 404 in local dev)
-          console.warn(`[${spot.name}] Wave summary API returned ${response.status}`);
-          setSummaryFailed(true);
-        }
-      } catch (err) {
-        console.error('Failed to fetch wave summary:', err);
-        setSummaryFailed(true);
-      } finally {
-        setSummaryLoading(false);
-      }
-    };
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         const now = Date.now();
+  //         setWaveSummary(data.summary);
+  //         setLocalKnowledge(data.localKnowledge);
+  //         setSummaryFetchedAt(now);
+  //         // Persist to localStorage
+  //         try {
+  //           localStorage.setItem(summaryKey, JSON.stringify({
+  //             summary: data.summary,
+  //             localKnowledge: data.localKnowledge,
+  //             fetchedAt: now
+  //           }));
+  //         } catch {}
+  //       } else {
+  //         // Mark as failed to prevent retries (e.g., 404 in local dev)
+  //         console.warn(`[${spot.name}] Wave summary API returned ${response.status}`);
+  //         setSummaryFailed(true);
+  //       }
+  //     } catch (err) {
+  //       console.error('Failed to fetch wave summary:', err);
+  //       setSummaryFailed(true);
+  //     } finally {
+  //       setSummaryLoading(false);
+  //     }
+  //   };
 
-    fetchSummary();
-  }, [spot.buoy, spot.forecast, spot.name, spot.region, tideData, summaryLoading, waveSummary, summaryFailed, summaryFetchedAt, summaryKey]);
+  //   fetchSummary();
+  // }, [spot.buoy, spot.forecast, spot.name, spot.region, tideData, summaryLoading, waveSummary, summaryFailed, summaryFetchedAt, summaryKey]);
 
   // Get tide direction arrow
   const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
@@ -304,15 +304,15 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
       {/* Header Row */}
       <div className="p-4 border-b border-border/30">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3">
           <div className="h-6 w-6 flex items-center justify-center">
             <Icon className="w-5 h-5 text-primary/80 group-hover:text-primary transition-colors" />
           </div>
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
-        {/* Claude Wave Summary - only show if loading or has valid summary */}
+        {/* Claude Wave Summary - DISABLED
         {!summaryFailed && (summaryLoading || waveSummary) && (
-          <div className="pl-9">
+          <div className="pl-9 mt-2">
             {summaryLoading ? (
               <p className="font-mono text-xs text-muted-foreground/40 animate-pulse">ANALYZING CONDITIONS...</p>
             ) : waveSummary ? (
@@ -327,6 +327,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
             ) : null}
           </div>
         )}
+        */}
       </div>
 
       {/* Data Grid */}
