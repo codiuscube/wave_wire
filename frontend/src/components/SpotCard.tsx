@@ -107,6 +107,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   const [waveSummary, setWaveSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryFailed, setSummaryFailed] = useState(false);
+  const [summaryFetchedAt, setSummaryFetchedAt] = useState<number | null>(null);
 
   // Update active forecast when prop changes or time selector changes
   useEffect(() => {
@@ -191,10 +192,13 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   // Fetch Claude wave summary when data is ready
   useEffect(() => {
     // Only fetch when we have data, not loading, not already fetched, and not failed
-    if ((!spot.buoy && !spot.forecast) || summaryLoading || waveSummary || summaryFailed) return;
+    if ((!spot.buoy && !spot.forecast) || summaryLoading || summaryFailed) return;
 
-    // Log data for debugging
-    console.log(`[${spot.name}] Wave data loaded:`, { buoy: spot.buoy, forecast: spot.forecast });
+    // Skip if we already have a summary that's less than 1 hour old
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    if (waveSummary && summaryFetchedAt && (Date.now() - summaryFetchedAt) < ONE_HOUR_MS) {
+      return;
+    }
 
     const fetchSummary = async () => {
       setSummaryLoading(true);
@@ -220,6 +224,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
         if (response.ok) {
           const data = await response.json();
           setWaveSummary(data.summary);
+          setSummaryFetchedAt(Date.now());
         } else {
           // Mark as failed to prevent retries (e.g., 404 in local dev)
           console.warn(`[${spot.name}] Wave summary API returned ${response.status}`);
@@ -234,7 +239,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     };
 
     fetchSummary();
-  }, [spot.buoy, spot.forecast, spot.name, tideData, summaryLoading, waveSummary, summaryFailed]);
+  }, [spot.buoy, spot.forecast, spot.name, spot.region, tideData, summaryLoading, waveSummary, summaryFailed, summaryFetchedAt]);
 
   // Get tide direction arrow
   const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
