@@ -142,8 +142,6 @@ export function DashboardOverview() {
     });
   }, [buoyDataMap, forecastDataMap]);
 
-  const isLoading = buoyLoading || forecastLoading;
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
@@ -207,15 +205,9 @@ export function DashboardOverview() {
           </div>
 
           <div className="p-6">
-            {isLoading && (
-              <div className="flex items-center gap-2 mb-4 text-muted-foreground font-mono text-sm">
-                <div className="w-2 h-2 bg-primary animate-pulse" />
-                <span>FETCHING LIVE DATA...</span>
-              </div>
-            )}
             <div className="space-y-4">
               {userSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} />
+                <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
               ))}
             </div>
           </div>

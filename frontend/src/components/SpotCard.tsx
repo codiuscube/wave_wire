@@ -94,9 +94,10 @@ export interface Spot {
 interface SpotCardProps {
   spot: Spot;
   buoyLoading?: boolean;
+  forecastLoading?: boolean;
 }
 
-export function SpotCard({ spot, buoyLoading = false }: SpotCardProps) {
+export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }: SpotCardProps) {
   const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
   const [forecastTime, setForecastTime] = useState<ForecastTime>("now");
   const [activeForecast, setActiveForecast] = useState<ForecastData | null | undefined>(spot.forecast);
@@ -230,7 +231,7 @@ export function SpotCard({ spot, buoyLoading = false }: SpotCardProps) {
             />
           </div>
 
-          {isLoadingForecast ? (
+          {(isLoadingForecast || (forecastLoading && !activeForecast)) ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground/20">
                 <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20 animate-pulse" />
