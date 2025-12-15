@@ -306,9 +306,9 @@ export function SpotCard({ spot }: SpotCardProps) {
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
-                <span className="font-mono text-sm text-muted-foreground">DIR</span>
+                <span className="font-mono text-sm text-muted-foreground">WND</span>
                 <span className="font-mono text-base font-normal">
-                  {spot.buoy.windSpeed || '-'}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || spot.buoy.meanWaveDirection} {spot.buoy.windDegrees || spot.buoy.meanWaveDegrees}°</span>
+                  {spot.buoy.windSpeed ? `${spot.buoy.windSpeed}kt` : 'N/A'} <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || spot.buoy.meanWaveDirection} {spot.buoy.windDegrees ?? spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
