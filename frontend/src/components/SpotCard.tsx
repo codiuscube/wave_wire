@@ -106,6 +106,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [waveSummary, setWaveSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryFailed, setSummaryFailed] = useState(false);
 
   // Update active forecast when prop changes or time selector changes
   useEffect(() => {
@@ -189,8 +190,8 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
 
   // Fetch Claude wave summary when data is ready
   useEffect(() => {
-    // Only fetch when we have some data and not already loading
-    if ((!spot.buoy && !spot.forecast) || summaryLoading || waveSummary) return;
+    // Only fetch when we have data, not loading, not already fetched, and not failed
+    if ((!spot.buoy && !spot.forecast) || summaryLoading || waveSummary || summaryFailed) return;
 
     // Log data for debugging
     console.log(`[${spot.name}] Wave data loaded:`, { buoy: spot.buoy, forecast: spot.forecast });
@@ -218,16 +219,21 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
         if (response.ok) {
           const data = await response.json();
           setWaveSummary(data.summary);
+        } else {
+          // Mark as failed to prevent retries (e.g., 404 in local dev)
+          console.warn(`[${spot.name}] Wave summary API returned ${response.status}`);
+          setSummaryFailed(true);
         }
       } catch (err) {
         console.error('Failed to fetch wave summary:', err);
+        setSummaryFailed(true);
       } finally {
         setSummaryLoading(false);
       }
     };
 
     fetchSummary();
-  }, [spot.buoy, spot.forecast, spot.name, tideData, summaryLoading, waveSummary]);
+  }, [spot.buoy, spot.forecast, spot.name, tideData, summaryLoading, waveSummary, summaryFailed]);
 
   // Get tide direction arrow
   const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
@@ -253,15 +259,17 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
         {/* Claude Wave Summary */}
-        <div className="pl-9">
-          {summaryLoading ? (
-            <p className="font-mono text-xs text-muted-foreground/40 animate-pulse">ANALYZING CONDITIONS...</p>
-          ) : waveSummary ? (
-            <p className="font-mono text-xs text-muted-foreground/70 leading-relaxed">{waveSummary}</p>
-          ) : (spot.buoy || spot.forecast) ? (
-            <p className="font-mono text-xs text-muted-foreground/30">AWAITING ANALYSIS...</p>
-          ) : null}
-        </div>
+        {!summaryFailed && (
+          <div className="pl-9">
+            {summaryLoading ? (
+              <p className="font-mono text-xs text-muted-foreground/40 animate-pulse">ANALYZING CONDITIONS...</p>
+            ) : waveSummary ? (
+              <p className="font-mono text-xs text-muted-foreground/70 leading-relaxed">{waveSummary}</p>
+            ) : (spot.buoy || spot.forecast) ? (
+              <p className="font-mono text-xs text-muted-foreground/30">AWAITING ANALYSIS...</p>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Data Grid */}

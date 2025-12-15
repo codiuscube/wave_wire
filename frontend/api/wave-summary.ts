@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251015',
       max_tokens: 100,
       messages: [
         {
