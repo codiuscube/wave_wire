@@ -9,6 +9,8 @@ const userSpots: Spot[] = [
   {
     id: 'surfside',
     name: 'Surfside Beach',
+    lat: 28.945,
+    lon: -95.290,
     buoyId: '42035',
     buoyName: 'Galveston (22nm SE)',
     buoy: {
@@ -48,6 +50,8 @@ const userSpots: Spot[] = [
   {
     id: 'galveston',
     name: 'Galveston (61st St)',
+    lat: 29.273,
+    lon: -94.811,
     buoyId: '42035',
     buoyName: 'Galveston (22nm SE)',
     buoy: {
@@ -87,6 +91,8 @@ const userSpots: Spot[] = [
   {
     id: 'bob-hall',
     name: 'Bob Hall Pier',
+    lat: 27.581,
+    lon: -97.221,
     // No buoy assigned for this one to test "No Signal"
     forecast: {
       primary: {

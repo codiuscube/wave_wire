@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Select } from "./ui/Select";
+import { MapPin } from "lucide-react";
 
 export interface BuoyData {
   waveHeight: number;
@@ -56,10 +57,28 @@ export function SpotCard({ spot }: SpotCardProps) {
     <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
       {/* Header Row */}
       <div className="p-4 flex items-start justify-between gap-4 border-b border-border/30">
+
         <div className="min-w-0 flex items-center gap-3">
           <div className="w-2 h-2 bg-primary/50 group-hover:bg-primary transition-colors" />
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
+
+        {spot.lat !== undefined && spot.lon !== undefined && (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lon}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-primary transition-colors group/link shrink-0"
+            title="View on Google Maps"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MapPin className="w-4 h-4" />
+            <span className="font-mono text-xs whitespace-nowrap tracking-tighter hover:underline decoration-primary/50 underline-offset-4">
+              {spot.lat.toFixed(3)} / {spot.lon.toFixed(3)}
+            </span>
+          </a>
+        )}
+
 
 
       </div>
