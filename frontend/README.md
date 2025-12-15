@@ -79,6 +79,168 @@ Customize the voice of your alerts based on condition tier. Set different person
 - Tailwind CSS v4
 - React Router v7
 - Lucide React icons
+- Supabase (Auth + Database)
+
+---
+
+## Data Sources
+
+### NOAA Buoy Data (Live Readings)
+
+Source: `https://www.ndbc.noaa.gov/`
+
+Real-time wave and weather data from NOAA's National Data Buoy Center. Updated hourly.
+
+| Field | Description | Unit |
+|-------|-------------|------|
+| waveHeight | Significant wave height | ft |
+| wavePeriod | Dominant wave period | seconds |
+| meanWaveDirection | Direction waves coming FROM | degrees + cardinal |
+| windSpeed | Wind speed (from same buoy) | mph |
+| windDirection | Wind direction | degrees + cardinal |
+| waterTemp | Sea surface temperature | °F |
+| timestamp | When NOAA recorded reading | ISO timestamp |
+
+**Gulf of Mexico Buoys:**
+- `42035` - Galveston (22nm SE)
+- `42020` - Corpus Christi (50nm SE)
+- `42019` - Freeport (60nm S)
+- `42001` - Mid Gulf (180nm S)
+
+### Open-Meteo Marine API (Forecast Data) - FREE TIER
+
+Source: `https://marine-api.open-meteo.com/v1/marine`
+
+Wave and ocean forecast data. No API key required.
+
+| Parameter | API Field | Unit |
+|-----------|-----------|------|
+| Primary swell height | `swell_wave_height` | m (convert to ft) |
+| Primary swell period | `swell_wave_period` | s |
+| Primary swell direction | `swell_wave_direction` | degrees |
+| Secondary swell height | `secondary_swell_wave_height` | m |
+| Secondary swell period | `secondary_swell_wave_period` | s |
+| Secondary swell direction | `secondary_swell_wave_direction` | degrees |
+| Wave height (combined) | `wave_height` | m |
+| Wave period | `wave_period` | s |
+| Wave direction | `wave_direction` | degrees |
+| Sea level (tide) | `sea_level` | m |
+| Sea surface temp | `sea_surface_temperature` | °C (convert to °F) |
+
+**Example API Call:**
+```
+https://marine-api.open-meteo.com/v1/marine?latitude=28.94&longitude=-95.29&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,sea_surface_temperature&forecast_days=3
+```
+
+### Open-Meteo Weather API (Wind/Air Temp) - FREE TIER
+
+Source: `https://api.open-meteo.com/v1/forecast`
+
+Weather forecast for wind and air temperature.
+
+| Parameter | API Field | Unit |
+|-----------|-----------|------|
+| Wind speed | `wind_speed_10m` | km/h (convert to mph) |
+| Wind direction | `wind_direction_10m` | degrees |
+| Wind gusts | `wind_gusts_10m` | km/h |
+| Air temperature | `temperature_2m` | °C (convert to °F) |
+
+### User Data (Supabase)
+
+#### `profiles` table (Account Info)
+| Field | Description | Required |
+|-------|-------------|----------|
+| id | UUID from auth.users | Yes |
+| email | User email | Yes |
+| phone | Phone number for SMS | Yes (for SMS) |
+| phone_verified | Whether phone is verified | Auto |
+| home_address | Home address for traffic estimates | Yes |
+| subscription_tier | 'free' or 'unlimited' | Default: free |
+
+#### `user_preferences` table (Display/Notification Settings)
+| Field | Description | Default |
+|-------|-------------|---------|
+| ai_personality | Message voice style | stoked_local |
+| include_emoji | Show emojis in messages | true |
+| include_buoy_data | Include raw buoy readings | false |
+| include_traffic | Include drive time | true |
+| use_metric | Use metric units (m, km/h, °C) | false (imperial) |
+
+#### `sent_alerts` table (Message History)
+| Field | Description |
+|-------|-------------|
+| message_content | Full text of sent message |
+| delivery_channel | 'sms' or 'email' |
+| delivery_status | 'queued', 'sent', 'failed' |
+| condition_matched | 'fair', 'good', 'epic' |
+| condition_data | JSONB snapshot of conditions when sent |
+
+#### Spot-level fields (computed at runtime)
+| Field | Description |
+|-------|-------------|
+| status | Determined by trigger matching (epic/good/fair/poor) |
+| triggersMatched | Count of matched user triggers |
+| nextCheck | Next scheduled alert check time |
+
+---
+
+## TypeScript Interfaces
+
+Frontend data structures for spot/buoy/forecast data:
+
+```typescript
+// Live buoy readings (from NOAA)
+interface BuoyData {
+  waveHeight: number;
+  wavePeriod: number;
+  waterTemp: number;
+  meanWaveDirection: string;      // Cardinal (SE, NW)
+  meanWaveDegrees: number;        // Degrees
+  timestamp: string;              // Relative ("15m ago") or ISO
+  windSpeed?: number;
+  windDirection?: string;
+  windDegrees?: number;
+}
+
+// Swell component (primary or secondary)
+interface SwellComponent {
+  height: number;
+  period: number;
+  direction: string;              // Cardinal
+  degrees: number;
+}
+
+// Forecast data (from Open-Meteo)
+interface ForecastData {
+  primary: SwellComponent;
+  secondary: SwellComponent;
+  windSpeed: number;
+  windDirection: string;
+  windDegrees: number;
+  tide: number;
+  tideDirection: string;          // 'rising' | 'falling' | 'slack'
+  airTemp: number;
+}
+
+// Complete spot with live + forecast data
+interface Spot {
+  id: string;
+  name: string;
+  region?: string;
+  lat?: number;
+  lon?: number;
+  buoyId?: string;
+  buoyName?: string;
+  buoy?: BuoyData;                // From NOAA buoy cache
+  forecast?: ForecastData;        // From Open-Meteo cache
+  status?: 'epic' | 'good' | 'fair' | 'poor' | 'unknown';
+  triggersMatched?: number;
+  nextCheck?: string;
+  icon?: string;
+}
+```
+
+---
 
 ## Project Structure
 

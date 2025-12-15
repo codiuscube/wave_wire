@@ -6,10 +6,14 @@ import { Button } from '../components/ui';
 import { AlertCard } from '../components/dashboard/AlertCard';
 
 // Mock data - would come from API/context in real app
+// Note: All coordinates are for Texas Gulf Coast spots
 const userSpots: Spot[] = [
   {
     id: 'surfside',
     name: 'Surfside Beach',
+    region: 'Texas Gulf Coast',
+    lat: 28.9447,
+    lon: -95.2908,
     buoyId: '42035',
     buoyName: 'Galveston (22nm SE)',
     buoy: {
@@ -51,6 +55,9 @@ const userSpots: Spot[] = [
   {
     id: 'galveston',
     name: 'Galveston (61st St)',
+    region: 'Texas Gulf Coast',
+    lat: 29.2850,
+    lon: -94.8125,
     buoyId: '42035',
     buoyName: 'Galveston (22nm SE)',
     buoy: {
@@ -92,7 +99,11 @@ const userSpots: Spot[] = [
   {
     id: 'bob-hall',
     name: 'Bob Hall Pier',
-    // No buoy assigned for this one to test "No Signal"
+    region: 'Texas Gulf Coast',
+    lat: 27.5806,
+    lon: -97.2167,
+    // No buoy assigned - uses 42020 (Corpus Christi) in real app
+    // Shown without buoy to test "No Signal" state
     forecast: {
       primary: {
         height: 2.1,
@@ -124,9 +135,9 @@ const recentAlerts = [
   {
     id: '1',
     spotName: 'Surfside Beach',
-    type: 'Epic',
+    type: 'Pop-Up Alert',
     message: 'Surfside is firing! 5ft sets, offshore wind. GO NOW!',
-    time: '2023-10-24T14:32:00Z',
+    time: '2025-12-14T14:32:00Z',
     condition: 'epic' as const,
   },
   {
@@ -134,15 +145,15 @@ const recentAlerts = [
     spotName: 'Galveston (61st St)',
     type: 'Morning Check',
     message: 'Good conditions expected. 4ft @ 11s. Traffic: 45min.',
-    time: '2023-10-23T06:15:00Z',
+    time: '2025-12-14T06:15:00Z',
     condition: 'good' as const,
   },
   {
     id: '3',
     spotName: 'Surfside Beach',
-    type: 'Night Forecast',
+    type: 'Night Before',
     message: 'Tomorrow looking fun. Swell building overnight.',
-    time: '2023-10-22T21:45:00Z',
+    time: '2025-12-13T20:45:00Z',
     condition: 'good' as const,
   },
 ];
