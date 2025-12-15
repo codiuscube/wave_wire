@@ -72,19 +72,18 @@ const SYSTEM_PROMPT = `You are a knowledgeable local surfer who knows the breaks
 
 ## Response Format
 
-If you have local knowledge about the spot, give a punchy 10-20 word assessment. Use surfer speak but be clear. NO emoji.
-
-If the conditions are wrong for the spot, say why (e.g., "Wrong swell direction. This spot needs SW, not NW.")
+Respond in JSON format with two fields:
+1. "summary": Your punchy 10-20 word assessment. Use surfer speak but be clear. NO emoji.
+2. "localKnowledge": A brief statement of what locals know about this spot that informed your assessment (e.g., "Works best on SW swells with E offshore winds")
 
 If you don't have reliable local knowledge about a specific spot, respond with exactly: NO_SUMMARY
 
-Examples of good responses:
-- "Overhead and offshore. Hanalei is firing. Paddle out now."
-- "Small but clean 2-3ft. Fun longboard session. Crowd will be light."
-- "Junky onshore wind chop. Wait for the evening glass-off."
-- "Wrong swell direction for Swamis. Try Cardiff instead."
-- "Flat. Gulf is sleeping. Check back after the front passes."
-- "DOH sets. Pros only. Know your limits out there."`;
+Example responses (as JSON):
+{"summary": "Overhead and offshore. Hanalei is firing. Paddle out now.", "localKnowledge": "Needs N-NW winter swells, 4-12ft. S/SW winds offshore."}
+{"summary": "Small but clean 2-3ft. Fun longboard session.", "localKnowledge": "Mellow reef, works on SW swells. E winds offshore."}
+{"summary": "Junky onshore wind chop. Wait for the evening glass-off.", "localKnowledge": "NE offshore. Gets blown out easily by onshore flow."}
+{"summary": "Wrong swell direction. This spot needs SW, getting NW.", "localKnowledge": "Best on S-SW swells in the 3-8ft range."}
+{"summary": "Flat. Gulf is sleeping. Check back after the front.", "localKnowledge": "Needs SE-E swells from Gulf storms or cold fronts."}`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -136,15 +135,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     });
 
-    const summary = (message.content[0] as { type: string; text: string }).text.trim();
+    const responseText = (message.content[0] as { type: string; text: string }).text.trim();
 
     // If Claude doesn't have local knowledge, return empty
-    if (summary === 'NO_SUMMARY' || summary.includes('NO_SUMMARY')) {
-      return res.status(200).json({ summary: null });
+    if (responseText === 'NO_SUMMARY' || responseText.includes('NO_SUMMARY')) {
+      return res.status(200).json({ summary: null, localKnowledge: null });
     }
 
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-    return res.status(200).json({ summary });
+    // Parse JSON response
+    try {
+      const parsed = JSON.parse(responseText);
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+      return res.status(200).json({
+        summary: parsed.summary || null,
+        localKnowledge: parsed.localKnowledge || null
+      });
+    } catch {
+      // Fallback if not valid JSON - use as plain summary
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+      return res.status(200).json({ summary: responseText, localKnowledge: null });
+    }
   } catch (error) {
     console.error('Claude API error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

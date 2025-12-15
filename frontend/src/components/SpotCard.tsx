@@ -119,6 +119,19 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     } catch {}
     return null;
   });
+  const [localKnowledge, setLocalKnowledge] = useState<string | null>(() => {
+    try {
+      const cached = localStorage.getItem(summaryKey);
+      if (cached) {
+        const { localKnowledge, fetchedAt } = JSON.parse(cached);
+        const ONE_HOUR_MS = 60 * 60 * 1000;
+        if (Date.now() - fetchedAt < ONE_HOUR_MS) {
+          return localKnowledge;
+        }
+      }
+    } catch {}
+    return null;
+  });
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryFailed, setSummaryFailed] = useState(false);
   const [summaryFetchedAt, setSummaryFetchedAt] = useState<number | null>(() => {
@@ -248,10 +261,15 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
           const data = await response.json();
           const now = Date.now();
           setWaveSummary(data.summary);
+          setLocalKnowledge(data.localKnowledge);
           setSummaryFetchedAt(now);
           // Persist to localStorage
           try {
-            localStorage.setItem(summaryKey, JSON.stringify({ summary: data.summary, fetchedAt: now }));
+            localStorage.setItem(summaryKey, JSON.stringify({
+              summary: data.summary,
+              localKnowledge: data.localKnowledge,
+              fetchedAt: now
+            }));
           } catch {}
         } else {
           // Mark as failed to prevent retries (e.g., 404 in local dev)
@@ -298,7 +316,14 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
             {summaryLoading ? (
               <p className="font-mono text-xs text-muted-foreground/40 animate-pulse">ANALYZING CONDITIONS...</p>
             ) : waveSummary ? (
-              <p className="font-mono text-xs text-muted-foreground/70 leading-relaxed">{waveSummary}</p>
+              <div className="space-y-1">
+                <p className="font-mono text-xs text-muted-foreground/70 leading-relaxed">{waveSummary}</p>
+                {localKnowledge && (
+                  <p className="font-mono text-[10px] text-muted-foreground/40 leading-relaxed">
+                    LOCALS SAY: {localKnowledge}
+                  </p>
+                )}
+              </div>
             ) : null}
           </div>
         )}
