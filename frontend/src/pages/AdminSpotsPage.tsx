@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import {
-  Shield,
   Search,
   CheckCircle,
   AlertCircle,
@@ -14,6 +13,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Button, Input, AddSpotModal } from "../components/ui";
+import { AdminHeader } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
 import {
   getSurfSpots,
@@ -164,14 +164,10 @@ export function AdminSpotsPage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-6 h-6 text-primary" />
-            <h1 className="font-mono text-2xl font-bold uppercase tracking-wider">
-              Admin: Spot Management
-            </h1>
-          </div>
+        <AdminHeader />
+
+        {/* Page Description */}
+        <div className="mb-6">
           <p className="font-mono text-sm text-muted-foreground">
             Verify, edit, and manage surf spot data.
           </p>

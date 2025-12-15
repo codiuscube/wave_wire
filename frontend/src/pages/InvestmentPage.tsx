@@ -1,9 +1,13 @@
 
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Navbar, Footer } from '../components/landing';
+import { AdminHeader } from '../components/admin';
 import { Check, CircleQuestionMark } from 'lucide-react';
 
 export function InvestmentPage() {
+    const location = useLocation();
+    const isAdminRoute = location.pathname.startsWith('/admin');
     const [textsPerUser, setTextsPerUser] = useState(4); // Default 4 texts/user/month
     const [donations, setDonations] = useState(5); // Default to $5
     const [p1Users, setP1Users] = useState(100); // Default 100
@@ -51,11 +55,13 @@ export function InvestmentPage() {
     };
 
     return (
-        <div className="min-h-screen bg-brand-abyss flex flex-col font-sans text-brand-foam selection:bg-brand-acid selection:text-brand-abyss relative">
-            <div className="grunge-overlay opacity-20 pointer-events-none"></div>
-            <Navbar />
+        <div className={`min-h-screen flex flex-col font-sans selection:bg-brand-acid selection:text-brand-abyss relative ${isAdminRoute ? 'bg-background text-foreground' : 'bg-brand-abyss text-brand-foam'}`}>
+            {!isAdminRoute && <div className="grunge-overlay opacity-20 pointer-events-none"></div>}
+            {!isAdminRoute && <Navbar />}
 
-            <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+            <main className={`flex-grow pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full ${isAdminRoute ? 'pt-6' : 'pt-24'}`}>
+                {isAdminRoute && <AdminHeader />}
+
                 {/* Header Section */}
                 <div className="mb-12 border-b-2 border-dashed border-white/10 pb-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
@@ -543,7 +549,7 @@ export function InvestmentPage() {
 
             </main>
 
-            <Footer />
+            {!isAdminRoute && <Footer />}
         </div>
     );
 }

@@ -104,6 +104,8 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [waveSummary, setWaveSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   // Update active forecast when prop changes or time selector changes
   useEffect(() => {
@@ -175,16 +177,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     };
   }, [tideData]);
 
-  // Get tide direction arrow
-  const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
-    switch (direction) {
-      case 'rising': return '↑';
-      case 'falling': return '↓';
-      default: return '~';
-    }
-  };
-
-  // Format tide time for display
+  // Format tide time for display (moved up for use in summary fetch)
   const formatTideTime = (date: Date): string => {
     const hours = date.getHours();
     const minutes = date.getMinutes();
@@ -194,6 +187,57 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     return `${displayHour}:${displayMinutes} ${ampm}`;
   };
 
+  // Fetch Claude wave summary when data is ready
+  useEffect(() => {
+    // Only fetch when we have some data and not already loading
+    if ((!spot.buoy && !spot.forecast) || summaryLoading || waveSummary) return;
+
+    // Log data for debugging
+    console.log(`[${spot.name}] Wave data loaded:`, { buoy: spot.buoy, forecast: spot.forecast });
+
+    const fetchSummary = async () => {
+      setSummaryLoading(true);
+      try {
+        const response = await fetch('/api/wave-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            spotName: spot.name,
+            buoy: spot.buoy,
+            forecast: spot.forecast,
+            tide: tideData ? {
+              currentHeight: tideData.currentHeight,
+              currentDirection: tideData.currentDirection,
+              nextEventType: tideData.nextEvent?.type === 'H' ? 'high' : 'low',
+              nextEventHeight: tideData.nextEvent?.height,
+              nextEventTime: tideData.nextEvent ? formatTideTime(tideData.nextEvent.time) : undefined,
+            } : undefined,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setWaveSummary(data.summary);
+        }
+      } catch (err) {
+        console.error('Failed to fetch wave summary:', err);
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, [spot.buoy, spot.forecast, spot.name, tideData, summaryLoading, waveSummary]);
+
+  // Get tide direction arrow
+  const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
+    switch (direction) {
+      case 'rising': return '↑';
+      case 'falling': return '↓';
+      default: return '~';
+    }
+  };
+
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     : Crosshair;
@@ -201,15 +245,23 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   return (
     <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
       {/* Header Row */}
-      <div className="p-4 flex items-start justify-between gap-4 border-b border-border/30">
-        <div className="min-w-0 flex items-center gap-3">
+      <div className="p-4 border-b border-border/30">
+        <div className="flex items-center gap-3 mb-2">
           <div className="h-6 w-6 flex items-center justify-center">
             <Icon className="w-5 h-5 text-primary/80 group-hover:text-primary transition-colors" />
           </div>
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
-
-
+        {/* Claude Wave Summary */}
+        <div className="pl-9">
+          {summaryLoading ? (
+            <p className="font-mono text-xs text-muted-foreground/40 animate-pulse">ANALYZING CONDITIONS...</p>
+          ) : waveSummary ? (
+            <p className="font-mono text-xs text-muted-foreground/70 leading-relaxed">{waveSummary}</p>
+          ) : (spot.buoy || spot.forecast) ? (
+            <p className="font-mono text-xs text-muted-foreground/30">AWAITING ANALYSIS...</p>
+          ) : null}
+        </div>
       </div>
 
       {/* Data Grid */}
