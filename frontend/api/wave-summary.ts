@@ -101,6 +101,7 @@ Give a one-line assessment:`
     return res.status(200).json({ summary });
   } catch (error) {
     console.error('Claude API error:', error);
-    return res.status(500).json({ error: 'Failed to generate summary' });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return res.status(500).json({ error: 'Failed to generate summary', details: errorMessage });
   }
 }
