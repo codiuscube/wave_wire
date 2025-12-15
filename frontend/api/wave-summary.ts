@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+// Claude Haiku 4.5 wave summary generator
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
