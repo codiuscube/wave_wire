@@ -59,6 +59,14 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/admin/investment"
+                  element={
+                    <ProtectedRoute>
+                      <InvestmentPage />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
             </SurfTechLayout>
           </LocationProvider>

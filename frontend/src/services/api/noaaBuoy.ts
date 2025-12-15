@@ -164,6 +164,7 @@ export interface BuoyFetchResult {
 // Simple in-memory cache
 const cache = new Map<string, { data: BuoyData; timestamp: number; rawTimestamp: Date }>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const STALE_DATA_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48 hours - data older than this is considered "no signal"
 
 // Fetch buoy data for a station
 export async function fetchBuoyData(stationId: string): Promise<BuoyFetchResult> {
@@ -216,6 +217,17 @@ export async function fetchBuoyData(stationId: string): Promise<BuoyFetchResult>
         error: 'Buoy data unavailable (all values missing)',
         isStale: !!cached,
         rawTimestamp: cached?.rawTimestamp ?? null,
+      };
+    }
+
+    // Check if data is too old (>48 hours) - treat as no signal
+    const dataAge = Date.now() - latestRow.timestamp.getTime();
+    if (dataAge > STALE_DATA_THRESHOLD_MS) {
+      return {
+        data: null,
+        error: 'Buoy offline - last reading over 48 hours ago',
+        isStale: true,
+        rawTimestamp: latestRow.timestamp,
       };
     }
 

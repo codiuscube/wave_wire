@@ -89,6 +89,19 @@ const baseSpots: BaseSpot[] = [
     nextCheck: '7:00 AM',
     icon: 'Anchor',
   },
+  {
+    id: 'hanalei',
+    name: 'Hanalei Bay',
+    region: 'Kauai, Hawaii',
+    lat: 22.2089,
+    lon: -159.5031,
+    buoyId: '51201',
+    buoyName: 'Waimea Bay',
+    status: 'unknown',
+    triggersMatched: 0,
+    nextCheck: '5:00 AM',
+    icon: 'Palmtree',
+  },
 ];
 
 const recentAlerts = [

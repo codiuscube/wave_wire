@@ -10,6 +10,7 @@ import {
   X,
   LogOut,
   Shield,
+  TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -134,6 +135,19 @@ export function Sidebar() {
                 >
                   <Shield className="w-4 h-4" />
                   Spot Management
+                </NavLink>
+                <NavLink
+                  to="/admin/investment"
+                  onClick={() => setIsMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
+                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+                    }`
+                  }
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Investment
                 </NavLink>
               </div>
             )}
