@@ -362,20 +362,28 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">SWL</span>
                 <span className="font-mono text-base">
-                  {spot.buoy.waveHeight}ft @ {spot.buoy.wavePeriod}s
+                  {spot.buoy.waveHeight}ft @ {spot.buoy.wavePeriod}s{" "}
                   <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.meanWaveDirection} {spot.buoy.meanWaveDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WND</span>
-                <span className="font-mono text-base font-normal">
-                  {spot.buoy.windGust ? `${spot.buoy.windGust}kt gust` : (spot.buoy.windSpeed ? `${spot.buoy.windSpeed}kt` : 'N/A')}{" "}
-                  <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection || 'N/A'} {spot.buoy.windDegrees ?? '-'}°</span>
-                </span>
+                {(spot.buoy.windGust || spot.buoy.windSpeed) ? (
+                  <span className="font-mono text-base font-normal">
+                    {spot.buoy.windGust ? `${spot.buoy.windGust}kt gust` : `${spot.buoy.windSpeed}kt`}{" "}
+                    <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.buoy.windDirection} {spot.buoy.windDegrees}°</span>
+                  </span>
+                ) : (
+                  <span className="font-mono text-sm text-muted-foreground/50">N/A</span>
+                )}
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">AIR</span>
-                <span className="font-mono text-base font-normal">{spot.buoy.airTemp ? `${spot.buoy.airTemp}°F` : 'N/A'}</span>
+                {spot.buoy.airTemp ? (
+                  <span className="font-mono text-base font-normal">{spot.buoy.airTemp}°F</span>
+                ) : (
+                  <span className="font-mono text-sm text-muted-foreground/50">N/A</span>
+                )}
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">H2O</span>
@@ -383,7 +391,11 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">PRS</span>
-                <span className="font-mono text-base font-normal">{spot.buoy.pressure ? `${spot.buoy.pressure} hPa` : 'N/A'}</span>
+                {spot.buoy.pressure ? (
+                  <span className="font-mono text-base font-normal">{spot.buoy.pressure} hPa</span>
+                ) : (
+                  <span className="font-mono text-sm text-muted-foreground/50">N/A</span>
+                )}
               </div>
             </div>
           ) : (
