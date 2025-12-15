@@ -104,46 +104,6 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  // Load cached summary from localStorage
-  const summaryKey = `wave-summary-${spot.id}`;
-  const [waveSummary, setWaveSummary] = useState<string | null>(() => {
-    try {
-      const cached = localStorage.getItem(summaryKey);
-      if (cached) {
-        const { summary, fetchedAt } = JSON.parse(cached);
-        const ONE_HOUR_MS = 60 * 60 * 1000;
-        if (Date.now() - fetchedAt < ONE_HOUR_MS) {
-          return summary;
-        }
-      }
-    } catch {}
-    return null;
-  });
-  const [localKnowledge, setLocalKnowledge] = useState<string | null>(() => {
-    try {
-      const cached = localStorage.getItem(summaryKey);
-      if (cached) {
-        const { localKnowledge, fetchedAt } = JSON.parse(cached);
-        const ONE_HOUR_MS = 60 * 60 * 1000;
-        if (Date.now() - fetchedAt < ONE_HOUR_MS) {
-          return localKnowledge;
-        }
-      }
-    } catch {}
-    return null;
-  });
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryFailed, setSummaryFailed] = useState(false);
-  const [summaryFetchedAt, setSummaryFetchedAt] = useState<number | null>(() => {
-    try {
-      const cached = localStorage.getItem(summaryKey);
-      if (cached) {
-        const { fetchedAt } = JSON.parse(cached);
-        return fetchedAt;
-      }
-    } catch {}
-    return null;
-  });
 
   // Update active forecast when prop changes or time selector changes
   useEffect(() => {

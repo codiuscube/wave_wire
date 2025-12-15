@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Navbar, Footer } from '../components/landing';
 import { AdminHeader } from '../components/admin';
-import { Check, CircleQuestionMark, ArrowUpRight } from 'lucide-react';
+import { Check, CircleQuestionMark } from 'lucide-react';
 
 const timelineSlides = [
     {
