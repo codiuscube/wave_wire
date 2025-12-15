@@ -59,34 +59,45 @@ export function SpotCard({ spot }: SpotCardProps) {
   const [forecastTime, setForecastTime] = useState<ForecastTime>("now");
   const [activeForecast, setActiveForecast] = useState<ForecastData | null | undefined>(spot.forecast);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+  const [forecastError, setForecastError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Update active forecast when prop changes or time selector changes
   useEffect(() => {
     // If "now" is selected, use the passed-in forecast
     if (forecastTime === "now") {
       setActiveForecast(spot.forecast);
+      setForecastError(null);
+      if (spot.forecast) {
+        setLastUpdated(new Date());
+      }
       return;
     }
 
     // For tomorrow/next_day, fetch the data
     if (spot.lat === undefined || spot.lon === undefined) {
       setActiveForecast(null);
+      setForecastError("No coordinates available");
       return;
     }
 
     let cancelled = false;
     setIsLoadingForecast(true);
+    setForecastError(null);
 
     fetchForecastDataForTime(spot.lat, spot.lon, forecastTime)
       .then((result) => {
         if (!cancelled) {
           setActiveForecast(result.data);
+          setForecastError(result.error);
+          setLastUpdated(new Date());
           setIsLoadingForecast(false);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
           setActiveForecast(null);
+          setForecastError(err.message || "Failed to fetch forecast");
           setIsLoadingForecast(false);
         }
       });
@@ -95,6 +106,18 @@ export function SpotCard({ spot }: SpotCardProps) {
       cancelled = true;
     };
   }, [forecastTime, spot.lat, spot.lon, spot.forecast]);
+
+  // Format last updated time
+  const formatLastUpdated = (date: Date | null): string => {
+    if (!date) return "";
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    return `${diffHours}h ago`;
+  };
 
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
@@ -139,6 +162,13 @@ export function SpotCard({ spot }: SpotCardProps) {
             </div>
           ) : activeForecast ? (
             <div className="space-y-4">
+              {/* Last updated indicator */}
+              {lastUpdated && (
+                <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground/40">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+                  <span>Updated {formatLastUpdated(lastUpdated)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center border-b border-border/10 pb-2">
                 <Select
                   options={[
@@ -163,19 +193,22 @@ export function SpotCard({ spot }: SpotCardProps) {
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
+                <span className="font-mono text-sm text-muted-foreground">AIR</span>
+                <span className="font-mono text-base font-normal">{activeForecast.airTemp}°F</span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">TDE</span>
-                <span className="font-mono text-base">
-                  {activeForecast.tide}ft {activeForecast.tideDirection && (
-                    <span className="text-muted-foreground/50 font-normal text-sm uppercase">
-                      ⋅ {activeForecast.tideDirection === 'rising' ? '↑' : activeForecast.tideDirection === 'falling' ? '↓' : '→'} {activeForecast.tideDirection}
-                    </span>
-                  )}
+                <span className="font-mono text-base text-muted-foreground/50">
+                  N/A <span className="text-xs">(coming soon)</span>
                 </span>
               </div>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
+            <div className="h-full flex flex-col items-center justify-center p-4 border border-dashed border-border/20 rounded gap-2">
               <p className="font-mono text-sm text-muted-foreground/50">NO FORECAST DATA</p>
+              {forecastError && (
+                <p className="font-mono text-xs text-destructive/50">{forecastError}</p>
+              )}
             </div>
           )}
         </div>
@@ -188,6 +221,13 @@ export function SpotCard({ spot }: SpotCardProps) {
 
           {spot.buoy ? (
             <div className="space-y-4">
+              {/* Last reading timestamp */}
+              {spot.buoy.timestamp && (
+                <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground/40">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+                  <span>Reading {spot.buoy.timestamp}</span>
+                </div>
+              )}
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WAV</span>
                 <span className="font-mono text-base">
