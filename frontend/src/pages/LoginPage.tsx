@@ -97,12 +97,14 @@ export function LoginPage() {
             )}
           </button>
 
+          {/* TODO: Comment back in when sign ups are open
           <p className="text-center text-slate-400 text-sm">
             Don't have an account?{' '}
             <Link to="/signup" className="text-foreground hover:underline">
               Sign up
             </Link>
           </p>
+          */}
         </form>
       </div>
     </div>
