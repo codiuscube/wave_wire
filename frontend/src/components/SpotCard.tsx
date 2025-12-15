@@ -104,10 +104,33 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
   const [forecastError, setForecastError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [waveSummary, setWaveSummary] = useState<string | null>(null);
+  // Load cached summary from localStorage
+  const summaryKey = `wave-summary-${spot.id}`;
+  const [waveSummary, setWaveSummary] = useState<string | null>(() => {
+    try {
+      const cached = localStorage.getItem(summaryKey);
+      if (cached) {
+        const { summary, fetchedAt } = JSON.parse(cached);
+        const ONE_HOUR_MS = 60 * 60 * 1000;
+        if (Date.now() - fetchedAt < ONE_HOUR_MS) {
+          return summary;
+        }
+      }
+    } catch {}
+    return null;
+  });
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryFailed, setSummaryFailed] = useState(false);
-  const [summaryFetchedAt, setSummaryFetchedAt] = useState<number | null>(null);
+  const [summaryFetchedAt, setSummaryFetchedAt] = useState<number | null>(() => {
+    try {
+      const cached = localStorage.getItem(summaryKey);
+      if (cached) {
+        const { fetchedAt } = JSON.parse(cached);
+        return fetchedAt;
+      }
+    } catch {}
+    return null;
+  });
 
   // Update active forecast when prop changes or time selector changes
   useEffect(() => {
@@ -223,8 +246,13 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
 
         if (response.ok) {
           const data = await response.json();
+          const now = Date.now();
           setWaveSummary(data.summary);
-          setSummaryFetchedAt(Date.now());
+          setSummaryFetchedAt(now);
+          // Persist to localStorage
+          try {
+            localStorage.setItem(summaryKey, JSON.stringify({ summary: data.summary, fetchedAt: now }));
+          } catch {}
         } else {
           // Mark as failed to prevent retries (e.g., 404 in local dev)
           console.warn(`[${spot.name}] Wave summary API returned ${response.status}`);
@@ -239,7 +267,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     };
 
     fetchSummary();
-  }, [spot.buoy, spot.forecast, spot.name, spot.region, tideData, summaryLoading, waveSummary, summaryFailed, summaryFetchedAt]);
+  }, [spot.buoy, spot.forecast, spot.name, spot.region, tideData, summaryLoading, waveSummary, summaryFailed, summaryFetchedAt, summaryKey]);
 
   // Get tide direction arrow
   const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
