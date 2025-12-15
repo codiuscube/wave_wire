@@ -251,13 +251,25 @@ export function SpotCard({ spot }: SpotCardProps) {
                   <span className="font-mono text-sm text-muted-foreground/50">N/A</span>
                 )}
               </div>
-              {/* Tide Charts for tomorrow/next day */}
-              {tideDays && forecastTime !== 'now' && (
+              {/* Tide Charts */}
+              {tideDays && (
                 <div className="pt-2">
                   <TideChart
-                    hourly={forecastTime === 'tomorrow' ? tideDays.tomorrow.hourly : tideDays.nextDay.hourly}
-                    hiLo={forecastTime === 'tomorrow' ? tideDays.tomorrow.hiLo : tideDays.nextDay.hiLo}
-                    label={forecastTime === 'tomorrow' ? "TIDE TOMORROW" : "TIDE NEXT DAY"}
+                    hourly={
+                      forecastTime === 'now' ? tideDays.today.hourly :
+                      forecastTime === 'tomorrow' ? tideDays.tomorrow.hourly :
+                      tideDays.nextDay.hourly
+                    }
+                    hiLo={
+                      forecastTime === 'now' ? tideDays.today.hiLo :
+                      forecastTime === 'tomorrow' ? tideDays.tomorrow.hiLo :
+                      tideDays.nextDay.hiLo
+                    }
+                    label={
+                      forecastTime === 'now' ? "TIDE TODAY" :
+                      forecastTime === 'tomorrow' ? "TIDE TOMORROW" :
+                      "TIDE NEXT DAY"
+                    }
                   />
                 </div>
               )}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { HourlyTide, TidePrediction } from '../services/api';
 
 interface TideChartProps {
@@ -8,11 +8,21 @@ interface TideChartProps {
   showLabels?: boolean;
 }
 
+interface TooltipData {
+  x: number;
+  y: number;
+  height: number;
+  time: Date;
+}
+
 /**
- * Simple SVG-based tide "hump" chart
- * Shows 24 hours of tide data as a smooth curve
+ * Interactive SVG-based tide "hump" chart
+ * Shows 24 hours of tide data as a smooth curve with hover tooltips
  */
 export function TideChart({ hourly, hiLo, label, showLabels = true }: TideChartProps) {
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
+
   const chartData = useMemo(() => {
     if (hourly.length === 0) return null;
 
@@ -84,6 +94,43 @@ export function TideChart({ hourly, hiLo, label, showLabels = true }: TideChartP
     return `${displayHour}${ampm}`;
   };
 
+  const formatTooltipTime = (date: Date): string => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * chartData.width;
+
+    // Find closest point
+    let closestPoint = chartData.points[0];
+    let closestDist = Math.abs(x - closestPoint.x);
+
+    for (const point of chartData.points) {
+      const dist = Math.abs(x - point.x);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestPoint = point;
+      }
+    }
+
+    setTooltip(closestPoint);
+    setTooltipPosition({
+      left: e.clientX - rect.left,
+      top: e.clientY - rect.top - 40,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
+    setTooltipPosition(null);
+  };
+
   return (
     <div className="space-y-1">
       {showLabels && (
@@ -97,8 +144,10 @@ export function TideChart({ hourly, hiLo, label, showLabels = true }: TideChartP
       <div className="relative">
         <svg
           viewBox={`0 0 ${chartData.width} ${chartData.height}`}
-          className="w-full h-12"
+          className="w-full h-12 cursor-crosshair"
           preserveAspectRatio="none"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
         >
           {/* Fill under curve */}
           <path
@@ -114,19 +163,46 @@ export function TideChart({ hourly, hiLo, label, showLabels = true }: TideChartP
             strokeWidth="1.5"
             className="text-primary/40"
           />
-          {/* High/Low markers */}
-          {chartData.markers.map((marker, i) => marker && (
-            <g key={i}>
-              <circle
-                cx={marker.x}
-                cy={marker.y}
-                r="2.5"
-                className={marker.type === 'H' ? 'fill-primary' : 'fill-muted-foreground'}
-              />
-            </g>
-          ))}
+          {/* Hover indicator line */}
+          {tooltip && (
+            <line
+              x1={tooltip.x}
+              y1={2}
+              x2={tooltip.x}
+              y2={chartData.height - 2}
+              stroke="currentColor"
+              strokeWidth="0.5"
+              strokeDasharray="2,2"
+              className="text-primary/60"
+            />
+          )}
+          {/* Hover point */}
+          {tooltip && (
+            <circle
+              cx={tooltip.x}
+              cy={tooltip.y}
+              r="3"
+              className="fill-primary"
+            />
+          )}
         </svg>
-        {/* Time labels */}
+        {/* Tooltip */}
+        {tooltip && tooltipPosition && (
+          <div
+            className="absolute pointer-events-none bg-background/95 border border-border/50 px-2 py-1 rounded shadow-lg z-10 whitespace-nowrap"
+            style={{
+              left: Math.min(tooltipPosition.left, 120),
+              top: tooltipPosition.top,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <span className="font-mono text-xs">
+              <span className="text-primary font-medium">{tooltip.height.toFixed(1)}ft</span>
+              <span className="text-muted-foreground/60"> @ {formatTooltipTime(tooltip.time)}</span>
+            </span>
+          </div>
+        )}
+        {/* Time labels for high/low */}
         {showLabels && chartData.markers.length > 0 && (
           <div className="flex justify-between text-[9px] font-mono text-muted-foreground/40 mt-0.5 px-0.5">
             {chartData.markers.slice(0, 4).map((marker, i) => marker && (
