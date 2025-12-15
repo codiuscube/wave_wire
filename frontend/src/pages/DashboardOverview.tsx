@@ -1,97 +1,51 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
 import { AlertsModal } from '../components/dashboard/AlertsModal';
 import { Button } from '../components/ui';
 import { AlertCard } from '../components/dashboard/AlertCard';
+import { useMultipleBuoyData } from '../hooks/useBuoyData';
+import { useMultipleForecastData } from '../hooks/useForecastData';
 
-// Mock data - would come from API/context in real app
-// Note: All coordinates are for Texas Gulf Coast spots
-const userSpots: Spot[] = [
+// Base spot data - would come from Supabase in production
+// Buoy and forecast data will be fetched live via hooks
+interface BaseSpot {
+  id: string;
+  name: string;
+  region: string;
+  lat: number;
+  lon: number;
+  buoyId?: string;
+  buoyName?: string;
+  status?: 'epic' | 'good' | 'fair' | 'poor' | 'unknown';
+  triggersMatched?: number;
+  nextCheck?: string;
+  icon?: string;
+}
+
+const baseSpots: BaseSpot[] = [
   {
-    id: 'surfside',
-    name: 'Surfside Beach',
-    region: 'Texas Gulf Coast',
-    lat: 28.9447,
-    lon: -95.2908,
-    buoyId: '42035',
-    buoyName: 'Galveston (22nm SE)',
-    buoy: {
-      waveHeight: 4.2,
-      wavePeriod: 12,
-      waterTemp: 72,
-      meanWaveDirection: 'SE',
-      meanWaveDegrees: 145,
-      timestamp: 'Just now',
-      windSpeed: 12,
-      windDirection: 'SE',
-      windDegrees: 140,
-    },
-    forecast: {
-      primary: {
-        height: 3.5,
-        period: 11,
-        direction: 'SE',
-        degrees: 140,
-      },
-      secondary: {
-        height: 1.2,
-        period: 8,
-        direction: 'E',
-        degrees: 90,
-      },
-      windSpeed: 8,
-      windDirection: 'NW',
-      windDegrees: 315,
-      tide: 1.2,
-      tideDirection: 'rising',
-      airTemp: 78,
-    },
-    status: 'good',
-    triggersMatched: 2,
+    id: 'hogans',
+    name: 'Hogans',
+    region: 'San Diego County',
+    lat: 32.820789,
+    lon: -117.280503,
+    buoyId: '46225',
+    buoyName: 'Torrey Pines Outer',
+    status: 'unknown',
+    triggersMatched: 0,
     nextCheck: '6:00 AM',
     icon: 'Star',
   },
   {
-    id: 'galveston',
-    name: 'Galveston (61st St)',
-    region: 'Texas Gulf Coast',
-    lat: 29.2850,
-    lon: -94.8125,
-    buoyId: '42035',
-    buoyName: 'Galveston (22nm SE)',
-    buoy: {
-      waveHeight: 3.8,
-      wavePeriod: 11,
-      waterTemp: 71,
-      meanWaveDirection: 'SE',
-      meanWaveDegrees: 142,
-      timestamp: '15m ago',
-      windSpeed: 10,
-      windDirection: 'SE',
-      windDegrees: 138,
-    },
-    forecast: {
-      primary: {
-        height: 3.2,
-        period: 10,
-        direction: 'SE',
-        degrees: 135,
-      },
-      secondary: {
-        height: 1.0,
-        period: 7,
-        direction: 'E',
-        degrees: 85,
-      },
-      windSpeed: 12,
-      windDirection: 'SE',
-      windDegrees: 135,
-      tide: 0.8,
-      tideDirection: 'falling',
-      airTemp: 76,
-    },
-    status: 'fair',
+    id: 'swamis',
+    name: 'Swamis',
+    region: 'San Diego County',
+    lat: 33.034470,
+    lon: -117.292324,
+    buoyId: '46254',
+    buoyName: 'Oceanside Offshore',
+    status: 'unknown',
     triggersMatched: 0,
     nextCheck: '6:30 AM',
     icon: 'Radio',
@@ -102,29 +56,9 @@ const userSpots: Spot[] = [
     region: 'Texas Gulf Coast',
     lat: 27.5806,
     lon: -97.2167,
-    // No buoy assigned - uses 42020 (Corpus Christi) in real app
-    // Shown without buoy to test "No Signal" state
-    forecast: {
-      primary: {
-        height: 2.1,
-        period: 8,
-        direction: 'E',
-        degrees: 95,
-      },
-      secondary: {
-        height: 0.8,
-        period: 5,
-        direction: 'SE',
-        degrees: 120,
-      },
-      windSpeed: 4,
-      windDirection: 'W',
-      windDegrees: 270,
-      tide: -0.2,
-      tideDirection: 'slack',
-      airTemp: 82,
-    },
-    status: 'poor',
+    buoyId: '42020',
+    buoyName: 'Corpus Christi (25nm E)',
+    status: 'unknown',
     triggersMatched: 0,
     nextCheck: '7:00 AM',
     icon: 'Anchor',
@@ -134,23 +68,23 @@ const userSpots: Spot[] = [
 const recentAlerts = [
   {
     id: '1',
-    spotName: 'Surfside Beach',
+    spotName: 'Swamis',
     type: 'Pop-Up Alert',
-    message: 'Surfside is firing! 5ft sets, offshore wind. GO NOW!',
+    message: 'Swamis is firing! 5ft sets, offshore wind. GO NOW!',
     time: '2025-12-14T14:32:00Z',
     condition: 'epic' as const,
   },
   {
     id: '2',
-    spotName: 'Galveston (61st St)',
+    spotName: 'Hogans',
     type: 'Morning Check',
-    message: 'Good conditions expected. 4ft @ 11s. Traffic: 45min.',
+    message: 'Good conditions expected. 4ft @ 11s from the SW.',
     time: '2025-12-14T06:15:00Z',
     condition: 'good' as const,
   },
   {
     id: '3',
-    spotName: 'Surfside Beach',
+    spotName: 'Bob Hall Pier',
     type: 'Night Before',
     message: 'Tomorrow looking fun. Swell building overnight.',
     time: '2025-12-13T20:45:00Z',
@@ -162,6 +96,53 @@ const recentAlerts = [
 
 export function DashboardOverview() {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
+
+  // Extract unique buoy IDs from spots
+  const buoyIds = useMemo(() => {
+    const ids = baseSpots
+      .map((spot) => spot.buoyId)
+      .filter((id): id is string => !!id);
+    return [...new Set(ids)];
+  }, []);
+
+  // Extract locations for forecast data
+  const forecastLocations = useMemo(() => {
+    return baseSpots.map((spot) => ({
+      lat: spot.lat,
+      lon: spot.lon,
+      id: spot.id,
+    }));
+  }, []);
+
+  // Fetch live buoy data
+  const {
+    data: buoyDataMap,
+    isLoading: buoyLoading,
+  } = useMultipleBuoyData(buoyIds);
+
+  // Fetch live forecast data
+  const {
+    data: forecastDataMap,
+    isLoading: forecastLoading,
+  } = useMultipleForecastData(forecastLocations);
+
+  // Merge live data with base spots
+  const userSpots: Spot[] = useMemo(() => {
+    return baseSpots.map((baseSpot) => {
+      const buoyData = baseSpot.buoyId
+        ? buoyDataMap.get(baseSpot.buoyId.toUpperCase())
+        : null;
+      const forecastData = forecastDataMap.get(baseSpot.id);
+
+      return {
+        ...baseSpot,
+        buoy: buoyData ?? undefined,
+        forecast: forecastData ?? undefined,
+      };
+    });
+  }, [buoyDataMap, forecastDataMap]);
+
+  const isLoading = buoyLoading || forecastLoading;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -226,6 +207,12 @@ export function DashboardOverview() {
           </div>
 
           <div className="p-6">
+            {isLoading && (
+              <div className="flex items-center gap-2 mb-4 text-muted-foreground font-mono text-sm">
+                <div className="w-2 h-2 bg-primary animate-pulse" />
+                <span>FETCHING LIVE DATA...</span>
+              </div>
+            )}
             <div className="space-y-4">
               {userSpots.map((spot) => (
                 <SpotCard key={spot.id} spot={spot} />

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select } from "./ui/Select";
 import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
 import { Crosshair } from "lucide-react";
+import { fetchForecastDataForTime, type ForecastTime } from "../services/api";
 
 export interface BuoyData {
   waveHeight: number;
@@ -55,7 +56,45 @@ interface SpotCardProps {
 
 export function SpotCard({ spot }: SpotCardProps) {
   const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
-  const [forecastTime, setForecastTime] = useState<"now" | "tomorrow" | "next_day">("now");
+  const [forecastTime, setForecastTime] = useState<ForecastTime>("now");
+  const [activeForecast, setActiveForecast] = useState<ForecastData | null | undefined>(spot.forecast);
+  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+
+  // Update active forecast when prop changes or time selector changes
+  useEffect(() => {
+    // If "now" is selected, use the passed-in forecast
+    if (forecastTime === "now") {
+      setActiveForecast(spot.forecast);
+      return;
+    }
+
+    // For tomorrow/next_day, fetch the data
+    if (spot.lat === undefined || spot.lon === undefined) {
+      setActiveForecast(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingForecast(true);
+
+    fetchForecastDataForTime(spot.lat, spot.lon, forecastTime)
+      .then((result) => {
+        if (!cancelled) {
+          setActiveForecast(result.data);
+          setIsLoadingForecast(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setActiveForecast(null);
+          setIsLoadingForecast(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [forecastTime, spot.lat, spot.lon, spot.forecast]);
 
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
@@ -94,7 +133,11 @@ export function SpotCard({ spot }: SpotCardProps) {
             />
           </div>
 
-          {spot.forecast ? (
+          {isLoadingForecast ? (
+            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
+              <p className="font-mono text-sm text-muted-foreground/50 animate-pulse">LOADING...</p>
+            </div>
+          ) : activeForecast ? (
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b border-border/10 pb-2">
                 <Select
@@ -107,24 +150,24 @@ export function SpotCard({ spot }: SpotCardProps) {
                   variant="ghost"
                 />
                 <span className="font-mono text-base font-normal">
-                  {spot.forecast[forecastSource].height}ft <span className="font-mono text-normal">@ {spot.forecast[forecastSource].period}s</span>{" "}
+                  {activeForecast[forecastSource].height}ft <span className="font-mono text-normal">@ {activeForecast[forecastSource].period}s</span>{" "}
                   <span className="text-muted-foreground/50 font-normal text-sm">
-                    ⋅ {spot.forecast[forecastSource].direction} {spot.forecast[forecastSource].degrees}°
+                    ⋅ {activeForecast[forecastSource].direction} {activeForecast[forecastSource].degrees}°
                   </span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">WND</span>
                 <span className="font-mono text-base font-normal">
-                  {spot.forecast.windSpeed}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {spot.forecast.windDirection} {spot.forecast.windDegrees}°</span>
+                  {activeForecast.windSpeed}kt <span className="text-muted-foreground/50 font-normal text-sm">⋅ {activeForecast.windDirection} {activeForecast.windDegrees}°</span>
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">TDE</span>
                 <span className="font-mono text-base">
-                  {spot.forecast.tide}ft {spot.forecast.tideDirection && (
+                  {activeForecast.tide}ft {activeForecast.tideDirection && (
                     <span className="text-muted-foreground/50 font-normal text-sm uppercase">
-                      ⋅ {spot.forecast.tideDirection === 'rising' ? '↑' : spot.forecast.tideDirection === 'falling' ? '↓' : '→'} {spot.forecast.tideDirection}
+                      ⋅ {activeForecast.tideDirection === 'rising' ? '↑' : activeForecast.tideDirection === 'falling' ? '↓' : '→'} {activeForecast.tideDirection}
                     </span>
                   )}
                 </span>
