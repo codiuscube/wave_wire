@@ -236,13 +236,64 @@ CREATE INDEX idx_condition_logs_spot ON public.condition_logs(spot_id);
 CREATE INDEX idx_condition_logs_timestamp ON public.condition_logs(logged_at DESC);
 ```
 
-### 5. Updates to Existing Tables
+### 5. `surf_spots` - Surf Spot Database
+
+Central database of surf spots with verification status.
+
+```sql
+CREATE TABLE public.surf_spots (
+  id TEXT PRIMARY KEY,                    -- Generated from name + coordinates
+  name TEXT NOT NULL,
+  lat NUMERIC NOT NULL,
+  lon NUMERIC NOT NULL,
+  region TEXT,                            -- Sub-region (e.g., "Texas Gulf Coast")
+  country_group TEXT CHECK (country_group IN ('USA', 'Mexico', 'Central America', 'Canada')),
+  country TEXT,                           -- Original country string
+  buoy_id TEXT,                           -- Recommended NOAA buoy
+  buoy_name TEXT,                         -- Human-readable buoy name
+
+  -- Verification
+  verified BOOLEAN DEFAULT FALSE,
+  source TEXT DEFAULT 'user' CHECK (source IN ('official', 'community', 'user')),
+  submitted_by UUID REFERENCES public.profiles(id),
+  verified_at TIMESTAMPTZ,
+  verified_by UUID REFERENCES public.profiles(id),
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_surf_spots_country_group ON public.surf_spots(country_group);
+CREATE INDEX idx_surf_spots_verified ON public.surf_spots(verified);
+CREATE INDEX idx_surf_spots_source ON public.surf_spots(source);
+CREATE INDEX idx_surf_spots_name ON public.surf_spots(name);
+
+-- Index for admin moderation queue (unverified community submissions)
+CREATE INDEX idx_surf_spots_moderation ON public.surf_spots(source, verified)
+WHERE source = 'community' AND verified = FALSE;
+```
+
+**Source Types:**
+- `official` - From curated database (pre-verified)
+- `community` - User-submitted, pending admin review
+- `user` - User's private custom spot
+
+### 6. Updates to Existing Tables
 
 #### Add `use_metric` to `user_preferences`
 
 ```sql
 ALTER TABLE public.user_preferences
 ADD COLUMN use_metric BOOLEAN DEFAULT FALSE;
+```
+
+#### Add `is_admin` to `profiles`
+
+```sql
+ALTER TABLE public.profiles
+ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
 ```
 
 #### Add `condition_data` to `sent_alerts`

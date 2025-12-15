@@ -15,6 +15,7 @@ import {
   AccountPage,
   LoginPage,
   SignupPage,
+  AdminSpotsPage,
 } from './pages';
 
 function App() {
@@ -46,6 +47,16 @@ function App() {
                   <Route path="personality" element={<PersonalityPage />} />
                   <Route path="account" element={<AccountPage />} />
                 </Route>
+
+                {/* Admin Routes (protected by isAdmin check in component) */}
+                <Route
+                  path="/admin/spots"
+                  element={
+                    <ProtectedRoute>
+                      <AdminSpotsPage />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
             </SurfTechLayout>
           </LocationProvider>

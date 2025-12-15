@@ -17,10 +17,11 @@ ITSPUMPING.AI is a surf alert system that monitors conditions and sends you SMS 
 
 ### Spots
 
-- Browse and save popular surf spots
-- Create custom spots with lat/lon coordinates
+- **1,225 pre-loaded surf spots** across USA, Mexico, Central America, and Canada
+- Browse spots by region with search-first UI
+- Create custom spots with lat/lon coordinates and swell exposure
+- Smart NOAA buoy recommendations based on swell direction (not just distance)
 - Optional home address for traffic estimates in alerts
-- NOAA buoy integration for real-time data
 
 ### Triggers (per spot)
 
@@ -43,6 +44,15 @@ All alerts include buoy data and only fire when conditions match triggers - no s
 ### Personality
 
 Customize the voice of your alerts based on condition tier. Set different personalities for Fair, Good, and Epic conditions.
+
+### Admin (Administrators Only)
+
+- **Spot Management** (`/admin/spots`) - View, edit, and verify all surf spots
+- Filter by verification status and region
+- Edit spot details (name, coordinates, region)
+- Toggle spot verification status
+- Add new spots (auto-verified for admins)
+- View stats: total spots, verified, unverified
 
 | Personality | Emoji | Description |
 |-------------|-------|-------------|
@@ -247,11 +257,17 @@ interface Spot {
 ```
 src/
 ├── components/
+│   ├── auth/          # Authentication components
 │   ├── dashboard/     # Dashboard layout and sidebar
 │   ├── landing/       # Landing page components
 │   └── ui/            # Reusable UI components
 ├── contexts/
-│   └── ThemeContext.tsx  # Light/dark theme provider
+│   ├── AuthContext.tsx   # Auth state & admin check
+│   ├── ThemeContext.tsx  # Light/dark theme provider
+│   └── LocationContext.tsx
+├── data/
+│   ├── surfSpots.ts   # 1,225 surf spots database
+│   └── noaaBuoys.ts   # NOAA buoys + smart recommendations
 ├── pages/
 │   ├── LandingPage.tsx
 │   ├── DashboardOverview.tsx
@@ -259,11 +275,20 @@ src/
 │   ├── SpotPage.tsx
 │   ├── AlertsPage.tsx
 │   ├── PersonalityPage.tsx
-│   └── AccountPage.tsx
+│   ├── AccountPage.tsx
+│   └── AdminSpotsPage.tsx  # Admin spot management
 ├── types/
 │   └── index.ts
 ├── App.tsx
 └── index.css
+
+scripts/
+└── process-spots.cjs  # Regenerate surf spots from gist
+
+docs/
+├── DATA_ARCHITECTURE.md
+├── SUPABASE_INTEGRATION_PLAN.md
+└── SPOT_MANAGEMENT.md
 ```
 
 ## Getting Started
@@ -282,6 +307,7 @@ npm run dev
 - `/dashboard/alerts` - Alert schedule settings
 - `/dashboard/personality` - Personality selection
 - `/dashboard/account` - Account settings and subscription
+- `/admin/spots` - Admin spot management (admin only)
 
 ## Notes
 

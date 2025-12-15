@@ -46,7 +46,19 @@ export function AddSpotModal({
     name: "",
     lat: "",
     lon: "",
+    exposure: "pacific" as string,
   });
+
+  // Exposure options for custom spots (maps to inferExposure logic)
+  const exposureOptions = [
+    { value: "pacific", label: "Pacific / West Coast", region: "Pacific West Coast" },
+    { value: "atlantic", label: "Atlantic / East Coast", region: "Atlantic East Coast" },
+    { value: "gulf", label: "Gulf Coast", region: "Gulf Coast" },
+    { value: "hawaii-north", label: "Hawaii - North Shore", region: "Hawaii North Shore" },
+    { value: "hawaii-south", label: "Hawaii - South Shore", region: "Hawaii South Shore" },
+    { value: "caribbean", label: "Caribbean", region: "Caribbean" },
+    { value: "unknown", label: "Other / Unknown", region: "Custom Location" },
+  ];
 
   // Get spots from centralized data
   const allSpots = useMemo(() => getSurfSpots(), []);
@@ -89,15 +101,16 @@ export function AddSpotModal({
 
   const handleAddCustomSpot = () => {
     if (!customSpot.name || !customSpot.lat || !customSpot.lon) return;
+    const selectedExposure = exposureOptions.find(e => e.value === customSpot.exposure);
     const newSpot: Spot = {
       id: `custom-${Date.now()}`,
       name: customSpot.name,
-      region: "Custom Location",
+      region: selectedExposure?.region || "Custom Location",
       lat: parseFloat(customSpot.lat),
       lon: parseFloat(customSpot.lon),
     };
     onAddSpot(newSpot);
-    setCustomSpot({ name: "", lat: "", lon: "" });
+    setCustomSpot({ name: "", lat: "", lon: "", exposure: "pacific" });
     onClose();
   };
 
@@ -359,10 +372,35 @@ export function AddSpotModal({
                 </div>
               </div>
 
+              <div>
+                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                  Swell Exposure
+                </label>
+                <p className="text-xs font-mono text-muted-foreground/60 mb-3">
+                  Select the ocean/coast this spot faces for better buoy recommendations
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {exposureOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setCustomSpot({ ...customSpot, exposure: option.value })}
+                      className={`px-3 py-2 text-left font-mono text-xs uppercase tracking-wider border transition-colors ${
+                        customSpot.exposure === option.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/50 bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:border-border"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="p-4 bg-secondary/10 border border-border/50 rounded-sm">
                 <p className="text-xs font-mono text-muted-foreground/80">
                   <span className="text-primary mr-2">TIP:</span>
-                  Buoy telemetry can be assigned after initialization.
+                  Swell exposure helps recommend buoys that are upstream of incoming waves.
                 </p>
               </div>
 

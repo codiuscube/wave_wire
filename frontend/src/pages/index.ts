@@ -7,3 +7,4 @@ export { PersonalityPage } from './PersonalityPage';
 export { AccountPage } from './AccountPage';
 export { LoginPage } from './LoginPage';
 export { SignupPage } from './SignupPage';
+export { AdminSpotsPage } from './AdminSpotsPage';

@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -29,7 +30,7 @@ const navItems = [
 
 export function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   // Separate nav items
@@ -114,6 +115,28 @@ export function Sidebar() {
                 {item.label}
               </NavLink>
             ))}
+
+            {/* Admin Section - only visible to admins */}
+            {isAdmin && (
+              <div className="pt-4 mt-4 border-t border-sidebar-border/50">
+                <div className="px-3 mb-2">
+                  <span className="text-xs font-semibold text-yellow-500 uppercase tracking-wider">Admin</span>
+                </div>
+                <NavLink
+                  to="/admin/spots"
+                  onClick={() => setIsMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
+                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+                    }`
+                  }
+                >
+                  <Shield className="w-4 h-4" />
+                  Spot Management
+                </NavLink>
+              </div>
+            )}
           </nav>
 
           {/* Bottom Section */}
