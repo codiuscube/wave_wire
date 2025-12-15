@@ -1,10 +1,10 @@
-# ITSPUMPING.AI - Frontend Prototype
+# Wave-Wire - Frontend Prototype
 
 The invisible surf check. No apps to open, no feeds to scroll - just a buddy that texts you when it's actually good.
 
 ## Overview
 
-ITSPUMPING.AI is a surf alert system that monitors conditions and sends you SMS notifications when waves match your personal triggers. It uses real-time NOAA buoy data, Open-Meteo forecasts, and AI-powered messaging (Claude) to deliver alerts that sound like a local buddy telling you to get out there.
+Wave-Wire is a surf alert system that monitors conditions and sends you SMS notifications when waves match your personal triggers. It uses real-time NOAA buoy data, Open-Meteo forecasts, and AI-powered messaging (Claude) to deliver alerts that sound like a local buddy telling you to get out there.
 
 ## Features
 

@@ -1,10 +1,10 @@
-# ITSPUMPING.AI
+# Wave-Wire
 
 The invisible surf check. No apps to check. No forecasts to analyze. Just texts from your surf buddy when it's actually worth the drive.
 
 ## Vision
 
-ITSPUMPING.AI is a lightweight, "invisible" surf alert system that runs in the background and texts you only when your spot is actually firing. It combines real data (NOAA buoys, Open-Meteo) with a personality engine to deliver alerts that feel like a text from a local buddy.
+Wave-Wire is a lightweight, "invisible" surf alert system that runs in the background and texts you only when your spot is actually firing. It combines real data (NOAA buoys, Open-Meteo) with a personality engine to deliver alerts that feel like a text from a local buddy.
 
 **The Trust Metric**: Users don't double-check Surfline after receiving a Home Break alert. They just grab their keys.
 
