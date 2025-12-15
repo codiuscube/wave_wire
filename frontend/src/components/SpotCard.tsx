@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Select } from "./ui/Select";
 import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
 import { Crosshair } from "lucide-react";
-import { fetchForecastDataForTime, type ForecastTime } from "../services/api";
+import { fetchForecastDataForTime, getTidePredictionsForDay, formatNextTideEvent, type ForecastTime } from "../services/api";
+import { useTideData } from "../hooks/useTideData";
+import { TideChart } from "./TideChart";
 
 export interface BuoyData {
   waveHeight: number;
@@ -119,6 +121,28 @@ export function SpotCard({ spot }: SpotCardProps) {
     return `${diffHours}h ago`;
   };
 
+  // Fetch tide data for this spot
+  const { data: tideData, isLoading: tideLoading } = useTideData(spot.lat, spot.lon);
+
+  // Get tide data for each day (for charts)
+  const tideDays = useMemo(() => {
+    if (!tideData) return null;
+    return {
+      today: getTidePredictionsForDay(tideData, 0),
+      tomorrow: getTidePredictionsForDay(tideData, 1),
+      nextDay: getTidePredictionsForDay(tideData, 2),
+    };
+  }, [tideData]);
+
+  // Get tide direction arrow
+  const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
+    switch (direction) {
+      case 'rising': return '↑';
+      case 'falling': return '↓';
+      default: return '→';
+    }
+  };
+
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     : Crosshair;
@@ -198,10 +222,30 @@ export function SpotCard({ spot }: SpotCardProps) {
               </div>
               <div className="flex justify-between items-baseline border-b border-border/10 pb-2">
                 <span className="font-mono text-sm text-muted-foreground">TDE</span>
-                <span className="font-mono text-base text-muted-foreground/50">
-                  N/A <span className="text-xs">(coming soon)</span>
-                </span>
+                {tideLoading ? (
+                  <span className="font-mono text-sm text-muted-foreground/50 animate-pulse">...</span>
+                ) : tideData ? (
+                  <span className="font-mono text-base">
+                    {tideData.currentHeight.toFixed(1)}ft{' '}
+                    <span className="text-muted-foreground/50 font-normal text-sm">
+                      {getTideArrow(tideData.currentDirection)}{' '}
+                      {tideData.nextEvent && formatNextTideEvent(tideData.nextEvent)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="font-mono text-sm text-muted-foreground/50">N/A</span>
+                )}
               </div>
+              {/* Tide Charts for tomorrow/next day */}
+              {tideDays && forecastTime !== 'now' && (
+                <div className="pt-2">
+                  <TideChart
+                    hourly={forecastTime === 'tomorrow' ? tideDays.tomorrow.hourly : tideDays.nextDay.hourly}
+                    hiLo={forecastTime === 'tomorrow' ? tideDays.tomorrow.hiLo : tideDays.nextDay.hiLo}
+                    label={forecastTime === 'tomorrow' ? "TIDE TOMORROW" : "TIDE NEXT DAY"}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center p-4 border border-dashed border-border/20 rounded gap-2">
