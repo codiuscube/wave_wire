@@ -13,14 +13,14 @@ interface SelectProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
-  variant?: 'default' | 'ghost';
+  variant?: 'default' | 'ghost' | 'model';
 }
 
-export function Select({ 
-  options, 
-  value, 
-  onChange, 
-  placeholder = 'Select...', 
+export function Select({
+  options,
+  value,
+  onChange,
+  placeholder = 'Select...',
   className = '',
   variant = 'default'
 }: SelectProps) {
@@ -42,7 +42,9 @@ export function Select({
   const baseButtonClasses = "flex items-center justify-between transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const variantClasses = variant === 'default'
     ? "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
-    : "h-auto p-0 bg-transparent border-0 !font-mono text-sm text-muted-foreground hover:text-primary gap-1";
+    : variant === 'model'
+      ? "font-mono text-xs tracking-widest text-muted-foreground mb-4 border-muted uppercase truncate"
+      : "h-auto p-0 bg-transparent border-0 !font-mono text-sm text-muted-foreground hover:text-primary gap-1 ";
 
   return (
     <div ref={ref} className={`relative ${className}`}>
@@ -67,9 +69,8 @@ export function Select({
                 onChange?.(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full rounded-sm px-2 py-1.5 text-left text-sm !font-mono whitespace-nowrap hover:bg-accent hover:text-accent-foreground ${
-                option.value === value ? 'bg-accent text-accent-foreground' : 'text-popover-foreground'
-              }`}
+              className={`w-full rounded-sm px-2 py-1.5 text-left text-sm !font-mono whitespace-nowrap hover:bg-accent hover:text-accent-foreground ${option.value === value ? 'bg-accent text-accent-foreground' : 'text-popover-foreground'
+                }`}
             >
               {option.label}
             </button>

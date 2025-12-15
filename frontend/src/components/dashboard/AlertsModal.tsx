@@ -1,28 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-
-interface Alert {
-    id: string;
-    spotName: string;
-    type: string;
-    message: string;
-    time: string;
-    condition: 'epic' | 'good' | 'fair' | 'poor' | 'unknown';
-}
+import { AlertCard, type Alert } from './AlertCard';
 
 interface AlertsModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialAlerts: Alert[];
 }
-
-const statusConfig = {
-    epic: { color: 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-sm' },
-    good: { color: 'bg-zinc-100 text-zinc-900 border-zinc-200' },
-    fair: { color: 'bg-zinc-800 text-zinc-300 border-zinc-700' },
-    poor: { color: 'bg-zinc-900 text-zinc-400 border-zinc-800' },
-    unknown: { color: 'bg-zinc-900 text-zinc-500 border-zinc-800' },
-};
 
 export function AlertsModal({ isOpen, onClose, initialAlerts }: AlertsModalProps) {
     const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -91,28 +75,9 @@ export function AlertsModal({ isOpen, onClose, initialAlerts }: AlertsModalProps
 
                 {/* Scrollable List */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {alerts.map((alert, idx) => {
-                        const conditionStyle = statusConfig[alert.condition];
-                        const emoji = alert.condition === 'epic' ? '🔥' : '🌊';
-
-                        return (
-                            <div key={`${alert.id}-${idx}`} className="flex items-start gap-4 p-5 border border-border/50 bg-secondary/10 hover:bg-secondary/20 transition-colors rounded-sm">
-                                <div className={`mt-1.5 h-2.5 w-2.5 rounded-full ${conditionStyle.color.split(' ')[0].replace('bg-', 'bg-')}`} />
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className="font-mono text-sm text-primary/80 uppercase tracking-wider">{alert.spotName}</span>
-                                    </div>
-                                    <p className="font-mono text-base text-foreground/90 leading-relaxed">
-                                        {emoji} {alert.message}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-2 font-mono opacity-60">
-                                        Sent: {alert.time}
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {alerts.map((alert, idx) => (
+                        <AlertCard key={`${alert.id}-${idx}`} alert={alert} />
+                    ))}
 
                     {hasMore && (
                         <div className="pt-4 flex justify-center">
@@ -145,7 +110,7 @@ function generateMockAlerts(count: number): Alert[] {
         spotName: Math.random() > 0.5 ? 'Surfside Beach' : 'Galveston (61st St)',
         type: 'Archive',
         message: 'Historic data point retrieved. Conditions verified.',
-        time: `${Math.floor(Math.random() * 30) + 2} days ago`,
+        time: new Date(Date.now() - (Math.floor(Math.random() * 30) + 2) * 24 * 60 * 60 * 1000).toISOString(),
         condition: Math.random() > 0.7 ? 'epic' : 'good',
     }));
 }

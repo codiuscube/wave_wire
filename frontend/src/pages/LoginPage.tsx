@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { Logo } from '../components/ui/Logo';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -38,10 +39,14 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
-            <h2 className="mt-6 text-3xl font-extrabold text-white">
+          <Link to="/" className="inline-flex items-center gap-3 text-brand-acid group mb-6">
+            <div className="transform -rotate-6 transition-transform group-hover:rotate-0 duration-300">
+              <Logo className="w-12 h-12" style={{ filter: 'drop-shadow(0 0 2px rgba(226,253,92,0.5))' }} />
+            </div>
+            <span className="font-display font-bold text-3xl tracking-wider text-white">
               WAVE_WIRE
-            </h2></Link>
+            </span>
+          </Link>
           <p className="text-slate-400 mt-2">Sign in to your account</p>
         </div>
 
@@ -97,12 +102,14 @@ export function LoginPage() {
             )}
           </button>
 
+          {/* TODO: Comment back in when sign ups are open
           <p className="text-center text-slate-400 text-sm">
             Don't have an account?{' '}
             <Link to="/signup" className="text-foreground hover:underline">
               Sign up
             </Link>
           </p>
+          */}
         </form>
       </div>
     </div>

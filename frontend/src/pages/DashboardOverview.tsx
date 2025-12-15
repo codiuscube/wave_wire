@@ -1,161 +1,185 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
 import { AlertsModal } from '../components/dashboard/AlertsModal';
 import { Button } from '../components/ui';
+import { AlertCard } from '../components/dashboard/AlertCard';
+import { useMultipleBuoyData } from '../hooks/useBuoyData';
+import { useMultipleForecastData } from '../hooks/useForecastData';
 
-// Mock data - would come from API/context in real app
-const userSpots: Spot[] = [
+// Base spot data - would come from Supabase in production
+// Buoy and forecast data will be fetched live via hooks
+interface BaseSpot {
+  id: string;
+  name: string;
+  region: string;
+  lat: number;
+  lon: number;
+  buoyId?: string;
+  buoyName?: string;
+  status?: 'epic' | 'good' | 'fair' | 'poor' | 'unknown';
+  triggersMatched?: number;
+  nextCheck?: string;
+  icon?: string;
+}
+
+const baseSpots: BaseSpot[] = [
   {
-    id: 'surfside',
-    name: 'Surfside Beach',
-    lat: 28.945,
-    lon: -95.290,
-    buoyId: '42035',
-    buoyName: 'Galveston (22nm SE)',
-    buoy: {
-      waveHeight: 4.2,
-      wavePeriod: 12,
-      waterTemp: 72,
-      meanWaveDirection: 'SE',
-      meanWaveDegrees: 145,
-      timestamp: 'Just now',
-      windSpeed: 12,
-      windDirection: 'SE',
-      windDegrees: 140,
-    },
-    forecast: {
-      primary: {
-        height: 3.5,
-        period: 11,
-        direction: 'SE',
-        degrees: 140,
-      },
-      secondary: {
-        height: 1.2,
-        period: 8,
-        direction: 'E',
-        degrees: 90,
-      },
-      windSpeed: 8,
-      windDirection: 'NW',
-      windDegrees: 315,
-      tide: 1.2,
-      airTemp: 78,
-    },
-    status: 'good',
-    triggersMatched: 2,
+    id: 'hogans',
+    name: 'Hogans',
+    region: 'San Diego County',
+    lat: 32.820789,
+    lon: -117.280503,
+    buoyId: '46225',
+    buoyName: 'Torrey Pines Outer',
+    status: 'unknown',
+    triggersMatched: 0,
     nextCheck: '6:00 AM',
+    icon: 'Star',
   },
   {
-    id: 'galveston',
-    name: 'Galveston (61st St)',
-    lat: 29.273,
-    lon: -94.811,
-    buoyId: '42035',
-    buoyName: 'Galveston (22nm SE)',
-    buoy: {
-      waveHeight: 3.8,
-      wavePeriod: 11,
-      waterTemp: 71,
-      meanWaveDirection: 'SE',
-      meanWaveDegrees: 142,
-      timestamp: '15m ago',
-      windSpeed: 10,
-      windDirection: 'SE',
-      windDegrees: 138,
-    },
-    forecast: {
-      primary: {
-        height: 3.2,
-        period: 10,
-        direction: 'SE',
-        degrees: 135,
-      },
-      secondary: {
-        height: 1.0,
-        period: 7,
-        direction: 'E',
-        degrees: 85,
-      },
-      windSpeed: 12,
-      windDirection: 'SE',
-      windDegrees: 135,
-      tide: 0.8,
-      airTemp: 76,
-    },
-    status: 'fair',
+    id: 'swamis',
+    name: 'Swamis',
+    region: 'San Diego County',
+    lat: 33.034470,
+    lon: -117.292324,
+    buoyId: '46254',
+    buoyName: 'Oceanside Offshore',
+    status: 'unknown',
     triggersMatched: 0,
     nextCheck: '6:30 AM',
+    icon: 'Radio',
+  },
+  {
+    id: 'trestles',
+    name: 'Trestles',
+    region: 'Orange County',
+    lat: 33.3825,
+    lon: -117.5889,
+    buoyId: '46086',
+    buoyName: 'San Clemente Basin',
+    status: 'unknown',
+    triggersMatched: 0,
+    nextCheck: '6:00 AM',
+    icon: 'Waves',
+  },
+  {
+    id: 'huntington',
+    name: 'Huntington Beach',
+    region: 'Orange County',
+    lat: 33.6553,
+    lon: -118.0053,
+    buoyId: '46253',
+    buoyName: 'Newport Beach',
+    status: 'unknown',
+    triggersMatched: 0,
+    nextCheck: '6:00 AM',
+    icon: 'Sun',
   },
   {
     id: 'bob-hall',
     name: 'Bob Hall Pier',
-    lat: 27.581,
-    lon: -97.221,
-    // No buoy assigned for this one to test "No Signal"
-    forecast: {
-      primary: {
-        height: 2.1,
-        period: 8,
-        direction: 'E',
-        degrees: 95,
-      },
-      secondary: {
-        height: 0.8,
-        period: 5,
-        direction: 'SE',
-        degrees: 120,
-      },
-      windSpeed: 4,
-      windDirection: 'W',
-      windDegrees: 270,
-      tide: -0.2,
-      airTemp: 82,
-    },
-    status: 'poor',
+    region: 'Texas Gulf Coast',
+    lat: 27.5806,
+    lon: -97.2167,
+    buoyId: '42020',
+    buoyName: 'Corpus Christi (25nm E)',
+    status: 'unknown',
     triggersMatched: 0,
     nextCheck: '7:00 AM',
+    icon: 'Anchor',
+  },
+  {
+    id: 'hanalei',
+    name: 'Hanalei Bay',
+    region: 'Kauai, Hawaii',
+    lat: 22.2089,
+    lon: -159.5031,
+    buoyId: '51201',
+    buoyName: 'Waimea Bay',
+    status: 'unknown',
+    triggersMatched: 0,
+    nextCheck: '5:00 AM',
+    icon: 'Palmtree',
   },
 ];
 
 const recentAlerts = [
   {
     id: '1',
-    spotName: 'Surfside Beach',
-    type: 'Epic',
-    message: 'Surfside is firing! 5ft sets, offshore wind. GO NOW!',
-    time: '2 hours ago',
+    spotName: 'Swamis',
+    type: 'Pop-Up Alert',
+    message: 'Swamis is firing! 5ft sets, offshore wind. GO NOW!',
+    time: '2025-12-14T14:32:00Z',
     condition: 'epic' as const,
   },
   {
     id: '2',
-    spotName: 'Galveston (61st St)',
+    spotName: 'Hogans',
     type: 'Morning Check',
-    message: 'Good conditions expected. 4ft @ 11s. Traffic: 45min.',
-    time: 'Yesterday 6:00 AM',
+    message: 'Good conditions expected. 4ft @ 11s from the SW.',
+    time: '2025-12-14T06:15:00Z',
     condition: 'good' as const,
   },
   {
     id: '3',
-    spotName: 'Surfside Beach',
-    type: 'Night Forecast',
+    spotName: 'Bob Hall Pier',
+    type: 'Night Before',
     message: 'Tomorrow looking fun. Swell building overnight.',
-    time: '2 days ago',
+    time: '2025-12-13T20:45:00Z',
     condition: 'good' as const,
   },
 ];
 
-const statusConfig = {
-  epic: { label: 'Epic', color: 'bg-zinc-100 text-zinc-950 border-zinc-200 shadow-sm' },
-  good: { label: 'Good', color: 'bg-zinc-100 text-zinc-900 border-zinc-200' },
-  fair: { label: 'Fair', color: 'bg-zinc-800 text-zinc-300 border-zinc-700' },
-  poor: { label: 'Poor', color: 'bg-zinc-900 text-zinc-400 border-zinc-800' },
-  unknown: { label: 'No Buoy', color: 'bg-zinc-900 text-zinc-500 border-zinc-800' },
-};
+
 
 export function DashboardOverview() {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
+
+  // Extract unique buoy IDs from spots
+  const buoyIds = useMemo(() => {
+    const ids = baseSpots
+      .map((spot) => spot.buoyId)
+      .filter((id): id is string => !!id);
+    return [...new Set(ids)];
+  }, []);
+
+  // Extract locations for forecast data
+  const forecastLocations = useMemo(() => {
+    return baseSpots.map((spot) => ({
+      lat: spot.lat,
+      lon: spot.lon,
+      id: spot.id,
+    }));
+  }, []);
+
+  // Fetch live buoy data
+  const {
+    data: buoyDataMap,
+    isLoading: buoyLoading,
+  } = useMultipleBuoyData(buoyIds);
+
+  // Fetch live forecast data
+  const {
+    data: forecastDataMap,
+    isLoading: forecastLoading,
+  } = useMultipleForecastData(forecastLocations);
+
+  // Merge live data with base spots
+  const userSpots: Spot[] = useMemo(() => {
+    return baseSpots.map((baseSpot) => {
+      const buoyData = baseSpot.buoyId
+        ? buoyDataMap.get(baseSpot.buoyId.toUpperCase())
+        : null;
+      const forecastData = forecastDataMap.get(baseSpot.id);
+
+      return {
+        ...baseSpot,
+        buoy: buoyData ?? undefined,
+        forecast: forecastData ?? undefined,
+      };
+    });
+  }, [buoyDataMap, forecastDataMap]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -191,27 +215,11 @@ export function DashboardOverview() {
 
           <div className="p-6">
             <div className="space-y-4">
-              {recentAlerts.map((alert) => {
-                const conditionStyle = statusConfig[alert.condition];
-                const emoji = alert.condition === 'epic' ? '🔥' : '🌊';
-                return (
-                  <div key={alert.id} className="flex items-start gap-4 p-5 border border-border/50 bg-secondary/10 transition-colors">
-                    <div className={`mt-1.5 h-2.5 w-2.5 rounded-full ${conditionStyle.color.split(' ')[0].replace('bg-', 'bg-')}`} />
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-sm text-primary/80 uppercase tracking-wider">{alert.spotName}</span>
-                      </div>
-                      <p className="font-mono text-base text-foreground/90 leading-relaxed">
-                        {emoji} {alert.message}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2 font-mono opacity-60">
-                        Sent: {alert.time}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="space-y-4">
+                {recentAlerts.map((alert) => (
+                  <AlertCard key={alert.id} alert={alert} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -238,7 +246,7 @@ export function DashboardOverview() {
           <div className="p-6">
             <div className="space-y-4">
               {userSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} />
+                <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
               ))}
             </div>
           </div>
@@ -252,3 +260,4 @@ export function DashboardOverview() {
     </div>
   );
 }
+

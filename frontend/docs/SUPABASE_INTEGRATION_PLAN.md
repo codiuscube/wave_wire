@@ -203,7 +203,71 @@ supabase.from('profiles').update({ phone, email, home_address }).eq('id', userId
 
 ---
 
-## Phase 4: External Integrations (Future)
+## Phase 4: Admin Features
+
+### 4.1 Admin Authentication
+**Current state:** localStorage toggle for development
+**Backend needs:**
+- [ ] Add `is_admin` column to profiles table
+- [ ] Update AuthContext to fetch admin status from Supabase
+- [ ] Remove localStorage fallback in production
+
+**Supabase queries:**
+```typescript
+// Check admin status
+const { data } = await supabase
+  .from('profiles')
+  .select('is_admin')
+  .eq('id', userId)
+  .single();
+```
+
+### 4.2 AdminSpotsPage.tsx - Spot Management
+**Current state:** In-memory state, no persistence
+**Backend needs:**
+- [ ] Fetch all spots from `surf_spots` table
+- [ ] Update spot details (name, lat, lon, region, country_group)
+- [ ] Toggle verification status
+- [ ] Add new spots (auto-verified for admin)
+
+**Supabase queries:**
+```typescript
+// Fetch all spots
+supabase.from('surf_spots').select('*').order('name')
+
+// Update spot
+supabase.from('surf_spots').update({
+  name, lat, lon, region, country_group, verified, updated_at
+}).eq('id', spotId)
+
+// Toggle verified
+supabase.from('surf_spots').update({
+  verified: !currentVerified,
+  verified_at: !currentVerified ? new Date().toISOString() : null,
+  verified_by: !currentVerified ? userId : null
+}).eq('id', spotId)
+
+// Admin add spot (auto-verified)
+supabase.from('surf_spots').insert({
+  ...spotData,
+  verified: true,
+  source: 'official',
+  verified_at: new Date().toISOString(),
+  verified_by: userId
+})
+```
+
+### 4.3 Surf Spots Database Migration
+**Current state:** Spots stored in TypeScript file (1,225 spots)
+**Backend needs:**
+- [ ] Create `surf_spots` table in Supabase
+- [ ] Seed table with data from `src/data/surfSpots.ts`
+- [ ] Update AddSpotModal to query from Supabase
+- [ ] Update LocationContext to query from Supabase
+
+---
+
+## Phase 5: External Integrations (Future)
 
 ### 4.1 NOAA Buoy Data
 - [ ] Fetch real-time buoy conditions

@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   // Phone auth methods
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   verifyOtp: (phone: string, otp: string) => Promise<{ error: Error | null; isNewUser?: boolean }>;
@@ -19,10 +20,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// TODO: Replace with actual admin user IDs from Supabase or use a profiles table with is_admin column
+// For development, check localStorage for admin mode toggle
+const ADMIN_USER_IDS: string[] = [];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -43,6 +49,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check admin status when user changes
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+
+    // Check if user ID is in admin list
+    if (ADMIN_USER_IDS.includes(user.id)) {
+      setIsAdmin(true);
+      return;
+    }
+
+    // Development mode: check localStorage for admin toggle
+    // This allows testing admin features without modifying the database
+    // Remove this in production or replace with proper Supabase role check
+    const devAdminMode = localStorage.getItem('homebreak_admin_mode') === 'true';
+    setIsAdmin(devAdminMode);
+
+    // TODO: For production, fetch admin status from Supabase profiles table:
+    // const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
+    // setIsAdmin(data?.is_admin ?? false);
+  }, [user]);
 
   // Send OTP to phone number
   const signInWithPhone = async (phone: string) => {
@@ -105,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       loading,
+      isAdmin,
       signInWithPhone,
       verifyOtp,
       updateEmail,

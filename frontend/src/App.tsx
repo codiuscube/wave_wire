@@ -15,6 +15,8 @@ import {
   AccountPage,
   LoginPage,
   SignupPage,
+  AdminSpotsPage,
+  InvestmentPage,
 } from './pages';
 
 function App() {
@@ -29,6 +31,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route path="/investment" element={<InvestmentPage />} />
 
                 {/* Protected Dashboard Routes */}
                 <Route
@@ -46,6 +49,24 @@ function App() {
                   <Route path="personality" element={<PersonalityPage />} />
                   <Route path="account" element={<AccountPage />} />
                 </Route>
+
+                {/* Admin Routes (protected by isAdmin check in component) */}
+                <Route
+                  path="/admin/spots"
+                  element={
+                    <ProtectedRoute>
+                      <AdminSpotsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/investment"
+                  element={
+                    <ProtectedRoute>
+                      <InvestmentPage />
+                    </ProtectedRoute>
+                  }
+                />
               </Routes>
             </SurfTechLayout>
           </LocationProvider>

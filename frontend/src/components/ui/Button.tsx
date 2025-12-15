@@ -12,8 +12,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const variants = {
       default: 'bg-primary text-primary-foreground hover:bg-primary/90 font-medium',
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium',
-      outline: 'border border-border bg-background hover:bg-secondary text-foreground font-medium',
-      ghost: 'hover:bg-secondary text-muted-foreground hover:text-foreground font-medium',
+      outline: 'border border-border bg-background hover:bg-secondary text-foreground hover:text-secondary-foreground font-medium',
+      ghost: 'hover:bg-secondary text-muted-foreground hover:text-secondary-foreground font-medium',
       rogue: 'font-mono font-bold uppercase transition-all border border-brand-rogue text-brand-rogue bg-transparent rounded-none shadow-[4px_4px_0px_0px_var(--color-brand-rogue)] hover:bg-brand-rogue hover:text-brand-abyss hover:shadow-[2px_2px_0px_0px_var(--color-brand-rogue)] hover:translate-x-[2px] hover:translate-y-[2px]',
       'rogue-secondary': 'font-mono font-bold uppercase tracking-widest bg-brand-abyss border border-border/50 border-b-brand-rogue border-b-2 text-sm rounded-none hover:text-white hover:border-brand-rogue transition-all',
     };
