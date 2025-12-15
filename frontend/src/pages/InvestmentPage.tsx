@@ -3,11 +3,47 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Navbar, Footer } from '../components/landing';
 import { AdminHeader } from '../components/admin';
-import { Check, CircleQuestionMark } from 'lucide-react';
+import { Check, CircleQuestionMark, ArrowUpRight } from 'lucide-react';
+
+const timelineSlides = [
+    {
+        number: '01',
+        title: 'SEED',
+        subtitle: '$750 Capital',
+        description: 'Establish legal entity. Secure seed capital for infrastructure and accountability.',
+        image: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?q=80&w=2070&auto=format&fit=crop',
+        overlay: '[INIT_SEQUENCE] // CAPITAL: $750 // ENTITY: PENDING // STATUS: READY',
+    },
+    {
+        number: '02',
+        title: 'BUILD',
+        subtitle: 'Jan 1, 2026',
+        description: 'Develop MVP. Alpha testing with trusted circle. Target launch: Jan 1, 2026.',
+        image: 'https://images.unsplash.com/photo-1455729552865-3658a5d39692?q=80&w=2070&auto=format&fit=crop',
+        overlay: '[DEV_MODE] // MVP: IN_PROGRESS // ALPHA_TESTERS: SELECTED // LAUNCH: 01-01-2026',
+    },
+    {
+        number: '03',
+        title: 'GROW',
+        subtitle: '1,000 Users',
+        description: 'Open beta via waitlist. Scale to 1k users. Validate product-market fit.',
+        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2070&auto=format&fit=crop',
+        overlay: '[SCALE_UP] // BETA: OPEN // CAP: 1000_USERS // STATUS: VALIDATING',
+    },
+    {
+        number: '04',
+        title: 'MONETIZE',
+        subtitle: '5,000 Paid',
+        description: 'Activate payments. $5/mo premium tier. Cap at 5k paid. Option to hire dev and scale beyond.',
+        image: 'https://images.unsplash.com/photo-1509914398892-963f53e6e2f1?q=80&w=2070&auto=format&fit=crop',
+        overlay: '[REVENUE_ON] // PAYMENTS: ACTIVE // TIER: $5/MO // CAP: 5000_PAID',
+    },
+];
 
 export function InvestmentPage() {
     const location = useLocation();
     const isAdminRoute = location.pathname.startsWith('/admin');
+    const [activeSlide, setActiveSlide] = useState(0);
     const [textsPerUser, setTextsPerUser] = useState(4); // Default 4 texts/user/month
     const [donations, setDonations] = useState(5); // Default to $5
     const [p1Users, setP1Users] = useState(100); // Default 100
@@ -93,8 +129,8 @@ export function InvestmentPage() {
                             <span className="text-white text-xl sm:text-2xl">$750</span>
                         </div>
                         <div className="flex flex-col md:items-end">
-                            <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">1 YEAR TARGET</span>
-                            <span className="text-white text-xl sm:text-2xl">2,000 active users</span>
+                            <span className="text-brand-rogue font-bold mb-1 uppercase tracking-wider">6 MONTH TARGET</span>
+                            <span className="text-white text-xl sm:text-2xl">1,000 active users</span>
                         </div>
                     </div>
                 </div>
@@ -112,10 +148,15 @@ export function InvestmentPage() {
                             // MISSION_PROFILE
                         </span>
                         <h3 className="font-bold text-white mb-4 text-xl sm:text-2xl font-display">SUMMARY</h3>
-                        <p className="text-brand-foam/90 text-base sm:text-lg leading-relaxed mb-6 max-w-4xl">
-                            Deploy a precision-engineered, low-overhead intelligence tool for core surfers. We filter raw buoy and weather data to deliver private, threshold-based alerts ("The Wire")—ensuring zero crowds and pure signal. Built primarily for the specific needs of the founding team; scaled to a capped userbase to fund operations without diluting the product's "Secret Weapon" status.
+                        <p className="text-brand-foam/90 text-base sm:text-lg leading-relaxed mb-6 max-w-3xl">
+                            We're building Wave_Wire because we're tired of missing windows. It’s a tool that watches the buoys and models 24/7, then texts you when it’s actually on. No social feeds, no noise.
                         </p>
-
+                        <p className="text-brand-foam/90 text-base sm:text-lg leading-relaxed mb-6 max-w-3xl">
+                            <strong>The Plan:</strong> We're opening it up to a limited crew on a donation basis to cover server costs. Once we validate the concept, we'll introduce a simple commercial tier. The goal remains simple: score more waves, spend less time checking apps.
+                        </p>
+                        <p className="text-brand-foam/90 text-base sm:text-lg leading-relaxed mb-6 max-w-3xl font-medium">
+                            $750 in, break-even at 6 subscribers, self-funding thereafter. 100% founder-owned with no debt. Cap it at 5k paid users and collect passive income—or double down and scale.
+                        </p>
                         <div className="border-t border-brand-rogue/20 pt-6 mt-6">
                             <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mb-4 tape">
                                 STRATEGIC VIABILITY
@@ -123,85 +164,111 @@ export function InvestmentPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                 <div className="group">
                                     <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› BREAK-EVEN THRESHOLD</strong>
-                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">System achieves self-sustainment at ~150 subscribers. Current architecture supports 50k+ users with no fixed cost increase.</span>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">In Phase 2, Wave_Wire achieves self-sustainment at just ~6 paid subscribers (~20 total users at 30% conversion).</span>
                                 </div>
                                 <div className="group">
-                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› INFINITE RUNWAY</strong>
-                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">With $5/mo pricing and minimal OpEx ($25/mo base), the project funds its own growth indefinitely once Phase 2 activates.</span>
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› SELF-SUSTAINING</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">At $5/mo with ~$25 OpEx, the project funds itself. Architecture scales to 5k+ users at no extra fixed cost.</span>
                                 </div>
                                 <div className="group">
                                     <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› SUPPLY CONSTRAINT</strong>
-                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">By capping at 1,000 users, we artificially constrain supply, maintaining "Private Intel" branding and eliminating complex support overhead.</span>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">Hard cap: 1,000 free users, 5,000 paid subscribers. Artificial scarcity maintains exclusivity and keeps support manageable.</span>
                                 </div>
                                 <div className="group">
-                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› ASSET RETENTION</strong>
-                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">The core IP (alert algorithms) remains proprietary. No external equity. 100% internal ownership.</span>
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› ZERO DILUTION</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">No VCs, no board, no external investors. 100% founder-owned. Once break-even, minimal maintenance = near-passive recurring revenue.</span>
+                                </div>
+                                <div className="group">
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› LOW RISK</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">$750 total exposure. No debt, no loans, no personal guarantees. Walk away clean if needed.</span>
+                                </div>
+                                <div className="group">
+                                    <strong className="text-white block mb-1 font-display tracking-wide text-base group-hover:text-brand-acid transition-colors">› EXIT OPTIONALITY</strong>
+                                    <span className="text-brand-foam/80 text-base leading-relaxed block pl-4 border-l border-brand-rogue/30">Keep it as passive income, sell the subscriber base, or scale up. All options stay open.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Timeline Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {/* Timeline Carousel */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                        {/* Part 1 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
-                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-2 font-mono text-sm font-bold tracking-widest tape">01</span>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 1: THE_INPUT</h3>
-                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Seed_Fund</div>
-                            <p className="text-brand-foam/80 text-base leading-relaxed">
-                                Establish legal entity (DE/TX/CA). Secure $750 seed capital for initial infrastructure and accountability.
-                            </p>
+                        {/* Left: Navigation */}
+                        <div className="lg:col-span-4">
+                            <div className="space-y-3">
+                                {timelineSlides.map((slide, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveSlide(idx)}
+                                        className={`w-full text-left group flex items-center gap-4 p-4 border transition-all duration-300 ${activeSlide === idx
+                                            ? 'border-brand-acid bg-brand-acid/10 lg:translate-x-4'
+                                            : 'border-white/10 hover:border-white/40'
+                                            }`}
+                                    >
+                                        <span className={`font-mono font-bold text-xl ${activeSlide === idx ? 'text-brand-acid' : 'text-brand-concrete'}`}>
+                                            {slide.number}:
+                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-white tracking-widest uppercase text-sm">
+                                                {slide.title}
+                                            </span>
+                                            <span className="font-mono text-xs text-brand-foam/60">
+                                                {slide.subtitle}
+                                            </span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Part 2 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
-                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-sm font-bold tracking-widest tape">02</span>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 2: THE_BUILD</h3>
-                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Jan 1, 2026</div>
-                            <p className="text-brand-foam/80 text-base leading-relaxed">
-                                Develop MVP for internal stakeholders. Alpha testing with trusted circle. Target Launch: Jan 1, 2026.
-                            </p>
-                        </div>
+                        {/* Right: Visual Display */}
+                        <div className="lg:col-span-8 relative min-h-[400px]">
+                            {timelineSlides.map((slide, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`transition-all duration-500 absolute inset-0 ${activeSlide === idx ? 'opacity-100 z-10 translate-x-0' : 'opacity-0 z-0 translate-x-12 pointer-events-none'
+                                        }`}
+                                >
+                                    {/* Main Image Container */}
+                                    <div className="relative group shadow-[12px_12px_0px_0px_rgba(255,51,0,0.2)] border-2 border-white/10 bg-black">
 
-                        {/* Part 3 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
-                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-sm font-bold tracking-widest tape">03</span>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 3: THE_SCALE</h3>
-                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Open Beta</div>
-                            <p className="text-brand-foam/80 text-base leading-relaxed">
-                                Initiate US-only Open Beta. Free tier entry via waitlist. Controlled, incremental user onboarding.
-                            </p>
-                        </div>
+                                        {/* Overlays */}
+                                        <div className="absolute inset-0 grunge-overlay z-20 mix-blend-hard-light opacity-50"></div>
+                                        <div className="absolute inset-0 bg-brand-rogue/10 mix-blend-multiply z-20"></div>
 
-                        {/* Part 4 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
-                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-2 font-mono text-sm font-bold tracking-widest tape">04</span>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 4: CAP</h3>
-                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">1000 Users</div>
-                            <p className="text-brand-foam/80 text-base leading-relaxed">
-                                Cap active users at 1,000. Pause acquisition to integrate payment infrastructure (Stripe) and validate stability.
-                            </p>
-                        </div>
+                                        <img
+                                            src={slide.image}
+                                            alt={slide.title}
+                                            className="w-full h-[300px] object-cover grayscale contrast-[1.3] brightness-75 border-b-4 border-brand-rogue"
+                                        />
 
-                        {/* Part 5 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
-                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-sm font-bold tracking-widest tape">05</span>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 5: REVENUE</h3>
-                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">Paid Launch</div>
-                            <p className="text-brand-foam/80 text-base leading-relaxed">
-                                Activate monetization. $5/mo premium tier with limited freemium access. US market focus.
-                            </p>
-                        </div>
+                                        {/* Corner Number */}
+                                        <div className="absolute top-0 right-0 bg-white text-black font-black font-mono text-xl p-2 z-20 shadow-lg border border-black">
+                                            {slide.number}
+                                        </div>
 
-                        {/* Part 6 */}
-                        <div className="bg-white/5 border border-brand-concrete p-6 relative group hover:border-brand-acid transition-colors shadow-[6px_6px_0px_0px_rgba(255,51,0,0.3)]">
-                            <span className="absolute -top-3 -right-2 inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-sm font-bold tracking-widest tape">06</span>
-                            <h3 className="text-white font-bold mb-2 pr-8 font-display uppercase tracking-wide text-lg sm:text-xl">PART 6: SCALE_UP</h3>
-                            <div className="font-mono text-sm text-brand-rogue mb-3 uppercase tracking-wider">5000 Users</div>
-                            <p className="text-brand-foam/80 text-base leading-relaxed">
-                                Expand to 5,000 users. Evaluate architecture for mass-scale (50k+) and potential contraction of external dev resources.
-                            </p>
+                                        {/* Sticker Overlay */}
+                                        <div className="absolute bottom-6 left-6 bg-brand-abyss border-2 border-brand-acid p-4 max-w-sm z-30 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.5)] -rotate-1">
+                                            <div className="flex justify-between items-end mb-2 border-b border-brand-concrete/30 pb-2">
+                                                <span className="font-mono text-xs text-brand-acid">
+                                                    PHASE_{slide.number}
+                                                </span>
+                                                <div className="w-2 h-2 bg-brand-rogue rounded-full"></div>
+                                            </div>
+                                            <p className="font-mono text-xs text-white leading-tight uppercase tracking-wide">
+                                                {slide.overlay}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Description Box */}
+                                    <div className="mt-6 ml-6 border-l-2 border-brand-acid pl-6">
+                                        <p className="text-lg text-brand-foam font-bold leading-tight uppercase font-display max-w-lg">
+                                            <span className="text-brand-rogue">//</span> {slide.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                     </div>
