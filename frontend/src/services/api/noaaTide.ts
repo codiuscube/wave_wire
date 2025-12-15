@@ -199,12 +199,15 @@ export async function fetchTideData(stationId: string, stationName: string): Pro
 
   try {
     const now = new Date();
-    const beginDate = formatDateForAPI(now);
+    // Start from yesterday to ensure we have predictions before current time
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const beginDate = formatDateForAPI(yesterday);
 
     // Fetch both hi/lo and hourly data in parallel
     const [predictions, hourly] = await Promise.all([
-      fetchHiLoPredictions(stationId, beginDate, 72), // 3 days of hi/lo
-      fetchHourlyPredictions(stationId, beginDate, 72), // 3 days hourly for chart
+      fetchHiLoPredictions(stationId, beginDate, 96), // 4 days of hi/lo (yesterday + 3 days)
+      fetchHourlyPredictions(stationId, beginDate, 96), // 4 days hourly for chart
     ]);
 
     if (predictions.length === 0) {

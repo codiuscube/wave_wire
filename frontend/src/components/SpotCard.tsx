@@ -137,9 +137,9 @@ export function SpotCard({ spot }: SpotCardProps) {
   // Get tide direction arrow
   const getTideArrow = (direction: 'rising' | 'falling' | 'slack'): string => {
     switch (direction) {
-      case 'rising': return '→';
-      case 'falling': return '→';
-      default: return '→';
+      case 'rising': return '↑';
+      case 'falling': return '↓';
+      default: return '~';
     }
   };
 

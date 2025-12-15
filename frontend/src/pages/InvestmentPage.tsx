@@ -30,7 +30,10 @@ export function InvestmentPage() {
 
     // Costs
     const p2_infrastructure = 24.40;
-    const p2_sms_cost = p2_paid_users * textsPerUser * COST_PER_TEXT;
+    const TRAFFIC_REQ_COST = 0.01; // $10/1000 requests
+    const REQS_PER_TEXT = 3;
+    const TRAFFIC_COST_PER_TEXT = TRAFFIC_REQ_COST * REQS_PER_TEXT;
+    const p2_sms_cost = p2_paid_users * textsPerUser * (COST_PER_TEXT + TRAFFIC_COST_PER_TEXT);
 
     // Stripe: 2.9% + $0.30 per txn
     const p2_processing = (p2_revenue * 0.029) + (p2_paid_users * 0.30);
@@ -418,7 +421,7 @@ export function InvestmentPage() {
                                 {/* Variable SMS Row (Interactive) */}
                                 <tr className="hover:bg-white/5 transition-colors border-b border-brand-concrete/10 bg-brand-rogue/5">
                                     <td className="p-6 font-bold text-white border-r border-brand-concrete/30 align-middle">
-                                        VARIABLE AUDIT (SMS)
+                                        VARIABLE AUDIT (SMS + TRAFFIC)
                                         <span className="block text-xs text-brand-foam/60 font-normal mt-1 uppercase tracking-wide">Messaging Volume</span>
                                     </td>
                                     <td className="p-6 border-r border-brand-concrete/30 align-middle">
