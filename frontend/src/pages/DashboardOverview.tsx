@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
