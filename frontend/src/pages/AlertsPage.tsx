@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Clock, Moon, Sun, Zap, Bell, Info, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Card,
   CardHeader,
@@ -67,10 +68,36 @@ const alertDetails: Record<string, { trigger: string; example: string }> = {
 };
 
 export function AlertsPage() {
+  const { isAdmin } = useAuth();
   const [schedules, setSchedules] = useState<AlertSchedule[]>(defaultSchedules);
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(true);
   const [quietStart, setQuietStart] = useState('22:00');
   const [quietEnd, setQuietEnd] = useState('05:00');
+
+  // Show "Coming Soon" for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">Alert Schedule</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Control when we check conditions and send notifications.
+          </p>
+        </div>
+        <Card className="border-dashed">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <Clock className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Custom alert schedules are coming soon. You'll be able to configure night-before forecasts, morning reality checks, and pop-up alerts.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const updateSchedule = (id: string, updates: Partial<AlertSchedule>) => {
     setSchedules((prev) =>

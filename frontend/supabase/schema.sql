@@ -14,6 +14,7 @@ CREATE TABLE public.profiles (
   phone_verified BOOLEAN DEFAULT FALSE,
   home_address TEXT,
   subscription_tier TEXT DEFAULT 'free' CHECK (subscription_tier IN ('free', 'unlimited')),
+  onboarding_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

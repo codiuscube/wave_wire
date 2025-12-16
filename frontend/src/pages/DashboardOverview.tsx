@@ -1,14 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
 import { AlertsModal } from '../components/dashboard/AlertsModal';
-import { Button } from '../components/ui';
+import { Button, OnboardingModal } from '../components/ui';
 import { AlertCard } from '../components/dashboard/AlertCard';
 import { useMultipleBuoyData } from '../hooks/useBuoyData';
 import { useMultipleForecastData } from '../hooks/useForecastData';
+import { useAuth } from '../contexts/AuthContext';
+import { useUserSpots, useSentAlerts, useProfile } from '../hooks';
+import { Loader2, Waves } from 'lucide-react';
+import type { UserSpot, SentAlert } from '../lib/mappers';
 
-// Base spot data - would come from Supabase in production
-// Buoy and forecast data will be fetched live via hooks
+// Convert UserSpot to base spot format for the dashboard
 interface BaseSpot {
   id: string;
   name: string;
@@ -23,118 +27,91 @@ interface BaseSpot {
   icon?: string;
 }
 
-const baseSpots: BaseSpot[] = [
-  {
-    id: 'hogans',
-    name: 'Hogans',
-    region: 'San Diego County',
-    lat: 32.820789,
-    lon: -117.280503,
-    buoyId: '46225',
-    buoyName: 'Torrey Pines Outer',
-    status: 'unknown',
-    triggersMatched: 0,
-    nextCheck: '6:00 AM',
-    icon: 'Star',
-  },
-  {
-    id: 'swamis',
-    name: 'Swamis',
-    region: 'San Diego County',
-    lat: 33.034470,
-    lon: -117.292324,
-    buoyId: '46254',
-    buoyName: 'Oceanside Offshore',
-    status: 'unknown',
-    triggersMatched: 0,
-    nextCheck: '6:30 AM',
-    icon: 'Radio',
-  },
-  {
-    id: 'trestles',
-    name: 'Trestles',
-    region: 'Orange County',
-    lat: 33.3825,
-    lon: -117.5889,
-    buoyId: '46086',
-    buoyName: 'San Clemente Basin',
-    status: 'unknown',
-    triggersMatched: 0,
-    nextCheck: '6:00 AM',
-    icon: 'Waves',
-  },
-  {
-    id: 'huntington',
-    name: 'Huntington Beach',
-    region: 'Orange County',
-    lat: 33.6553,
-    lon: -118.0053,
-    buoyId: '46253',
-    buoyName: 'Newport Beach',
-    status: 'unknown',
-    triggersMatched: 0,
-    nextCheck: '6:00 AM',
-    icon: 'Sun',
-  },
-  {
-    id: 'bob-hall',
-    name: 'Bob Hall Pier',
-    region: 'Texas Gulf Coast',
-    lat: 27.5806,
-    lon: -97.2167,
-    buoyId: '42020',
-    buoyName: 'Corpus Christi (25nm E)',
-    status: 'unknown',
-    triggersMatched: 0,
-    nextCheck: '7:00 AM',
-    icon: 'Anchor',
-  },
-  {
-    id: 'hanalei',
-    name: 'Hanalei Bay',
-    region: 'Kauai, Hawaii',
-    lat: 22.2089,
-    lon: -159.5031,
-    buoyId: '51201',
-    buoyName: 'Waimea Bay',
-    status: 'unknown',
-    triggersMatched: 0,
-    nextCheck: '5:00 AM',
-    icon: 'Palmtree',
-  },
-];
+function userSpotToBaseSpot(userSpot: UserSpot): BaseSpot | null {
+  // Skip spots without coordinates
+  if (!userSpot.latitude || !userSpot.longitude) return null;
 
-const recentAlerts = [
-  {
-    id: '1',
-    spotName: 'Swamis',
-    type: 'Pop-Up Alert',
-    message: 'Swamis is firing! 5ft sets, offshore wind. GO NOW!',
-    time: '2025-12-14T14:32:00Z',
-    condition: 'epic' as const,
-  },
-  {
-    id: '2',
-    spotName: 'Hogans',
-    type: 'Morning Check',
-    message: 'Good conditions expected. 4ft @ 11s from the SW.',
-    time: '2025-12-14T06:15:00Z',
-    condition: 'good' as const,
-  },
-  {
-    id: '3',
-    spotName: 'Bob Hall Pier',
-    type: 'Night Before',
-    message: 'Tomorrow looking fun. Swell building overnight.',
-    time: '2025-12-13T20:45:00Z',
-    condition: 'good' as const,
-  },
-];
+  return {
+    id: userSpot.id,
+    name: userSpot.name,
+    region: userSpot.region || 'Unknown Region',
+    lat: userSpot.latitude,
+    lon: userSpot.longitude,
+    buoyId: userSpot.buoyId || undefined,
+    status: 'unknown',
+    triggersMatched: 0,
+    icon: userSpot.icon || undefined,
+  };
+}
+
+// Convert SentAlert to alert card format
+interface AlertCardData {
+  id: string;
+  spotName: string;
+  type: string;
+  message: string;
+  time: string;
+  condition: 'epic' | 'good' | 'fair' | 'poor';
+}
+
+function sentAlertToAlertCard(alert: SentAlert): AlertCardData {
+  // Map delivery status / alert type to condition
+  let condition: 'epic' | 'good' | 'fair' | 'poor' = 'good';
+  if (alert.conditionMatched?.toLowerCase().includes('epic')) {
+    condition = 'epic';
+  } else if (alert.conditionMatched?.toLowerCase().includes('poor')) {
+    condition = 'poor';
+  } else if (alert.conditionMatched?.toLowerCase().includes('fair')) {
+    condition = 'fair';
+  }
+
+  return {
+    id: alert.id,
+    spotName: alert.spotId || 'Unknown Spot', // Would need to join with spots for name
+    type: alert.alertType || 'Alert',
+    message: alert.messageContent || 'No message content',
+    time: alert.sentAt || alert.createdAt || new Date().toISOString(),
+    condition,
+  };
+}
 
 
 
 export function DashboardOverview() {
+  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { profile, isLoading: profileLoading, refresh: refreshProfile } = useProfile(user?.id);
+  // Admins automatically get premium tier access
+  const tier = isAdmin ? 'premium' : (profile?.subscriptionTier || 'free');
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Fetch user's spots from DB
+  const {
+    spots: dbSpots,
+    isLoading: spotsLoading,
+    error: spotsError,
+    refresh: refreshSpots,
+  } = useUserSpots(user?.id, tier);
+
+  // Fetch recent alerts from DB
+  const {
+    alerts: dbAlerts,
+    isLoading: alertsLoading,
+  } = useSentAlerts(user?.id, { limit: 5 });
+
   const [showAlertsModal, setShowAlertsModal] = useState(false);
+
+  // Convert DB spots to base spots format
+  const baseSpots: BaseSpot[] = useMemo(() => {
+    return dbSpots
+      .map(userSpotToBaseSpot)
+      .filter((spot): spot is BaseSpot => spot !== null);
+  }, [dbSpots]);
+
+  // Convert DB alerts to alert card format
+  const recentAlerts: AlertCardData[] = useMemo(() => {
+    return dbAlerts.map(sentAlertToAlertCard);
+  }, [dbAlerts]);
 
   // Extract unique buoy IDs from spots
   const buoyIds = useMemo(() => {
@@ -142,7 +119,7 @@ export function DashboardOverview() {
       .map((spot) => spot.buoyId)
       .filter((id): id is string => !!id);
     return [...new Set(ids)];
-  }, []);
+  }, [baseSpots]);
 
   // Extract locations for forecast data
   const forecastLocations = useMemo(() => {
@@ -151,7 +128,7 @@ export function DashboardOverview() {
       lon: spot.lon,
       id: spot.id,
     }));
-  }, []);
+  }, [baseSpots]);
 
   // Fetch live buoy data
   const {
@@ -179,7 +156,40 @@ export function DashboardOverview() {
         forecast: forecastData ?? undefined,
       };
     });
-  }, [buoyDataMap, forecastDataMap]);
+  }, [baseSpots, buoyDataMap, forecastDataMap]);
+
+  // Loading state
+  if (authLoading || profileLoading || spotsLoading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (spotsError) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <div className="tech-card border-destructive p-6">
+          <p className="text-destructive">Error loading dashboard: {spotsError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding if incomplete (and not admin) OR if forced by URL param
+  const forceShowOnboarding = searchParams.get('onboarding') === 'true';
+  const showOnboarding = (!!profile && !profile.onboardingCompleted && !isAdmin) || (isAdmin && forceShowOnboarding);
+
+  const handleOnboardingClose = () => {
+    // Remove query param
+    searchParams.delete('onboarding');
+    setSearchParams(searchParams);
+
+    refreshProfile();
+    refreshSpots();
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -214,13 +224,24 @@ export function DashboardOverview() {
           </div>
 
           <div className="p-6">
-            <div className="space-y-4">
+            {alertsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : recentAlerts.length > 0 ? (
               <div className="space-y-4">
                 {recentAlerts.map((alert) => (
                   <AlertCard key={alert.id} alert={alert} />
                 ))}
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="font-mono text-sm text-muted-foreground">No alerts yet</p>
+                <p className="font-mono text-xs text-muted-foreground/60 mt-1">
+                  Alerts will appear here when your triggers match conditions
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -244,17 +265,36 @@ export function DashboardOverview() {
           </div>
 
           <div className="p-6">
-            <div className="space-y-4">
-              {userSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
-              ))}
-            </div>
+            {userSpots.length > 0 ? (
+              <div className="space-y-4">
+                {userSpots.map((spot) => (
+                  <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/20 mb-6 border border-border/50">
+                  <Waves className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="font-mono text-sm text-muted-foreground">No spots configured</p>
+                <p className="font-mono text-xs text-muted-foreground/60 mt-1 mb-4">
+                  Add spots to start monitoring conditions
+                </p>
+                <Button variant="rogue-secondary" className="px-4 py-2" onClick={() => window.location.href = '/spots'}>
+                  ADD_SPOTS
+                </Button>
+              </div>
+            )}
           </div>
         </div>
         <AlertsModal
           isOpen={showAlertsModal}
           onClose={() => setShowAlertsModal(false)}
           initialAlerts={recentAlerts}
+        />
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={handleOnboardingClose}
         />
       </div>
     </div>

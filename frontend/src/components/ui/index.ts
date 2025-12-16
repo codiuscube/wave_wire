@@ -10,3 +10,4 @@ export { ComingSoonModal } from './ComingSoonModal';
 export { AddSpotModal } from './AddSpotModal';
 export type { SpotOption } from './AddSpotModal';
 export { AddTriggerModal } from './AddTriggerModal';
+export { OnboardingModal } from './OnboardingModal';

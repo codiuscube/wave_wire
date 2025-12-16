@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2, GripVertical, Info, Radar, MapPin } from "lucide-react";
+import { Plus, Trash2, GripVertical, Info, Radar, MapPin, Clock } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Card,
   CardContent,
@@ -111,6 +112,7 @@ const conditionColors = {
 };
 
 export function TriggersPage() {
+  const { isAdmin } = useAuth();
   const [triggers, setTriggers] = useState<TriggerTier[]>(defaultTriggers);
   const [expandedId, setExpandedId] = useState<string | null>("1");
   const [selectedSpotId, setSelectedSpotId] = useState<string>(
@@ -119,6 +121,31 @@ export function TriggersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const hasSpots = userSpots.length > 0;
+
+  // Show "Coming Soon" for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">Triggers</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Define what conditions get you out of bed.
+          </p>
+        </div>
+        <Card className="border-dashed">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <Clock className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Custom triggers are coming soon. You'll be able to set specific wave height, period, and wind conditions that match your preferences.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const spotOptions = userSpots.map((s) => ({ value: s.id, label: s.name }));
 
   const filteredTriggers = selectedSpotId
