@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -8,11 +8,17 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
-  // Phone auth methods
+  // Email OTP (magic link) auth - PREFERRED
+  signInWithEmailOtp: (email: string) => Promise<{ error: Error | null }>;
+  verifyEmailOtp: (email: string, token: string) => Promise<{ error: Error | null }>;
+  // Password reset
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  // Phone auth methods (Twilio pending)
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   verifyOtp: (phone: string, otp: string) => Promise<{ error: Error | null; isNewUser?: boolean }>;
   updateEmail: (email: string) => Promise<{ error: Error | null }>;
-  // Legacy email methods (kept for compatibility)
+  // Legacy email/password methods
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -20,22 +26,51 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// TODO: Replace with actual admin user IDs from Supabase or use a profiles table with is_admin column
-// For development, check localStorage for admin mode toggle
-const ADMIN_USER_IDS: string[] = [];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Combined loading state - true until both auth AND profile are loaded
+  const loading = isLoadingAuth || isLoadingProfile;
+
+  // Fetch admin status from profiles table
+  const fetchAdminStatus = useCallback(async (userId: string) => {
+    setIsLoadingProfile(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error.message);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(data?.is_admin ?? false);
+      }
+    } catch (err) {
+      console.error('Error fetching admin status:', err);
+      setIsAdmin(false);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  }, []);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      setIsLoadingAuth(false);
+
+      // If no user, we're done loading profile too
+      if (!session?.user) {
+        setIsLoadingProfile(false);
+      }
     });
 
     // Listen for auth changes
@@ -43,36 +78,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        setIsLoadingAuth(false);
+
+        // If user signed out, reset profile loading
+        if (!session?.user) {
+          setIsLoadingProfile(false);
+        }
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Check admin status when user changes
+  // Fetch admin status when user changes
   useEffect(() => {
     if (!user) {
       setIsAdmin(false);
       return;
     }
 
-    // Check if user ID is in admin list
-    if (ADMIN_USER_IDS.includes(user.id)) {
-      setIsAdmin(true);
-      return;
-    }
+    fetchAdminStatus(user.id);
+  }, [user, fetchAdminStatus]);
 
-    // Development mode: check localStorage for admin toggle
-    // This allows testing admin features without modifying the database
-    // Remove this in production or replace with proper Supabase role check
-    const devAdminMode = localStorage.getItem('homebreak_admin_mode') === 'true';
-    setIsAdmin(devAdminMode);
+  // Email OTP (magic link) - sends a code to email
+  const signInWithEmailOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        // Use OTP code instead of magic link for better UX
+        shouldCreateUser: true,
+      },
+    });
+    return { error: error as Error | null };
+  };
 
-    // TODO: For production, fetch admin status from Supabase profiles table:
-    // const { data } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single();
-    // setIsAdmin(data?.is_admin ?? false);
-  }, [user]);
+  // Verify email OTP code
+  const verifyEmailOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+    return { error: error as Error | null };
+  };
+
+  // Password reset - sends reset email
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error: error as Error | null };
+  };
+
+  // Update password (after reset link clicked)
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    return { error: error as Error | null };
+  };
 
   // Send OTP to phone number
   const signInWithPhone = async (phone: string) => {
@@ -136,6 +200,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       loading,
       isAdmin,
+      signInWithEmailOtp,
+      verifyEmailOtp,
+      resetPassword,
+      updatePassword,
       signInWithPhone,
       verifyOtp,
       updateEmail,

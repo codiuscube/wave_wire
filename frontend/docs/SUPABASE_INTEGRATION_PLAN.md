@@ -1,360 +1,358 @@
-# ITSPUMPING.AI - Supabase Integration To-Do List
+# ITSPUMPING.AI - Supabase Integration Plan
 
 ## Overview
-Wire up all frontend pages to Supabase backend with phone-first authentication.
+Wire up frontend pages to Supabase backend. Current scope: **Account**, **Spots**, and **Dashboard Overview** pages, plus admin features.
+
+**Auth Status:** Using email/password (Twilio A2P approval pending for SMS)
 
 ---
 
-## Phase 0: Twilio Setup (Do This First)
+## Phase 0: Prerequisites
 
-### Create Twilio Account
-1. Go to https://www.twilio.com/try-twilio
-2. Sign up with email
-3. Verify your own phone number
+### 0.1 Install Docker (Required for Supabase CLI) ✅
+Supabase CLI requires Docker for local development and type generation.
 
-### Get Credentials
-After signup, go to **Console Dashboard**:
-- [ ] Copy **Account SID** (starts with `AC...`)
-- [ ] Copy **Auth Token** (click to reveal)
+**macOS:**
+1. Download Docker Desktop: https://www.docker.com/products/docker-desktop/
+2. Install and launch Docker Desktop
+3. Wait for Docker to fully start (whale icon stops animating)
+4. Verify: `docker --version`
 
-### Get a Phone Number
-1. Go to **Phone Numbers > Manage > Buy a Number**
-2. Search for a number with **SMS capability**
-3. Buy it (~$1.15/month for US numbers)
-4. [ ] Copy your **Twilio Phone Number** (e.g., +1234567890)
+**Status:** Docker 28.4.0 installed
 
-### Configure in Supabase
-1. Go to Supabase Dashboard > **Authentication > Providers**
-2. Enable **Phone**
-3. Select **Twilio** as provider
-4. Enter:
-   - Twilio Account SID
-   - Twilio Auth Token
-   - Twilio Message Service SID (or phone number)
-5. Save
+### 0.2 Install Supabase CLI ✅
+```bash
+brew install supabase/tap/supabase
+```
 
-**Come back here once you have:**
-- Twilio Account SID
-- Twilio Auth Token
-- Twilio Phone Number
-- Phone auth enabled in Supabase
+**Status:** Supabase CLI 2.65.5 installed
+
+### 0.3 Initialize Supabase Project ✅
+```bash
+cd frontend
+# Check if already initialized
+if [ ! -f "supabase/config.toml" ]; then
+  supabase init
+fi
+supabase link --project-ref rbqfhcmykqdndwbtewtb
+```
+
+**Status:** Linked to project `rbqfhcmykqdndwbtewtb`
 
 ---
 
-## Phase 1: Phone-First Authentication
+## Phase 1: Database Migrations
 
-### Status: ✅ Code Ready (Waiting for Twilio A2P Approval)
+### 1.1 Add `is_admin` to profiles + Trigger Protection ✅
 
-### 1.1 Supabase Configuration (Manual in Dashboard)
-- [x] Enable Phone Auth provider in Supabase Auth settings
-- [x] Configure Twilio SMS provider
-- [x] Set SMS OTP expiry time (60 seconds)
-- [ ] **BLOCKED:** Waiting for Twilio A2P 10DLC campaign approval
+**CRITICAL:** Use TRIGGER (not RLS policy) because RLS policies are additive (OR logic). An RLS "deny" policy would be bypassed by existing "Users can update own profile" policy.
 
-### 1.2 Auth Flow (Implemented)
-**Files created:**
-- `src/contexts/AuthContext.tsx` - Has phone OTP methods ready
-- `src/components/auth/PhoneInput.tsx` - Phone number input with formatting
-- `src/components/auth/OtpInput.tsx` - 6-digit OTP verification input
-- `src/components/auth/ProtectedRoute.tsx` - Route protection
+```sql
+-- Add is_admin column
+ALTER TABLE public.profiles ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
 
-**Current state:** Using email/password until Twilio is approved
+-- Trigger to protect sensitive columns
+CREATE OR REPLACE FUNCTION protect_sensitive_columns()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (OLD.is_admin IS DISTINCT FROM NEW.is_admin) OR
+     (OLD.subscription_tier IS DISTINCT FROM NEW.subscription_tier) THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND is_admin = TRUE
+    ) THEN
+      RAISE EXCEPTION 'Cannot modify is_admin or subscription_tier';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-### 1.3 AuthContext Methods Available
-```typescript
-signInWithPhone(phone: string) // Send OTP
-verifyOtp(phone: string, otp: string) // Verify & create session
-updateEmail(email: string) // Add email after phone verification
-signIn(email, password) // Email login (current)
-signUp(email, password) // Email signup (current)
-signOut() // Logout
+CREATE TRIGGER protect_profile_sensitive_columns
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_sensitive_columns();
 ```
+
+**Status:** Applied via migration `20251216050123_add_admin_and_surf_spots.sql`
+
+### 1.2 Bootstrap Admins ✅
+
+**CRITICAL:** The trigger blocks admin updates, so temporarily disable it first:
+
+```sql
+-- Temporarily disable the trigger
+ALTER TABLE public.profiles DISABLE TRIGGER protect_profile_sensitive_columns;
+
+-- Set admins
+UPDATE public.profiles SET is_admin = true
+WHERE email IN (
+  'cody@wave-wire.com',
+  'shaun@wave-wire.com',
+  'cody.a.iddings@gmail.com'
+);
+
+-- Re-enable the trigger
+ALTER TABLE public.profiles ENABLE TRIGGER protect_profile_sensitive_columns;
+```
+
+**Status:** ✅ Applied in Supabase SQL Editor
+
+### 1.3 Create `surf_spots` Master Table ✅
+
+```sql
+CREATE TABLE public.surf_spots (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  lat NUMERIC NOT NULL,
+  lon NUMERIC NOT NULL,
+  region TEXT NOT NULL,
+  country_group TEXT NOT NULL CHECK (country_group IN ('USA', 'Mexico', 'Central America', 'Canada')),
+  country TEXT,
+  buoy_id TEXT,
+  buoy_name TEXT,
+  verified BOOLEAN DEFAULT FALSE,
+  source TEXT DEFAULT 'official' CHECK (source IN ('official', 'community', 'user')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.surf_spots ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can read verified spots
+CREATE POLICY "Anyone can view verified spots" ON public.surf_spots
+  FOR SELECT USING (verified = TRUE OR
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE));
+
+-- Only admins can modify
+CREATE POLICY "Admins can manage spots" ON public.surf_spots
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
+  );
+
+-- Indexes
+CREATE INDEX idx_surf_spots_country_group ON public.surf_spots(country_group);
+CREATE INDEX idx_surf_spots_verified ON public.surf_spots(verified);
+
+-- Updated at trigger
+CREATE TRIGGER update_surf_spots_updated_at
+  BEFORE UPDATE ON public.surf_spots
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+```
+
+**Status:** Applied via migration `20251216050123_add_admin_and_surf_spots.sql`
+
+### 1.4 Add FK from user_spots to surf_spots ✅
+
+```sql
+ALTER TABLE public.user_spots
+  ADD COLUMN master_spot_id TEXT REFERENCES public.surf_spots(id);
+```
+
+**Status:** Applied via migration `20251216050123_add_admin_and_surf_spots.sql`
+
+### 1.5 Server-Side Spot Limit Enforcement ✅
+
+**CRITICAL:** Frontend validation is PRIMARY user feedback. DB trigger is safety net only (returns generic SQL error).
+
+```sql
+CREATE OR REPLACE FUNCTION check_spot_limit()
+RETURNS TRIGGER AS $$
+DECLARE
+  spot_count INTEGER;
+  user_tier TEXT;
+BEGIN
+  SELECT subscription_tier INTO user_tier
+  FROM public.profiles WHERE id = NEW.user_id;
+
+  SELECT COUNT(*) INTO spot_count
+  FROM public.user_spots WHERE user_id = NEW.user_id;
+
+  IF user_tier = 'free' AND spot_count >= 1 THEN
+    RAISE EXCEPTION 'Free tier limit: 1 spot maximum. Upgrade to add more.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_spot_limit
+  BEFORE INSERT ON public.user_spots
+  FOR EACH ROW EXECUTE FUNCTION check_spot_limit();
+```
+
+**Status:** Applied via migration `20251216050123_add_admin_and_surf_spots.sql`
+
+### 1.6 Migrate 1,217 Surf Spots ✅
+
+Script: `scripts/migrate-surf-spots.ts` (run with `npx tsx`)
+
+**Run command:**
+```bash
+SUPABASE_URL=https://rbqfhcmykqdndwbtewtb.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key \
+npx tsx scripts/migrate-surf-spots.ts
+```
+
+**Results:**
+- Total spots: 1,225
+- Migrated: 1,217 (8 skipped due to null lat/lon)
+- By region: USA (714), Central America (134), Mexico (105), Canada (47)
+
+**Status:** ✅ Complete
 
 ---
 
-## Phase 2: Dashboard Pages - Wire to Supabase
+## Phase 2: TypeScript Types
 
-### 2.1 SpotPage.tsx - Surf Spots
-**Current state:** Hardcoded spots, local state only
-**Backend needs:**
-- [ ] Fetch user's saved spots on load
-- [ ] Save new spot (popular or custom)
-- [ ] Delete spot
-- [ ] Enforce free tier limit (1 spot)
-
-**Supabase queries:**
-```typescript
-// Fetch spots
-supabase.from('user_spots').select('*').eq('user_id', userId)
-
-// Add spot
-supabase.from('user_spots').insert({ user_id, name, lat, lon, buoy_id, region })
-
-// Delete spot
-supabase.from('user_spots').delete().eq('id', spotId)
+### 2.1 Auto-Generate from Supabase ✅
+```bash
+supabase gen types typescript --linked > src/types/supabase.ts
 ```
 
-### 2.2 TriggersPage.tsx - Alert Triggers
-**Current state:** Hardcoded triggers, local state only
-**Backend needs:**
-- [ ] Fetch triggers for selected spot
-- [ ] Create new trigger
-- [ ] Update trigger settings
-- [ ] Delete trigger
-- [ ] Enforce free tier limit (1 trigger per spot)
+**Status:** ✅ Generated at `src/types/supabase.ts`
 
-**Supabase queries:**
-```typescript
-// Fetch triggers for spot
-supabase.from('triggers').select('*').eq('spot_id', spotId)
+### 2.2 Create Mappers ✅
+**File:** `src/lib/mappers.ts`
 
-// Create trigger
-supabase.from('triggers').insert({ user_id, spot_id, name, emoji, condition, ... })
+Convert snake_case DB types to camelCase frontend types.
 
-// Update trigger
-supabase.from('triggers').update({ name, emoji, ... }).eq('id', triggerId)
+**Exports:**
+- Frontend types: `Profile`, `SurfSpot`, `UserSpot`, `Trigger`, `SentAlert`, `AlertSchedule`, `UserPreferences`
+- DB → Frontend: `mapProfile`, `mapSurfSpot`, `mapUserSpot`, `mapTrigger`, `mapSentAlert`, `mapAlertSchedule`, `mapUserPreferences`
+- Frontend → DB: `toDbProfileUpdate`, `toDbUserSpotInsert/Update`, `toDbTriggerInsert/Update`, `toDbAlertScheduleInsert/Update`, `toDbUserPreferencesInsert/Update`, `toDbSurfSpotInsert/Update`
 
-// Delete trigger
-supabase.from('triggers').delete().eq('id', triggerId)
-```
-
-### 2.3 AlertsPage.tsx - Alert Schedules
-**Current state:** Hardcoded schedules, local state only
-**Backend needs:**
-- [ ] Fetch user's alert schedules (created on signup via DB trigger)
-- [ ] Update schedule (time, enabled, days)
-- [ ] Fetch/update quiet hours
-
-**Supabase queries:**
-```typescript
-// Fetch schedules
-supabase.from('alert_schedules').select('*').eq('user_id', userId)
-
-// Update schedule
-supabase.from('alert_schedules').update({ check_time, enabled, active_days }).eq('id', scheduleId)
-
-// Fetch quiet hours
-supabase.from('quiet_hours').select('*').eq('user_id', userId).single()
-
-// Update quiet hours
-supabase.from('quiet_hours').update({ enabled, start_time, end_time }).eq('user_id', userId)
-```
-
-### 2.4 PersonalityPage.tsx - AI Personality
-**Current state:** Hardcoded personality, local state only
-**Backend needs:**
-- [ ] Fetch user preferences
-- [ ] Update personality selection
-- [ ] Update message options (emoji, buoy data, traffic)
-
-**Supabase queries:**
-```typescript
-// Fetch preferences
-supabase.from('user_preferences').select('*').eq('user_id', userId).single()
-
-// Update preferences
-supabase.from('user_preferences').update({
-  ai_personality, include_emoji, include_buoy_data, include_traffic
-}).eq('user_id', userId)
-```
-
-### 2.5 AccountPage.tsx - User Account
-**Current state:** Hardcoded user data, mock verification states
-**Backend needs:**
-- [ ] Fetch user profile from `profiles` table
-- [ ] Update phone number (with re-verification)
-- [ ] Update email
-- [ ] Update home address
-- [ ] Display subscription tier
-- [x] Logout functionality ✅
-
-**Supabase queries:**
-```typescript
-// Fetch profile
-supabase.from('profiles').select('*').eq('id', userId).single()
-
-// Update profile
-supabase.from('profiles').update({ phone, email, home_address }).eq('id', userId)
-```
-
-### 2.6 DashboardOverview.tsx - Dashboard Home
-**Current state:** Hardcoded spots, alerts, conditions
-**Backend needs:**
-- [ ] Fetch user's spots with current status
-- [ ] Fetch recent alerts from `sent_alerts`
-- [ ] Calculate stats (alerts this week, etc.)
-
-**Note:** Real-time buoy data will require external API integration (Phase 4)
+**Status:** ✅ Complete
 
 ---
 
-## Phase 3: Shared Hooks & Utilities
+## Phase 3: Custom Hooks ✅
 
-### 3.1 Create Custom Hooks
-- [ ] `src/hooks/useSpots.ts` - CRUD for user spots
-- [ ] `src/hooks/useTriggers.ts` - CRUD for triggers
-- [ ] `src/hooks/useAlertSchedules.ts` - Fetch/update schedules
-- [ ] `src/hooks/useUserPreferences.ts` - Fetch/update preferences
-- [ ] `src/hooks/useProfile.ts` - Fetch/update profile
+| Hook | Purpose | Status |
+|------|---------|--------|
+| `useProfile(userId)` | Fetch/update profile from `profiles` | ✅ |
+| `useUserSpots(userId, tier)` | CRUD for `user_spots`, enforces free tier limit | ✅ |
+| `useSurfSpots(options)` | Query master `surf_spots` list with filters | ✅ |
+| `useSentAlerts(userId)` | Fetch recent alerts from `sent_alerts` | ✅ |
 
-### 3.2 Create Types
-- [ ] Update `src/types/index.ts` with Supabase table types
-- [ ] Generate types from Supabase schema (optional)
+All hooks follow existing pattern: `{ data, isLoading, error, refresh, ...mutations }`
+
+**Exports from `src/hooks/index.ts`:**
+- `useProfile` - profile CRUD with `update()` method
+- `useUserSpots` - spot CRUD with `canAddSpot`, `addSpot()`, `updateSpot()`, `deleteSpot()`
+- `useSurfSpots` - master spots query with admin `toggleVerified()`, `addSpot()`, `updateSpot()`, `deleteSpot()`
+- `useSentAlerts` - read-only alert history with filters
 
 ---
 
-## Phase 4: Admin Features
+## Phase 4: Update AuthContext ✅
 
-### 4.1 Admin Authentication
-**Current state:** localStorage toggle for development
-**Backend needs:**
-- [ ] Add `is_admin` column to profiles table
-- [ ] Update AuthContext to fetch admin status from Supabase
-- [ ] Remove localStorage fallback in production
+**File:** `src/contexts/AuthContext.tsx`
 
-**Supabase queries:**
+- [x] Remove `ADMIN_USER_IDS` array and localStorage fallback
+- [x] Fetch `is_admin` from `profiles` table when user changes
+
+**CRITICAL - Prevent Flicker:**
+Added `isLoadingProfile` state. Global `loading` stays true until BOTH auth session AND profile data are loaded.
+
 ```typescript
-// Check admin status
-const { data } = await supabase
-  .from('profiles')
-  .select('is_admin')
-  .eq('id', userId)
-  .single();
+const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+const loading = isLoadingAuth || isLoadingProfile;
 ```
 
-### 4.2 AdminSpotsPage.tsx - Spot Management
-**Current state:** In-memory state, no persistence
-**Backend needs:**
-- [ ] Fetch all spots from `surf_spots` table
-- [ ] Update spot details (name, lat, lon, region, country_group)
-- [ ] Toggle verification status
-- [ ] Add new spots (auto-verified for admin)
-
-**Supabase queries:**
-```typescript
-// Fetch all spots
-supabase.from('surf_spots').select('*').order('name')
-
-// Update spot
-supabase.from('surf_spots').update({
-  name, lat, lon, region, country_group, verified, updated_at
-}).eq('id', spotId)
-
-// Toggle verified
-supabase.from('surf_spots').update({
-  verified: !currentVerified,
-  verified_at: !currentVerified ? new Date().toISOString() : null,
-  verified_by: !currentVerified ? userId : null
-}).eq('id', spotId)
-
-// Admin add spot (auto-verified)
-supabase.from('surf_spots').insert({
-  ...spotData,
-  verified: true,
-  source: 'official',
-  verified_at: new Date().toISOString(),
-  verified_by: userId
-})
-```
-
-### 4.3 Surf Spots Database Migration
-**Current state:** Spots stored in TypeScript file (1,225 spots)
-**Backend needs:**
-- [ ] Create `surf_spots` table in Supabase
-- [ ] Seed table with data from `src/data/surfSpots.ts`
-- [ ] Update AddSpotModal to query from Supabase
-- [ ] Update LocationContext to query from Supabase
+**Status:** ✅ Complete
 
 ---
 
-## Phase 5: External Integrations (Future)
+## Phase 5: Wire Up Pages ✅
 
-### 4.1 NOAA Buoy Data
-- [ ] Fetch real-time buoy conditions
-- [ ] Cache in `current_conditions` table
-- [ ] Display on DashboardOverview
+### 5.1 AccountPage.tsx ✅
+- [x] Use `useProfile` to fetch/update user data
+- [x] Replace hardcoded phone/email/address with profile data
+- [x] Save button calls `profile.update()`
+- [x] Added loading/error states and save feedback
 
-### 4.2 SMS Alerts (Twilio)
-- [ ] Send alerts via Twilio
-- [ ] Track SMS usage for free tier limit
-- [ ] Implement cooldown logic
+### 5.2 SpotPage.tsx ✅
+- [x] Use `useUserSpots` for CRUD operations
+- [x] Check `canAddSpot` (free tier = 1 spot limit)
+- [x] Show upgrade prompt when limit reached
+- [x] Wire icon updates and buoy assignment to DB
 
-### 4.3 AI Message Generation
-- [ ] Integrate Claude Haiku for personality-based messages
-- [ ] Generate alerts based on user's personality setting
+### 5.3 DashboardOverview.tsx ✅
+- [x] Use `useUserSpots` for user's spots
+- [x] Use `useSentAlerts` for recent alert history
+- [x] Map data to existing component formats
+- [x] Added empty states for no spots/alerts
 
----
+### 5.4 AdminSpotsPage.tsx ✅
+- [x] Use `useSurfSpots` with admin filters (`includeUnverified: true`)
+- [x] Wire verify toggle, edit, and add to hook methods
+- [x] Admin check via AuthContext (from Supabase)
+- [x] Removed dev mode toggle (admin from DB now)
 
-## Implementation Order (Recommended)
-
-1. **~~Phone Auth~~** - ⏸️ Paused (waiting for Twilio A2P approval)
-   - [x] Supabase phone auth config
-   - [x] PhoneInput + OtpInput components
-   - [ ] Switch to phone-first flow when approved
-
-2. **Account Page** - Users need to manage their profile
-   - [ ] Wire profile fetch/update
-   - [x] Add logout button ✅
-
-3. **Spots Page** - Foundation for triggers
-   - [ ] Wire spots CRUD
-   - [ ] Enforce tier limits
-
-4. **Triggers Page** - Depends on spots
-   - [ ] Wire triggers CRUD
-   - [ ] Link to spots
-
-5. **Alerts Page** - Schedules already created by DB trigger
-   - [ ] Wire schedule updates
-   - [ ] Wire quiet hours
-
-6. **Personality Page** - Preferences
-   - [ ] Wire preferences
-
-7. **Dashboard Overview** - Aggregates everything
-   - [ ] Fetch spots + recent alerts
-   - [ ] Real-time data (Phase 4)
+### 5.5 AddSpotModal.tsx ✅
+- [x] Use `useSurfSpots` instead of local `getSurfSpots()`
+- [x] Pass region/search filters to hook
+- [x] Added loading state during search
 
 ---
 
-## Database Schema
+## Implementation Progress
 
-Schema file: `supabase/schema.sql`
-
-### Tables
-| Table | Purpose |
-|-------|---------|
-| `profiles` | User data (extends auth.users) |
-| `user_spots` | Saved surf locations |
-| `triggers` | Alert conditions per spot |
-| `alert_schedules` | When to check conditions |
-| `quiet_hours` | Do not disturb settings |
-| `sent_alerts` | Alert history |
-| `sms_usage` | SMS limit tracking |
-| `user_preferences` | AI personality settings |
-
-### Auto-created on Signup
-The database trigger `handle_new_user()` automatically creates:
-- Profile record
-- Default preferences
-- Default quiet hours
-- 3 default alert schedules (Night Before, Morning, Pop-Up)
+| Step | Task | Status |
+|------|------|--------|
+| 1 | Docker + Supabase CLI | ✅ Complete |
+| 2 | Base schema (schema.sql) | ✅ Complete |
+| 3 | Schema migrations (is_admin, surf_spots, triggers) | ✅ Complete |
+| 4 | Bootstrap admins | ✅ Complete |
+| 5 | Generate types | ✅ Complete |
+| 6 | Data seed (1,217 spots) | ✅ Complete |
+| 7 | Mappers | ✅ Complete |
+| 8 | Hooks | ✅ Complete |
+| 9 | AuthContext | ✅ Complete |
+| 10 | Pages | ✅ Complete |
 
 ---
 
 ## Critical Files
 
-| File | Status | Purpose |
-|------|--------|---------|
-| `src/lib/supabase.ts` | ✅ | Supabase client |
-| `src/contexts/AuthContext.tsx` | ✅ | Auth state & methods |
-| `src/components/auth/*` | ✅ | Auth components |
-| `src/pages/LoginPage.tsx` | ✅ | Email login (phone ready) |
-| `src/pages/SignupPage.tsx` | ✅ | Email signup |
-| `supabase/schema.sql` | ✅ | Database schema |
-| `src/pages/SpotPage.tsx` | ⏳ | Needs Supabase wiring |
-| `src/pages/TriggersPage.tsx` | ⏳ | Needs Supabase wiring |
-| `src/pages/AlertsPage.tsx` | ⏳ | Needs Supabase wiring |
-| `src/pages/PersonalityPage.tsx` | ⏳ | Needs Supabase wiring |
-| `src/pages/AccountPage.tsx` | ⏳ | Needs Supabase wiring |
-| `src/pages/DashboardOverview.tsx` | ⏳ | Needs Supabase wiring |
+| File | Action | Status |
+|------|--------|--------|
+| `supabase/migrations/20251216050123_add_admin_and_surf_spots.sql` | Migration for is_admin, surf_spots, triggers | ✅ |
+| `src/types/supabase.ts` | Auto-generated via `supabase gen types` | ✅ |
+| `scripts/migrate-surf-spots.ts` | Seed 1,217 spots | ✅ |
+| `src/lib/mappers.ts` | Create - snake_case → camelCase | ✅ |
+| `src/hooks/useProfile.ts` | Create | ✅ |
+| `src/hooks/useUserSpots.ts` | Create | ✅ |
+| `src/hooks/useSurfSpots.ts` | Create | ✅ |
+| `src/hooks/useSentAlerts.ts` | Create | ✅ |
+| `src/contexts/AuthContext.tsx` | Update admin logic | ✅ |
+| `src/pages/AccountPage.tsx` | Wire to useProfile | ✅ |
+| `src/pages/SpotPage.tsx` | Wire to useUserSpots | ✅ |
+| `src/pages/DashboardOverview.tsx` | Wire to hooks | ✅ |
+| `src/pages/AdminSpotsPage.tsx` | Wire to useSurfSpots | ✅ |
+| `src/components/ui/AddSpotModal.tsx` | Wire to useSurfSpots | ✅ |
+
+---
+
+## Security Notes
+
+- **Sensitive column protection** - BEFORE UPDATE trigger (not RLS!) prevents users from modifying `is_admin` or `subscription_tier`
+- **Server-side spot limits** - PostgreSQL trigger enforces 1 spot limit for free tier
+- **RLS** - All queries protected by Row Level Security policies
+- **Email only** - Twilio SMS paused until A2P approval
+
+---
+
+## Future Phases (Not in Current Scope)
+
+### Triggers & Alerts Pages
+- Wire TriggersPage.tsx to triggers CRUD
+- Wire AlertsPage.tsx to alert_schedules
+- Wire PersonalityPage.tsx to user_preferences
+
+### External Integrations
+- NOAA buoy data caching
+- Twilio SMS alerts (after A2P approval)
+- Claude Haiku for AI message generation

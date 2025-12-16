@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Phone,
@@ -12,6 +12,7 @@ import {
   Infinity,
   Navigation,
   Home,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -23,15 +24,83 @@ import {
   Input,
   Badge,
 } from "../components/ui";
+import { useAuth } from "../contexts/AuthContext";
+import { useProfile } from "../hooks";
 
 export function AccountPage() {
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
-  const [email, setEmail] = useState("surfer@example.com");
-  const [phoneVerified] = useState(true);
-  const [emailVerified] = useState(false);
-  const [showPricingModal, setShowPricingModal] = useState(false);
-  const [currentTier] = useState<"free" | "unlimited">("free");
+  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { profile, isLoading, error, update } = useProfile(user?.id);
+
+  // Local form state (initialized from profile)
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [homeAddress, setHomeAddress] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+
+  // Sync local state when profile loads
+  useEffect(() => {
+    if (profile) {
+      setPhone(profile.phone || "");
+      setEmail(profile.email || "");
+      setHomeAddress(profile.homeAddress || "");
+    }
+  }, [profile]);
+
+  // Derived values from profile
+  const phoneVerified = profile?.phoneVerified ?? false;
+  const emailVerified = !!profile?.email; // Consider verified if email exists (from Supabase auth)
+  // Admins automatically get unlimited tier display
+  const currentTier = isAdmin ? "unlimited" : (profile?.subscriptionTier === "premium" ? "unlimited" : profile?.subscriptionTier === "pro" ? "unlimited" : "free");
+
+  // Check if there are unsaved changes
+  const hasChanges =
+    phone !== (profile?.phone || "") ||
+    email !== (profile?.email || "") ||
+    homeAddress !== (profile?.homeAddress || "");
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    const { error: updateError } = await update({
+      phone: phone || null,
+      email: email || null,
+      homeAddress: homeAddress || null,
+    });
+
+    setIsSaving(false);
+
+    if (updateError) {
+      setSaveError(updateError);
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+  };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <p className="text-destructive">Error loading profile: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -270,8 +339,27 @@ export function AccountPage() {
       </Card>
 
       {/* Save */}
-      <div className="mt-8 flex justify-end">
-        <Button size="lg">Save Changes</Button>
+      <div className="mt-8 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3">
+        {saveError && (
+          <p className="text-sm text-destructive">{saveError}</p>
+        )}
+        {saveSuccess && (
+          <p className="text-sm text-green-600">Changes saved successfully!</p>
+        )}
+        <Button
+          size="lg"
+          onClick={handleSave}
+          disabled={isSaving || !hasChanges}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Changes"
+          )}
+        </Button>
       </div>
 
       {/* Pricing Modal */}

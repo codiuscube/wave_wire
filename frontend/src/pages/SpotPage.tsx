@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Crosshair, Plus, Trash2, Waves, ChevronDown } from "lucide-react";
+import { Crosshair, Plus, Trash2, Waves, ChevronDown, Loader2, AlertTriangle } from "lucide-react";
 import {
   Button,
   Badge,
@@ -12,51 +12,47 @@ import {
   formatDistance,
   type BuoyRecommendation,
 } from "../data/noaaBuoys";
+import { useAuth } from "../contexts/AuthContext";
+import { useUserSpots, useProfile } from "../hooks";
+import type { UserSpot } from "../lib/mappers";
 
-const defaultSpot: any = { // Changed type to 'any' or 'Spot' if Spot is defined elsewhere
-  id: "surfside",
-  name: "Surfside Beach",
-  region: "Texas Gulf Coast",
-  lat: 28.944,
-  lon: -95.291,
-  buoyId: "42035",
-  buoyName: "Galveston (22nm SE)",
-  buoy: {
-    waveHeight: 4.2,
-    wavePeriod: 12,
-    waterTemp: 72,
-    meanWaveDirection: 'SE',
-    meanWaveDegrees: 145,
-    timestamp: 'Just now',
-    windSpeed: 12,
-    windDirection: 'SE',
-    windDegrees: 140,
-  },
-  forecast: {
-    primary: {
-      height: 3.5,
-      period: 11,
-      direction: "SE",
-      degrees: 140,
-    },
-    secondary: {
-      height: 1.2,
-      period: 8,
-      direction: "E",
-      degrees: 90,
-    },
-    windSpeed: 8,
-    windDirection: "NW",
-    windDegrees: 315,
-    tide: 1.2,
-    airTemp: 78,
-  }
-};
+// Convert UserSpot (DB) to SpotOption (UI)
+function userSpotToSpotOption(userSpot: UserSpot): SpotOption {
+  return {
+    id: userSpot.id,
+    name: userSpot.name,
+    region: userSpot.region || undefined,
+    lat: userSpot.latitude || undefined,
+    lon: userSpot.longitude || undefined,
+    buoyId: userSpot.buoyId || undefined,
+    icon: userSpot.icon || undefined,
+  };
+}
 
 export function SpotPage() {
-  const [mySpots, setMySpots] = useState<SpotOption[]>([defaultSpot]);
+  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { profile, isLoading: profileLoading } = useProfile(user?.id);
+  // Admins automatically get premium tier access
+  const tier = isAdmin ? 'premium' : (profile?.subscriptionTier || 'free');
+
+  const {
+    spots: userSpots,
+    isLoading,
+    error,
+    canAddSpot,
+    spotCount,
+    spotLimit,
+    addSpot: addUserSpot,
+    updateSpot: updateUserSpot,
+    deleteSpot: deleteUserSpot,
+  } = useUserSpots(user?.id, tier);
+
+  // Convert DB spots to UI format
+  const mySpots: SpotOption[] = userSpots.map(userSpotToSpotOption);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   // Icon Picker State
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
@@ -64,22 +60,39 @@ export function SpotPage() {
 
   const isSpotSaved = (spotId: string) => mySpots.some((s) => s.id === spotId);
 
-  const addSpot = (spot: SpotOption) => {
-    if (!isSpotSaved(spot.id)) {
-      setMySpots([...mySpots, spot]);
+  const addSpot = async (spot: SpotOption) => {
+    if (!isSpotSaved(spot.id) && canAddSpot) {
+      const { error } = await addUserSpot({
+        name: spot.name,
+        latitude: spot.lat || null,
+        longitude: spot.lon || null,
+        region: spot.region || null,
+        buoyId: spot.buoyId || null,
+        icon: spot.icon || null,
+        masterSpotId: spot.id, // Link to master surf_spots table
+      });
+      if (error) {
+        console.error('Error adding spot:', error);
+      }
     }
   };
 
-  const removeSpot = (spotId: string) => {
-    setMySpots(mySpots.filter((s) => s.id !== spotId));
+  const removeSpot = async (spotId: string) => {
+    setIsDeleting(spotId);
+    const { error } = await deleteUserSpot(spotId);
+    if (error) {
+      console.error('Error removing spot:', error);
+    }
+    setIsDeleting(null);
   };
 
-  const assignBuoy = (spotId: string, buoy: BuoyRecommendation) => {
-    setMySpots(
-      mySpots.map((s) =>
-        s.id === spotId ? { ...s, buoyId: buoy.id, buoyName: buoy.name } : s
-      )
-    );
+  const assignBuoy = async (spotId: string, buoy: BuoyRecommendation) => {
+    const { error } = await updateUserSpot(spotId, {
+      buoyId: buoy.id,
+    });
+    if (error) {
+      console.error('Error assigning buoy:', error);
+    }
     setExpandedSpotId(null);
   };
 
@@ -101,14 +114,31 @@ export function SpotPage() {
 
 
 
-  const updateSpotIcon = (iconName: string) => {
+  const updateSpotIcon = async (iconName: string) => {
     if (!selectedSpotForIcon) return;
-    setMySpots(
-      mySpots.map((s) =>
-        s.id === selectedSpotForIcon ? { ...s, icon: iconName } : s
-      )
-    );
+    const { error } = await updateUserSpot(selectedSpotForIcon, { icon: iconName });
+    if (error) {
+      console.error('Error updating icon:', error);
+    }
   };
+
+  if (authLoading || profileLoading || isLoading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <div className="tech-card border-destructive p-6">
+          <p className="text-destructive">Error loading spots: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -125,15 +155,34 @@ export function SpotPage() {
             Configure your spots and buoy sources.
           </p>
         </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          variant="rogue"
-          className="shrink-0 h-auto py-3 px-6"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          ADD A SPOT
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            variant="rogue"
+            className="shrink-0 h-auto py-3 px-6"
+            disabled={!canAddSpot}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            ADD A SPOT
+          </Button>
+          <span className="font-mono text-xs text-muted-foreground">
+            {spotCount} / {spotLimit === Infinity ? '∞' : spotLimit} spots
+          </span>
+        </div>
       </div>
+
+      {/* Tier Limit Warning */}
+      {!canAddSpot && (
+        <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/10 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-mono text-sm text-amber-500 font-medium">Spot Limit Reached</p>
+            <p className="font-mono text-xs text-muted-foreground mt-1">
+              Free tier allows {spotLimit} spot{spotLimit === 1 ? '' : 's'}. Upgrade to add more spots.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Saved Spots */}
       {mySpots.length > 0 ? (
@@ -179,10 +228,15 @@ export function SpotPage() {
                     </div>
                     <button
                       onClick={() => removeSpot(spot.id)}
-                      className="p-3 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      disabled={isDeleting === spot.id}
+                      className="p-3 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
                       title="Remove target"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      {isDeleting === spot.id ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
 

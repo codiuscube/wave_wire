@@ -152,6 +152,19 @@ export function Sidebar() {
                   <ChartSquare size={ICON_SIZE} weight="BoldDuotone" />
                   Investment
                 </NavLink>
+                <NavLink
+                  to="/dashboard?onboarding=true"
+                  onClick={() => setIsMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
+                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+                    }`
+                  }
+                >
+                  <Bolt size={ICON_SIZE} weight="BoldDuotone" />
+                  Test Onboarding
+                </NavLink>
               </div>
             )}
           </nav>

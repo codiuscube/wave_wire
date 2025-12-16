@@ -11,16 +11,17 @@ import {
   X,
   Save,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { Button, Input, AddSpotModal } from "../components/ui";
 import { AdminHeader } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
+import { useSurfSpots } from "../hooks";
 import {
-  getSurfSpots,
   COUNTRY_GROUP_LABELS,
-  type SurfSpot,
   type CountryGroup,
 } from "../data/surfSpots";
+import type { SurfSpot } from "../lib/mappers";
 
 type FilterStatus = "all" | "verified" | "unverified";
 
@@ -30,37 +31,34 @@ interface EditingSpot {
   lat: string;
   lon: string;
   region: string;
-  countryGroup: CountryGroup;
+  countryGroup: SurfSpot['countryGroup'];
   verified: boolean;
 }
 
 export function AdminSpotsPage() {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, loading: authLoading } = useAuth();
+
+  // Fetch all spots from Supabase (include unverified for admin)
+  const {
+    spots: allSpots,
+    isLoading: spotsLoading,
+    error: spotsError,
+    toggleVerified,
+    updateSpot,
+    addSpot: addSurfSpot,
+  } = useSurfSpots({ includeUnverified: true });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterCountry, setFilterCountry] = useState<CountryGroup | "all">("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSpot, setEditingSpot] = useState<EditingSpot | null>(null);
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
-
-  // Get all spots from centralized data
-  const allSpots = useMemo(() => getSurfSpots(), []);
-
-  // For admin, we'd typically have a state for custom/user spots too
-  // For now, we'll work with the official spots and allow "editing" (in-memory only)
-  const [spotOverrides, setSpotOverrides] = useState<Record<string, Partial<SurfSpot>>>({});
-
-  // Apply overrides to spots
-  const spotsWithOverrides = useMemo(() => {
-    return allSpots.map(spot => ({
-      ...spot,
-      ...spotOverrides[spot.id],
-    }));
-  }, [allSpots, spotOverrides]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Filter spots
   const filteredSpots = useMemo(() => {
-    let spots = spotsWithOverrides;
+    let spots = allSpots;
 
     // Filter by verification status
     if (filterStatus === "verified") {
@@ -86,15 +84,15 @@ export function AdminSpotsPage() {
     }
 
     return spots;
-  }, [spotsWithOverrides, filterStatus, filterCountry, searchQuery]);
+  }, [allSpots, filterStatus, filterCountry, searchQuery]);
 
   // Stats
   const stats = useMemo(() => {
-    const total = spotsWithOverrides.length;
-    const verified = spotsWithOverrides.filter(s => s.verified).length;
+    const total = allSpots.length;
+    const verified = allSpots.filter(s => s.verified).length;
     const unverified = total - verified;
     return { total, verified, unverified };
-  }, [spotsWithOverrides]);
+  }, [allSpots]);
 
   const handleEditSpot = (spot: SurfSpot) => {
     setEditingSpot({
@@ -108,50 +106,74 @@ export function AdminSpotsPage() {
     });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingSpot) return;
 
-    setSpotOverrides(prev => ({
-      ...prev,
-      [editingSpot.id]: {
-        name: editingSpot.name,
-        lat: parseFloat(editingSpot.lat),
-        lon: parseFloat(editingSpot.lon),
-        region: editingSpot.region,
-        countryGroup: editingSpot.countryGroup,
-        verified: editingSpot.verified,
-      },
-    }));
-    setEditingSpot(null);
+    setIsSaving(true);
+    const { error } = await updateSpot(editingSpot.id, {
+      name: editingSpot.name,
+      lat: parseFloat(editingSpot.lat),
+      lon: parseFloat(editingSpot.lon),
+      region: editingSpot.region,
+      countryGroup: editingSpot.countryGroup,
+      verified: editingSpot.verified,
+    });
+    setIsSaving(false);
 
-    // TODO: In production, save to Supabase
-    // await supabase.from('surf_spots').upsert({ ... })
+    if (error) {
+      console.error('Error saving spot:', error);
+    } else {
+      setEditingSpot(null);
+    }
   };
 
-  const handleToggleVerified = (spotId: string, currentVerified: boolean) => {
-    setSpotOverrides(prev => ({
-      ...prev,
-      [spotId]: {
-        ...prev[spotId],
-        verified: !currentVerified,
-      },
-    }));
-
-    // TODO: In production, update Supabase
+  const handleToggleVerified = async (spotId: string, currentVerified: boolean) => {
+    const { error } = await toggleVerified(spotId, !currentVerified);
+    if (error) {
+      console.error('Error toggling verified:', error);
+    }
   };
 
-  const handleAddSpot = (spot: any) => {
+  const handleAddSpot = async (spot: any) => {
     // Admin-added spots are auto-verified
-    console.log("Admin added spot (auto-verified):", { ...spot, verified: true, source: "official" });
-    // TODO: Save to Supabase with verified: true
-    setIsAddModalOpen(false);
+    const newSpot = {
+      id: spot.id || `spot-${Date.now()}`,
+      name: spot.name,
+      lat: spot.lat || 0,
+      lon: spot.lon || 0,
+      region: spot.region || 'Unknown',
+      countryGroup: (spot.countryGroup || 'USA') as SurfSpot['countryGroup'],
+      country: spot.country || null,
+      buoyId: spot.buoyId || null,
+      buoyName: spot.buoyName || null,
+      verified: true,
+      source: 'official' as const,
+    };
+
+    const { error } = await addSurfSpot(newSpot);
+    if (error) {
+      console.error('Error adding spot:', error);
+    } else {
+      setIsAddModalOpen(false);
+    }
   };
 
   // Loading state
-  if (loading) {
+  if (authLoading || spotsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="font-mono text-muted-foreground">Loading...</div>
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (spotsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="tech-card border-destructive p-6">
+          <p className="text-destructive">Error loading spots: {spotsError}</p>
+        </div>
       </div>
     );
   }
@@ -350,22 +372,6 @@ export function AdminSpotsPage() {
           )}
         </div>
 
-        {/* Dev Mode Toggle (for testing) */}
-        <div className="mt-8 p-4 border border-dashed border-border/50 rounded">
-          <div className="font-mono text-xs text-muted-foreground mb-2">
-            Developer Tools (remove in production)
-          </div>
-          <button
-            onClick={() => {
-              const current = localStorage.getItem('homebreak_admin_mode') === 'true';
-              localStorage.setItem('homebreak_admin_mode', (!current).toString());
-              window.location.reload();
-            }}
-            className="font-mono text-xs text-primary hover:underline"
-          >
-            Toggle Admin Mode (currently: {localStorage.getItem('homebreak_admin_mode') === 'true' ? 'ON' : 'OFF'})
-          </button>
-        </div>
       </div>
 
       {/* Edit Modal */}
@@ -463,12 +469,21 @@ export function AdminSpotsPage() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <Button variant="outline" onClick={() => setEditingSpot(null)} className="flex-1">
+                <Button variant="outline" onClick={() => setEditingSpot(null)} className="flex-1" disabled={isSaving}>
                   Cancel
                 </Button>
-                <Button onClick={handleSaveEdit} className="flex-1">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                <Button onClick={handleSaveEdit} className="flex-1" disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

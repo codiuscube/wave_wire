@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, MapPin } from "lucide-react";
+import { Check, MapPin, Clock } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Card,
   CardHeader,
@@ -53,6 +54,8 @@ const triggerConfig: { condition: TriggerCondition; label: string; color: string
 ];
 
 export function PersonalityPage() {
+  const { isAdmin } = useAuth();
+
   // Active condition being configured
   const [activeCondition, setActiveCondition] = useState<TriggerCondition>("good");
 
@@ -80,6 +83,31 @@ export function PersonalityPage() {
 
   // User's home location for local flavor
   const userRegion = "Texas Gulf Coast";
+
+  // Show "Coming Soon" for non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">Message Personality</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Different vibes for different conditions.
+          </p>
+        </div>
+        <Card className="border-dashed">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <Clock className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Custom message personalities are coming soon. You'll be able to choose different vibes like Stoked Local, Chill Surfer, or Data Nerd for your alerts.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const updatePersonalityForCondition = (personality: PersonalityId) => {
     setPersonalityByCondition(prev => ({ ...prev, [activeCondition]: personality }));

@@ -7,5 +7,6 @@ export { PersonalityPage } from './PersonalityPage';
 export { AccountPage } from './AccountPage';
 export { LoginPage } from './LoginPage';
 export { SignupPage } from './SignupPage';
+export { ResetPasswordPage } from './ResetPasswordPage';
 export { AdminSpotsPage } from './AdminSpotsPage';
 export { InvestmentPage } from './InvestmentPage';
