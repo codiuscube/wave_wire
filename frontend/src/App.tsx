@@ -11,7 +11,6 @@ import {
   TriggersPage,
   SpotPage,
   AlertsPage,
-  PersonalityPage,
   AccountPage,
   LoginPage,
   SignupPage,
@@ -48,7 +47,6 @@ function App() {
                   <Route path="triggers" element={<TriggersPage />} />
                   <Route path="spot" element={<SpotPage />} />
                   <Route path="alerts" element={<AlertsPage />} />
-                  <Route path="personality" element={<PersonalityPage />} />
                   <Route path="account" element={<AccountPage />} />
                 </Route>
 
