@@ -1,25 +1,47 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2, GripVertical, Info, Radar, MapPin, Clock } from "lucide-react";
+import { Plus, Trash2, GripVertical, Info, Radar, MapPin, Edit2, ChevronDown } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  Card,
-  CardContent,
   Button,
-  Input,
-  Slider,
-  Select,
+  TriggerModal,
   Badge,
-  AddTriggerModal,
 } from "../components/ui";
-import type { TriggerTier } from "../types";
+import type { TriggerTier, SurfSpot } from "../types";
+import { generateTriggerSummary } from "../lib/triggerUtils";
 
 // Mock spots - in real app this would come from context/store
-// Set to empty array to test no-spots state, or use the array below for normal state
-const userSpots: { id: string; name: string; buoyId: string }[] = [
-  { id: "surfside", name: "Surfside Beach", buoyId: "42035" },
-  { id: "galveston", name: "Galveston (61st St)", buoyId: "42035" },
-  { id: "bob-hall", name: "Bob Hall Pier", buoyId: "42020" },
+const userSpots: SurfSpot[] = [
+  {
+    id: "surfside",
+    name: "Surfside Beach",
+    buoyId: "42035",
+    lat: 29.2,
+    lon: -95.2, // Added longitude
+    timezone: "America/Chicago", // Added timezone
+    region: "Texas",
+    country: "United States" // Changed from USA to match string matching logic better
+  },
+  {
+    id: "galveston",
+    name: "Galveston (61st St)",
+    buoyId: "42035",
+    lat: 29.2,
+    lon: -94.8,
+    timezone: "America/Chicago",
+    region: "Texas",
+    country: "United States"
+  },
+  {
+    id: "bob-hall",
+    name: "Bob Hall Pier",
+    buoyId: "42020",
+    lat: 27.58, // More accurate lat
+    lon: -97.22,
+    timezone: "America/Chicago",
+    region: "Texas",
+    country: "United States"
+  },
 ];
 
 const defaultTriggers: TriggerTier[] = [
@@ -32,10 +54,17 @@ const defaultTriggers: TriggerTier[] = [
     maxHeight: 15,
     minPeriod: 10,
     maxPeriod: 20,
-    windDirections: ["N", "NNW", "NW", "WNW"],
+    minWindSpeed: 0,
     maxWindSpeed: 12,
-    swellDirection: ["SE", "S", "SSE"],
+    minWindDirection: 290, // Offshore (WNW)
+    maxWindDirection: 20,  // Offshore (NNE)
+    minSwellDirection: 90,
+    maxSwellDirection: 180,
+    tideType: "any",
+    minTideHeight: -2,
+    maxTideHeight: 3,
     spotId: "surfside",
+    messageTemplate: "Dawn Patrol Alert! [Spot Name] is firing. [Height]ft @ [Period]s.",
   },
   {
     id: "2",
@@ -46,155 +75,99 @@ const defaultTriggers: TriggerTier[] = [
     maxHeight: 6,
     minPeriod: 8,
     maxPeriod: 15,
-    windDirections: ["N", "NNW", "NW", "WNW", "W", "NNE"],
+    minWindSpeed: 0,
     maxWindSpeed: 15,
-    swellDirection: ["SE", "S", "SSE", "E"],
+    minWindDirection: 290, // Offshore
+    maxWindDirection: 20,
+    minSwellDirection: 90,
+    maxSwellDirection: 180,
+    tideType: "any",
+    minTideHeight: -2,
+    maxTideHeight: 3,
     spotId: "surfside",
+    messageTemplate: "Lunch break surf? [Spot Name] looks fun.",
   },
-  {
-    id: "3",
-    name: "After Work",
-    emoji: "👍",
-    condition: "fair",
-    minHeight: 2,
-    maxHeight: 4,
-    minPeriod: 6,
-    maxPeriod: 12,
-    windDirections: ["N", "NNW", "NW", "WNW", "W", "NNE", "NE", "WSW"],
-    maxWindSpeed: 20,
-    swellDirection: ["SE", "S", "SSE", "E", "ESE"],
-    spotId: "surfside",
-  },
-];
-
-const emojiOptions = [
-  { value: "🔥", label: "🔥 Fire" },
-  { value: "🏄", label: "🏄 Surfer" },
-  { value: "👍", label: "👍 Thumbs Up" },
-  { value: "🌊", label: "🌊 Wave" },
-  { value: "⚡", label: "⚡ Lightning" },
-  { value: "🚀", label: "🚀 Rocket" },
-  { value: "💎", label: "💎 Diamond" },
-  { value: "🌅", label: "🌅 Sunrise" },
-  { value: "🌴", label: "🌴 Palm" },
-  { value: "☀️", label: "☀️ Sun" },
-];
-
-const conditionOptions = [
-  { value: "fair", label: "Fair" },
-  { value: "good", label: "Good" },
-  { value: "epic", label: "Epic" },
-];
-
-const directionOptions = [
-  { value: "N", label: "N" },
-  { value: "NNE", label: "NNE" },
-  { value: "NE", label: "NE" },
-  { value: "ENE", label: "ENE" },
-  { value: "E", label: "E" },
-  { value: "ESE", label: "ESE" },
-  { value: "SE", label: "SE" },
-  { value: "SSE", label: "SSE" },
-  { value: "S", label: "S" },
-  { value: "SSW", label: "SSW" },
-  { value: "SW", label: "SW" },
-  { value: "WSW", label: "WSW" },
-  { value: "W", label: "W" },
-  { value: "WNW", label: "WNW" },
-  { value: "NW", label: "NW" },
-  { value: "NNW", label: "NNW" },
 ];
 
 const conditionColors = {
-  fair: "bg-zinc-900 text-zinc-300 border-zinc-800",
-  good: "bg-zinc-100 text-zinc-900 border-zinc-200",
-  epic: "bg-white text-black border-white ring-1 ring-zinc-200 shadow-sm",
+  fair: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  good: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  epic: "bg-amber-500/10 text-amber-500 border-amber-500/20",
 };
 
 export function TriggersPage() {
   const { isAdmin } = useAuth();
   const [triggers, setTriggers] = useState<TriggerTier[]>(defaultTriggers);
-  const [expandedId, setExpandedId] = useState<string | null>("1");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<string>(
     userSpots.length > 0 ? userSpots[0].id : ""
   );
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTrigger, setEditingTrigger] = useState<TriggerTier | undefined>(undefined);
+  // Spot Selector Dropdown State
+  const [isSpotDropdownOpen, setIsSpotDropdownOpen] = useState(false);
 
   const hasSpots = userSpots.length > 0;
 
-  // Show "Coming Soon" for non-admin users
   if (!isAdmin) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
-        <div className="mb-6 lg:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">Triggers</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Define what conditions get you out of bed.
-          </p>
+        <div className="mb-8 lg:mb-12">
+          <div className="inline-block bg-brand-rogue text-brand-abyss font-bold font-mono text-xs px-2 py-1 mb-4 transform -rotate-1 tracking-widest tape">
+            // TRIGGER_CONFIG
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="TRIGGERS">
+            TRIGGERS
+          </h1>
         </div>
-        <Card className="border-dashed">
-          <CardContent className="pt-8 pb-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <Clock className="w-8 h-8 text-primary" />
+        <div className="tech-card border-dashed">
+          <div className="pt-12 pb-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/20 mb-6 border border-border/50">
+              <Radar className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
+            <h2 className="text-xl font-mono uppercase font-bold mb-2">Coming Soon</h2>
+            <p className="font-mono text-muted-foreground max-w-md mx-auto">
               Custom triggers are coming soon. You'll be able to set specific wave height, period, and wind conditions that match your preferences.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
-  const spotOptions = userSpots.map((s) => ({ value: s.id, label: s.name }));
 
   const filteredTriggers = selectedSpotId
     ? triggers.filter((t) => t.spotId === selectedSpotId)
     : [];
 
-  const updateTrigger = (id: string, updates: Partial<TriggerTier>) => {
-    setTriggers((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    );
+  const handleCreateTrigger = () => {
+    setEditingTrigger(undefined);
+    setIsModalOpen(true);
   };
 
-  const toggleSwellDirection = (triggerId: string, direction: string) => {
-    const trigger = triggers.find((t) => t.id === triggerId);
-    if (!trigger) return;
-
-    const newDirections = trigger.swellDirection.includes(direction)
-      ? trigger.swellDirection.filter((d) => d !== direction)
-      : [...trigger.swellDirection, direction];
-
-    updateTrigger(triggerId, { swellDirection: newDirections });
+  const handleEditTrigger = (trigger: TriggerTier) => {
+    setEditingTrigger(trigger);
+    setIsModalOpen(true);
   };
 
-  const toggleWindDirection = (triggerId: string, direction: string) => {
-    const trigger = triggers.find((t) => t.id === triggerId);
-    if (!trigger) return;
-
-    const newDirections = trigger.windDirections.includes(direction)
-      ? trigger.windDirections.filter((d) => d !== direction)
-      : [...trigger.windDirections, direction];
-
-    updateTrigger(triggerId, { windDirections: newDirections });
+  const handleSaveTrigger = (trigger: TriggerTier) => {
+    // Check if it's an update or new
+    const exists = triggers.some(t => t.id === trigger.id);
+    if (exists) {
+      setTriggers(prev => prev.map(t => t.id === trigger.id ? trigger : t));
+    } else {
+      setTriggers(prev => [...prev, trigger]);
+    }
+    setIsModalOpen(false);
   };
 
-  const addTrigger = (newTrigger: TriggerTier) => {
-    setTriggers([...triggers, newTrigger]);
-    setExpandedId(newTrigger.id);
-  };
-
-  const deleteTrigger = (id: string) => {
-    setTriggers(triggers.filter((t) => t.id !== id));
-    if (expandedId === id) setExpandedId(null);
-  };
-
-  const formatWindSummary = (directions: string[]) => {
-    if (directions.length === 0) return "No wind selected";
-    if (directions.length <= 3) return directions.join(", ");
-    return `${directions.slice(0, 2).join(", ")} +${directions.length - 2
-      } more`;
+  const deleteTrigger = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this trigger?")) {
+      setTriggers(triggers.filter((t) => t.id !== id));
+      if (expandedId === id) setExpandedId(null);
+    }
   };
 
   const selectedSpot = userSpots.find((s) => s.id === selectedSpotId);
@@ -202,375 +175,229 @@ export function TriggersPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Triggers</h1>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Define what conditions get you out of bed. Triggers are specific to
-          each spot.
+      <div className="mb-8 lg:mb-12">
+        <div className="inline-block bg-brand-rogue text-brand-abyss font-bold font-mono text-xs px-2 py-1 mb-4 transform -rotate-1 tracking-widest tape">
+          // CONFIGURATION_PARAMETERS
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="TRIGGER_CONFIG">
+          TRIGGER_CONFIG
+        </h1>
+        <p className="font-mono text-muted-foreground text-base sm:text-lg border-l-2 border-muted pl-4">
+          Define automated intercept conditions.
         </p>
       </div>
 
       {/* Spot Selector */}
-      <Card className="mb-6">
-        <CardContent className="pt-4 sm:pt-6">
-          {hasSpots ? (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    Select Spot
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    Triggers are configured per spot. Select a spot to manage
-                    its triggers.
-                  </p>
-                </div>
-                <Select
-                  options={spotOptions}
-                  value={selectedSpotId}
-                  onChange={setSelectedSpotId}
-                  className="w-full sm:w-64"
-                />
-              </div>
-              {selectedSpot && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground font-mono">
-                    Buoy: {selectedSpot.buoyId} • {filteredTriggers.length}{" "}
-                    trigger
-                    {filteredTriggers.length !== 1 ? "s" : ""} configured
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-800 mb-3">
-                <MapPin className="w-6 h-6 text-zinc-400" />
-              </div>
-              <p className="font-medium text-foreground mb-1">No spots saved yet</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create a spot first to start defining triggers.
-              </p>
-              <Link to="/dashboard/spots">
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create a Spot
-                </Button>
-              </Link>
+      <div className="mb-8 lg:mb-12">
+        <div className="tech-card rounded-lg bg-card/50 backdrop-blur-md">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 bg-primary rounded-none" />
+              <h2 className="font-mono text-base tracking-widest text-muted-foreground uppercase">TARGET_ACQUISITION</h2>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+
+          <div className="p-6">
+            {hasSpots ? (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+                  <div>
+                    <label className="text-sm font-bold font-mono uppercase mb-1 block tracking-wider">
+                      Select Target Spot
+                    </label>
+                    <p className="text-xs font-mono text-muted-foreground">
+                      Triggers are configured per spot.
+                    </p>
+                  </div>
+
+                  {/* Custom Select Implementation for Aesthetic */}
+                  <div className="relative w-full sm:w-72">
+                    <button
+                      onClick={() => setIsSpotDropdownOpen(!isSpotDropdownOpen)}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-secondary/10 border border-border/50 hover:border-primary/50 text-foreground transition-all group"
+                    >
+                      <span className="font-mono text-sm uppercase truncate">
+                        {selectedSpot ? selectedSpot.name : "Select Spot"}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform group-hover:text-primary ${isSpotDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isSpotDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-background/95 backdrop-blur-md border border-border/50 z-50 max-h-60 overflow-y-auto shadow-xl">
+                        {userSpots.map((spot) => (
+                          <button
+                            key={spot.id}
+                            onClick={() => {
+                              setSelectedSpotId(spot.id);
+                              setIsSpotDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 font-mono text-sm uppercase transition-colors hover:bg-secondary/20
+                            ${selectedSpotId === spot.id ? 'bg-primary/10 text-primary border-l-2 border-primary' : 'text-muted-foreground border-l-2 border-transparent'}
+                          `}
+                          >
+                            {spot.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedSpot && (
+                  <div className="mt-6 pt-6 border-t border-border/30 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-primary/50 rounded-full animate-pulse" />
+                    <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                      <span className="text-primary">{selectedSpot.buoyId}</span> • {filteredTriggers.length} CONDITION SET{filteredTriggers.length !== 1 ? 'S' : ''} ACTIVE
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-zinc-800 mb-3 border border-zinc-700">
+                  <MapPin className="w-6 h-6 text-zinc-400" />
+                </div>
+                <p className="font-mono font-bold text-foreground mb-1 uppercase">No targets found</p>
+                <p className="font-mono text-xs text-muted-foreground mb-6">
+                  Acquire target first to set triggers.
+                </p>
+                <Link to="/dashboard/spots">
+                  <Button variant="outline" className="font-mono uppercase text-xs">
+                    <Plus className="w-3 h-3 mr-2" />
+                    Create Spot
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Info Banner - Only show when no triggers */}
       {hasSpots && filteredTriggers.length === 0 && (
-        <Card className="mb-6 lg:mb-8 bg-primary/10 border-primary/30">
-          <CardContent className="pt-4 sm:pt-6">
-            <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-              <div>
-                <p className="font-medium text-foreground">How Triggers Work</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Triggers are checked in order from top to bottom. When
-                  conditions match a trigger, you'll get an alert with that
-                  condition level (Fair/Good/Epic). Alerts use your Personality
-                  setting.
-                </p>
+        <div className="mb-6 lg:mb-8 p-4 border border-primary/30 bg-primary/5 flex items-start gap-3">
+          <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="font-mono font-bold text-sm text-foreground uppercase tracking-wide">Configuration Mode</p>
+            <p className="font-mono text-xs text-muted-foreground mt-1 leading-relaxed">
+              Triggers watch forecast data for matches. You can set specific wind, swell, and tide conditions.
+              Messages can be customized for each trigger.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Triggers List */}
+      <div className="mb-8">
+        {hasSpots && (
+          <div className="tech-card rounded-lg bg-card/50 backdrop-blur-md">
+            <div className="flex items-center justify-between p-6 border-b border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 bg-brand-rogue rounded-none" />
+                <h2 className="font-mono text-base tracking-widest text-muted-foreground uppercase">INTERCEPT_CONDITIONS</h2>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Triggers List - Only show when spots exist */}
-      {hasSpots && (
-        <div className="space-y-4">
-          {filteredTriggers.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="pt-6 pb-6 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-800 mb-4">
-                  <Radar className="w-8 h-8 text-zinc-400" />
-                </div>
-                <p className="text-muted-foreground">
-                  No triggers configured for this spot yet.
-                </p>
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Trigger
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredTriggers.map((trigger, index) => (
-            <Card
-              key={trigger.id}
-              className={`transition-all ${expandedId === trigger.id ? "border-zinc-600" : ""
-                }`}
-            >
-              {/* Collapsed Header */}
-              <button
-                onClick={() =>
-                  setExpandedId(expandedId === trigger.id ? null : trigger.id)
-                }
-                className="w-full p-4 flex items-center gap-4 text-left"
-              >
-                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-                <div className="flex-1 flex items-center gap-3">
-                  <span className="text-2xl">{trigger.emoji}</span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold">{trigger.name}</p>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full border ${conditionColors[trigger.condition]
-                          }`}
-                      >
-                        {trigger.condition.charAt(0).toUpperCase() +
-                          trigger.condition.slice(1)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {trigger.minHeight}-{trigger.maxHeight}ft @{" "}
-                      {trigger.minPeriod}s+ • Wind:{" "}
-                      {formatWindSummary(trigger.windDirections)} &lt;
-                      {trigger.maxWindSpeed}mph
-                    </p>
+            <div className="p-0">
+              {filteredTriggers.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/20 mb-6 border border-border/50">
+                    <Radar className="w-8 h-8 text-muted-foreground" />
                   </div>
+                  <p className="font-mono text-sm text-muted-foreground uppercase tracking-wider mb-6">
+                    No active conditions for this target
+                  </p>
+                  <Button
+                    onClick={handleCreateTrigger}
+                    variant="outline"
+                    className="font-mono uppercase text-xs border-dashed border-muted-foreground/50 hover:border-primary hover:text-primary"
+                  >
+                    <Plus className="w-3 h-3 mr-2" />
+                    Initialize First Trigger
+                  </Button>
                 </div>
-                <Badge variant={index === 0 ? "success" : "secondary"}>
-                  Priority {index + 1}
-                </Badge>
-              </button>
+              ) : (
+                <div className="divide-y divide-border/30">
+                  {filteredTriggers.map((trigger) => (
+                    <div
+                      key={trigger.id}
+                      className="group p-4 sm:p-6 flex items-center gap-4 hover:bg-secondary/10 transition-colors cursor-pointer"
+                      onClick={() => handleEditTrigger(trigger)}
+                    >
+                      <GripVertical className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
 
-              {/* Expanded Content */}
-              {expandedId === trigger.id && (
-                <CardContent className="pt-0 pb-4 sm:pb-6 px-4 sm:px-6 border-t border-border mt-2">
-                  <div className="space-y-4 sm:space-y-6 pt-4 sm:pt-6">
-                    {/* Name, Emoji & Condition */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Trigger Name
-                        </label>
-                        <Input
-                          value={trigger.name}
-                          onChange={(e) =>
-                            updateTrigger(trigger.id, { name: e.target.value })
-                          }
-                          placeholder="e.g., Dawn Patrol, Lunch Session"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Emoji
-                        </label>
-                        <Select
-                          options={emojiOptions}
-                          value={trigger.emoji}
-                          onChange={(v) =>
-                            updateTrigger(trigger.id, { emoji: v })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Condition
-                        </label>
-                        <Select
-                          options={conditionOptions}
-                          value={trigger.condition}
-                          onChange={(v) =>
-                            updateTrigger(trigger.id, {
-                              condition: v as "fair" | "good" | "epic",
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    {/* Wave Height */}
-                    <div>
-                      <label className="text-sm font-medium mb-4 block">
-                        Wave Height: {trigger.minHeight}ft - {trigger.maxHeight}
-                        ft
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs text-muted-foreground w-8">
-                          {trigger.minHeight}ft
-                        </span>
-                        <div className="flex-1 flex gap-4 items-center">
-                          <Slider
-                            min={1}
-                            max={10}
-                            step={0.5}
-                            value={trigger.minHeight}
-                            onChange={(v) =>
-                              updateTrigger(trigger.id, { minHeight: v })
-                            }
-                            className="flex-1"
-                          />
-                          <span className="text-muted-foreground">to</span>
-                          <Slider
-                            min={2}
-                            max={15}
-                            step={0.5}
-                            value={trigger.maxHeight}
-                            onChange={(v) =>
-                              updateTrigger(trigger.id, { maxHeight: v })
-                            }
-                            className="flex-1"
-                          />
+                      <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                        <div className="flex items-center gap-4">
+                          <span className="text-2xl filter grayscale group-hover:grayscale-0 transition-all">{trigger.emoji}</span>
+                          <div>
+                            <div className="flex items-center gap-3 mb-1">
+                              <span className="font-mono font-bold text-base uppercase tracking-tight">{trigger.name}</span>
+                              <Badge
+                                variant="outline"
+                                className={`font-mono text-[10px] uppercase border px-1.5 py-0 rounded-none ${conditionColors[trigger.condition] || ''}`}
+                              >
+                                {trigger.condition}
+                              </Badge>
+                            </div>
+                            <div className="font-mono text-xs text-muted-foreground/70 line-clamp-1">
+                              <span dangerouslySetInnerHTML={{ __html: generateTriggerSummary(trigger) }} />
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground w-8">
-                          {trigger.maxHeight}ft
-                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-primary transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTrigger(trigger);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          onClick={(e) => deleteTrigger(trigger.id, e)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Wave Period */}
-                    <div>
-                      <label className="text-sm font-medium mb-4 block">
-                        Minimum Period: {trigger.minPeriod}s
-                      </label>
-                      <Slider
-                        min={4}
-                        max={18}
-                        step={1}
-                        value={trigger.minPeriod}
-                        onChange={(v) =>
-                          updateTrigger(trigger.id, { minPeriod: v })
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Longer periods = more powerful waves. Gulf storms
-                        usually 6-10s, hurricane swells 12s+.
-                      </p>
-                    </div>
-
-                    {/* Swell Direction */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        Acceptable Swell Directions
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {directionOptions.map((dir) => (
-                          <button
-                            key={dir.value}
-                            onClick={() =>
-                              toggleSwellDirection(trigger.id, dir.value)
-                            }
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${trigger.swellDirection.includes(dir.value)
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-transparent text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
-                              }`}
-                          >
-                            {dir.label}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Select directions that work for your spot. Most Gulf
-                        beaches favor SE-S swells.
-                      </p>
-                    </div>
-
-                    {/* Wind Direction */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        Acceptable Wind Directions
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {directionOptions.map((dir) => (
-                          <button
-                            key={dir.value}
-                            onClick={() =>
-                              toggleWindDirection(trigger.id, dir.value)
-                            }
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${trigger.windDirections.includes(dir.value)
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-transparent text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
-                              }`}
-                          >
-                            {dir.label}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Offshore wind (blowing from land to sea) creates the
-                        cleanest conditions. For most Gulf beaches, N/NW winds
-                        are offshore.
-                      </p>
-                    </div>
-
-                    {/* Max Wind Speed */}
-                    <div>
-                      <label className="text-sm font-medium mb-4 block">
-                        Max Wind Speed: {trigger.maxWindSpeed}mph
-                      </label>
-                      <Slider
-                        min={5}
-                        max={30}
-                        step={1}
-                        value={trigger.maxWindSpeed}
-                        onChange={(v) =>
-                          updateTrigger(trigger.id, { maxWindSpeed: v })
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Even good wind direction gets choppy above 15-20mph.
-                        Lower = cleaner conditions.
-                      </p>
-                    </div>
-
-                    {/* Delete Button */}
-                    <div className="pt-4 border-t border-border">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteTrigger(trigger.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Trigger
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
+                  ))}
+                </div>
               )}
-            </Card>
-            ))
-          )}
-        </div>
-      )}
+            </div>
 
-      {/* Add Trigger Button */}
-      {hasSpots && filteredTriggers.length > 0 && (
-        <Button
-          onClick={() => setIsAddModalOpen(true)}
-          variant="outline"
-          className="mt-4 w-full"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Trigger
-        </Button>
-      )}
+            {/* Footer Action */}
+            {filteredTriggers.length > 0 && (
+              <div className="p-4 bg-secondary/5 border-t border-border/30">
+                <Button
+                  onClick={handleCreateTrigger}
+                  variant="outline"
+                  className="w-full font-mono uppercase text-xs border-dashed border-muted-foreground/30 hover:border-primary hover:text-primary hover:bg-primary/5 h-10"
+                >
+                  <Plus className="w-3 h-3 mr-2" />
+                  Add Another Condition
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Save Button */}
-      {hasSpots && (
-        <div className="mt-8 flex justify-end">
-          <Button size="lg">Save Changes</Button>
-        </div>
-      )}
-
-      {/* Add Trigger Modal */}
-      <AddTriggerModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddTrigger={addTrigger}
+      {/* Modal */}
+      <TriggerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSaveTrigger}
         spotId={selectedSpotId}
+        spot={selectedSpot}
+        triggerToEdit={editingTrigger}
       />
     </div>
   );

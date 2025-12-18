@@ -10,7 +10,6 @@ import {
   MenuDots,
   CloseCircle,
   Logout,
-  EmojiFunnySquare
 } from "@solar-icons/react";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -24,11 +23,6 @@ const navItems = [
   { to: "/dashboard/spot", icon: MapPoint, label: "My Spots" },
   { to: "/dashboard/triggers", icon: Bolt, label: "Triggers" },
   { to: "/dashboard/alerts", icon: ChatRoundDots, label: "Alerts" },
-  {
-    to: "/dashboard/personality",
-    icon: EmojiFunnySquare,
-    label: "Personality",
-  },
   { to: "/dashboard/account", icon: Scanner, label: "Account" },
 ];
 

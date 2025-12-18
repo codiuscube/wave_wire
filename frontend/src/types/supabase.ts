@@ -307,54 +307,78 @@ export type Database = {
           created_at: string | null
           emoji: string | null
           id: string
-          max_height: number | null
-          max_period: number | null
-          max_wind_speed: number | null
           min_height: number | null
+          max_height: number | null
           min_period: number | null
+          max_period: number | null
+          min_wind_speed: number | null
+          max_wind_speed: number | null
+          min_wind_direction: number | null
+          max_wind_direction: number | null
+          min_swell_direction: number | null
+          max_swell_direction: number | null
+          tide_type: string | null
+          min_tide_height: number | null
+          max_tide_height: number | null
+          message_template: string | null
+          notification_style: string | null
           name: string
           priority: number | null
           spot_id: string
-          swell_directions: string[] | null
           updated_at: string | null
           user_id: string
-          wind_directions: string[] | null
         }
         Insert: {
           condition?: string | null
           created_at?: string | null
           emoji?: string | null
           id?: string
-          max_height?: number | null
-          max_period?: number | null
-          max_wind_speed?: number | null
           min_height?: number | null
+          max_height?: number | null
           min_period?: number | null
+          max_period?: number | null
+          min_wind_speed?: number | null
+          max_wind_speed?: number | null
+          min_wind_direction?: number | null
+          max_wind_direction?: number | null
+          min_swell_direction?: number | null
+          max_swell_direction?: number | null
+          tide_type?: string | null
+          min_tide_height?: number | null
+          max_tide_height?: number | null
+          message_template?: string | null
+          notification_style?: string | null
           name: string
           priority?: number | null
           spot_id: string
-          swell_directions?: string[] | null
           updated_at?: string | null
           user_id: string
-          wind_directions?: string[] | null
         }
         Update: {
           condition?: string | null
           created_at?: string | null
           emoji?: string | null
           id?: string
-          max_height?: number | null
-          max_period?: number | null
-          max_wind_speed?: number | null
           min_height?: number | null
+          max_height?: number | null
           min_period?: number | null
+          max_period?: number | null
+          min_wind_speed?: number | null
+          max_wind_speed?: number | null
+          min_wind_direction?: number | null
+          max_wind_direction?: number | null
+          min_swell_direction?: number | null
+          max_swell_direction?: number | null
+          tide_type?: string | null
+          min_tide_height?: number | null
+          max_tide_height?: number | null
+          message_template?: string | null
+          notification_style?: string | null
           name?: string
           priority?: number | null
           spot_id?: string
-          swell_directions?: string[] | null
           updated_at?: string | null
           user_id?: string
-          wind_directions?: string[] | null
         }
         Relationships: [
           {

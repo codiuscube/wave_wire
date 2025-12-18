@@ -5,6 +5,8 @@ export interface SurfSpot {
   lon: number;
   buoyId: string;
   timezone: string;
+  region?: string;
+  country?: string;
 }
 
 export interface TriggerTier {
@@ -16,10 +18,18 @@ export interface TriggerTier {
   maxHeight: number;
   minPeriod: number;
   maxPeriod: number;
-  windDirections: string[];
+  minWindSpeed: number;
   maxWindSpeed: number;
-  swellDirection: string[];
+  minWindDirection: number; // 0-360
+  maxWindDirection: number; // 0-360
+  minSwellDirection: number; // 0-360
+  maxSwellDirection: number; // 0-360
+  tideType: 'rising' | 'falling' | 'any';
+  minTideHeight: number;
+  maxTideHeight: number;
   spotId: string;
+  messageTemplate: string;
+  notificationStyle?: 'local' | 'hype' | 'custom';
 }
 
 export interface AlertSchedule {

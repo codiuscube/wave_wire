@@ -63,9 +63,17 @@ export interface Trigger {
   maxHeight: number | null;
   minPeriod: number | null;
   maxPeriod: number | null;
+  minWindSpeed: number | null;
   maxWindSpeed: number | null;
-  windDirections: string[] | null;
-  swellDirections: string[] | null;
+  minWindDirection: number | null;
+  maxWindDirection: number | null;
+  minSwellDirection: number | null;
+  maxSwellDirection: number | null;
+  tideType: 'rising' | 'falling' | 'any' | null;
+  minTideHeight: number | null;
+  maxTideHeight: number | null;
+  messageTemplate: string | null;
+  notificationStyle: 'local' | 'hype' | 'custom' | null;
   priority: number | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -185,9 +193,17 @@ export function mapTrigger(row: DbTrigger): Trigger {
     maxHeight: row.max_height,
     minPeriod: row.min_period,
     maxPeriod: row.max_period,
+    minWindSpeed: row.min_wind_speed,
     maxWindSpeed: row.max_wind_speed,
-    windDirections: row.wind_directions,
-    swellDirections: row.swell_directions,
+    minWindDirection: row.min_wind_direction,
+    maxWindDirection: row.max_wind_direction,
+    minSwellDirection: row.min_swell_direction,
+    maxSwellDirection: row.max_swell_direction,
+    tideType: row.tide_type as any,
+    minTideHeight: row.min_tide_height,
+    maxTideHeight: row.max_tide_height,
+    messageTemplate: row.message_template,
+    notificationStyle: row.notification_style as any,
     priority: row.priority,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -295,9 +311,17 @@ export function toDbTriggerInsert(
     max_height: trigger.maxHeight,
     min_period: trigger.minPeriod,
     max_period: trigger.maxPeriod,
+    min_wind_speed: trigger.minWindSpeed,
     max_wind_speed: trigger.maxWindSpeed,
-    wind_directions: trigger.windDirections,
-    swell_directions: trigger.swellDirections,
+    min_wind_direction: trigger.minWindDirection,
+    max_wind_direction: trigger.maxWindDirection,
+    min_swell_direction: trigger.minSwellDirection,
+    max_swell_direction: trigger.maxSwellDirection,
+    tide_type: trigger.tideType,
+    min_tide_height: trigger.minTideHeight,
+    max_tide_height: trigger.maxTideHeight,
+    message_template: trigger.messageTemplate,
+    notification_style: trigger.notificationStyle,
     priority: trigger.priority,
   };
 }
@@ -313,9 +337,17 @@ export function toDbTriggerUpdate(
   if (trigger.maxHeight !== undefined) update.max_height = trigger.maxHeight;
   if (trigger.minPeriod !== undefined) update.min_period = trigger.minPeriod;
   if (trigger.maxPeriod !== undefined) update.max_period = trigger.maxPeriod;
+  if (trigger.minWindSpeed !== undefined) update.min_wind_speed = trigger.minWindSpeed;
   if (trigger.maxWindSpeed !== undefined) update.max_wind_speed = trigger.maxWindSpeed;
-  if (trigger.windDirections !== undefined) update.wind_directions = trigger.windDirections;
-  if (trigger.swellDirections !== undefined) update.swell_directions = trigger.swellDirections;
+  if (trigger.minWindDirection !== undefined) update.min_wind_direction = trigger.minWindDirection;
+  if (trigger.maxWindDirection !== undefined) update.max_wind_direction = trigger.maxWindDirection;
+  if (trigger.minSwellDirection !== undefined) update.min_swell_direction = trigger.minSwellDirection;
+  if (trigger.maxSwellDirection !== undefined) update.max_swell_direction = trigger.maxSwellDirection;
+  if (trigger.tideType !== undefined) update.tide_type = trigger.tideType;
+  if (trigger.minTideHeight !== undefined) update.min_tide_height = trigger.minTideHeight;
+  if (trigger.maxTideHeight !== undefined) update.max_tide_height = trigger.maxTideHeight;
+  if (trigger.messageTemplate !== undefined) update.message_template = trigger.messageTemplate;
+  if (trigger.notificationStyle !== undefined) update.notification_style = trigger.notificationStyle;
   if (trigger.priority !== undefined) update.priority = trigger.priority;
   return update;
 }

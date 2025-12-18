@@ -133,9 +133,9 @@ export function calculateDistance(
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -256,7 +256,14 @@ export function inferExposure(
   const combined = `${region} ${country}`.toLowerCase();
 
   // Gulf Coast - spots facing south into Gulf of Mexico
-  if (combined.includes('gulf coast') || combined.includes('gulf of mexico')) {
+  if (
+    combined.includes('gulf coast') ||
+    combined.includes('gulf of mexico') ||
+    combined.includes('texas') ||
+    combined.includes('louisiana') ||
+    combined.includes('alabama') ||
+    combined.includes('mississippi')
+  ) {
     return 'gulf';
   }
 
@@ -482,4 +489,56 @@ export function getRecommendedBuoysWithScoring(
     .filter((b) => b.distance <= maxDistance)
     .sort((a, b) => b.combinedScore - a.combinedScore)
     .slice(0, limit);
+}
+
+/**
+ * Calculate the target "offshore" wind direction range.
+ * Offshore wind is typically opposite to the swell arrival direction.
+ * @param region Region string
+ * @param country Country string
+ * @param lat Latitude
+ * @returns [min, max] wind direction (0-360)
+ */
+export function getOffshoreWindow(
+  region: string = '',
+  country: string = '',
+  lat: number
+): [number, number] {
+  const exposure = inferExposure(region, country, lat);
+  const swellRange = getPreferredBearingRange(exposure);
+
+  if (!swellRange) {
+    return [0, 360];
+  }
+
+  const [swellMin, swellMax] = swellRange;
+
+  // Offshore is 180 degrees opposite to swell
+  let min = (swellMin + 180) % 360;
+  let max = (swellMax + 180) % 360;
+
+  return [min, max];
+}
+
+/**
+ * Calculate the target "preferred" swell direction range.
+ * This is the direction from which swells typically arrive for the spot's exposure.
+ * @param region Region string
+ * @param country Country string
+ * @param lat Latitude
+ * @returns [min, max] swell direction (0-360)
+ */
+export function getSwellWindow(
+  region: string = '',
+  country: string = '',
+  lat: number
+): [number, number] {
+  const exposure = inferExposure(region, country, lat);
+  const swellRange = getPreferredBearingRange(exposure);
+
+  if (!swellRange) {
+    return [0, 360];
+  }
+
+  return swellRange;
 }

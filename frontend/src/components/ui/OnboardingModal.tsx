@@ -4,7 +4,7 @@ import { Check, ChevronRight, Home, MapPin, Zap, Waves } from "lucide-react";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { AddSpotContent } from "./AddSpotContent";
-import { AddTriggerContent } from "./AddTriggerContent";
+import { TriggerForm } from "./TriggerForm";
 import { useUserSpots, useProfile } from "../../hooks";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -90,11 +90,27 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         try {
             // Create trigger directly using supabase client (as we don't have a hook for it yet)
             const dbTrigger = toDbTriggerInsert({
-                ...trigger,
-                swellDirections: trigger.swellDirection,
                 userId: user.id,
                 spotId: createdSpotId,
-                priority: 1, // Default priority
+                name: trigger.name,
+                emoji: trigger.emoji,
+                condition: trigger.condition,
+                minHeight: trigger.minHeight,
+                maxHeight: trigger.maxHeight,
+                minPeriod: trigger.minPeriod,
+                maxPeriod: trigger.maxPeriod,
+                minWindSpeed: trigger.minWindSpeed,
+                maxWindSpeed: trigger.maxWindSpeed,
+                minWindDirection: trigger.minWindDirection,
+                maxWindDirection: trigger.maxWindDirection,
+                minSwellDirection: trigger.minSwellDirection,
+                maxSwellDirection: trigger.maxSwellDirection,
+                tideType: trigger.tideType,
+                minTideHeight: trigger.minTideHeight,
+                maxTideHeight: trigger.maxTideHeight,
+                messageTemplate: trigger.messageTemplate,
+                notificationStyle: trigger.notificationStyle ?? null,
+                priority: 1,
             });
 
             const { error: insertError } = await supabase
@@ -219,10 +235,10 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                                 Define the conditions that make this spot fire.
                             </p>
                         </div>
-                        <div className="flex-1 overflow-hidden border border-border rounded-lg">
-                            <AddTriggerContent
+                        <div className="flex-1 overflow-hidden border border-border rounded-lg bg-card">
+                            <TriggerForm
                                 spotId={createdSpotId!}
-                                onAddTrigger={handleTriggerAdd}
+                                onSubmit={handleTriggerAdd}
                                 className="h-full"
                             />
                         </div>
