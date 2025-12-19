@@ -13,9 +13,10 @@ import {
   Bolt,
   Letter,
   DollarMinimalistic,
+  AddCircle,
 } from '@solar-icons/react';
 import { Button, Input, DnaLogo } from "../components/ui";
-import { AdminHeader, UserDetailModal } from "../components/admin";
+import { AdminHeader, UserDetailModal, InviteUserModal } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import type { AdminUserStats } from "../lib/mappers";
@@ -62,6 +63,7 @@ export function UserManagementPage() {
   const [filterTier, setFilterTier] = useState<FilterTier>("all");
   const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUserStats | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch all users from admin_user_stats view
@@ -196,11 +198,17 @@ export function UserManagementPage() {
         <AdminHeader />
 
         {/* Page Description */}
-        <div className="mb-6">
-          <h2 className="font-mono text-xl font-bold uppercase tracking-wider mb-2">User Management</h2>
-          <p className="font-mono text-sm text-muted-foreground">
-            View and manage user accounts, subscription tiers, and admin access.
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="font-mono text-xl font-bold uppercase tracking-wider mb-2">User Management</h2>
+            <p className="font-mono text-sm text-muted-foreground">
+              View and manage user accounts, subscription tiers, and admin access.
+            </p>
+          </div>
+          <Button onClick={() => setShowInviteModal(true)}>
+            <AddCircle weight="Bold" size={16} className="mr-2" />
+            Invite User
+          </Button>
         </div>
 
         {/* Stats */}
@@ -494,6 +502,17 @@ export function UserManagementPage() {
             </div>
           </div>
         </div>
+      )}
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <InviteUserModal
+          onClose={() => setShowInviteModal(false)}
+          onSuccess={() => {
+            // Optional: refresh user list if the user is created immediately (often it requires them to click the link first)
+            // But if we want to be safe we can just fetch.
+            fetchUsers();
+          }}
+        />
       )}
     </div>
   );
