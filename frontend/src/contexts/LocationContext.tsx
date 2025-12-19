@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { getSurfSpots, type SurfSpot } from '../data/surfSpots';
 import { calculateDistance } from '../data/noaaBuoys';
+import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 
 // Interface for location context (uses lng for legacy compatibility)
 interface LocationSpot {
@@ -65,11 +67,66 @@ const DEFAULT_SPOT: LocationSpot = (() => {
 })();
 
 export function LocationProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [spot, setSpot] = useState<LocationSpot>(DEFAULT_SPOT);
   const [isLoading, setIsLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
-  const requestLocation = () => {
+  // Fetch user's first spot (their "home" spot) when logged in
+  const fetchUserHomeSpot = useCallback(async (userId: string) => {
+    setIsLoading(true);
+    try {
+      // Get the user's first spot (ordered by created_at ascending = oldest first = their home)
+      const { data, error } = await supabase
+        .from('user_spots')
+        .select('name, latitude, longitude, region, master_spot_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        // No spots found, use default
+        setSpot(DEFAULT_SPOT);
+        setIsLoading(false);
+        return;
+      }
+
+      // If they have a master_spot_id, get the master spot details
+      if (data.master_spot_id) {
+        const masterSpot = ALL_SURF_SPOTS.find(s => s.id === data.master_spot_id);
+        if (masterSpot) {
+          setSpot({
+            name: data.name || masterSpot.name,
+            lat: masterSpot.lat,
+            lng: masterSpot.lon,
+            region: masterSpot.region,
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Use the user spot's own coordinates if available
+      if (data.latitude && data.longitude) {
+        setSpot({
+          name: data.name,
+          lat: data.latitude,
+          lng: data.longitude,
+          region: data.region || 'Unknown',
+        });
+      } else {
+        setSpot(DEFAULT_SPOT);
+      }
+    } catch {
+      setSpot(DEFAULT_SPOT);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Request browser geolocation (only called manually, not on mount)
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setIsLoading(false);
       return;
@@ -89,12 +146,21 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       },
       { timeout: 10000, maximumAge: 300000 }
     );
-  };
+  }, []);
 
   useEffect(() => {
-    // Auto-request location on mount
-    requestLocation();
-  }, []);
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    if (user) {
+      // Logged in: fetch user's home spot
+      fetchUserHomeSpot(user.id);
+    } else {
+      // Not logged in: use default fallback (no geolocation prompt)
+      setSpot(DEFAULT_SPOT);
+      setIsLoading(false);
+    }
+  }, [user, authLoading, fetchUserHomeSpot]);
 
   return (
     <LocationContext.Provider value={{ spot, isLoading, hasPermission, requestLocation }}>

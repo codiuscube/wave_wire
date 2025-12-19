@@ -15,3 +15,4 @@ export type { SpotOption } from './AddSpotModal';
 export { TriggerModal } from './TriggerModal';
 export { OnboardingModal } from './OnboardingModal';
 export { UpgradeModal } from './UpgradeModal';
+export { Sheet } from './Sheet';
