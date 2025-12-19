@@ -79,10 +79,20 @@ const interpolateTideHeight = (
     }
   }
 
-  if (!before || !after) {
-    // Edge case: use first two predictions
-    before = predictions[0];
-    after = predictions[1];
+  // Handle edge cases
+  if (!after) {
+    // All predictions are in the past - use last two
+    before = predictions[predictions.length - 2];
+    after = predictions[predictions.length - 1];
+  } else if (!before) {
+    // Current time is before first prediction - estimate based on first two
+    // Use the first prediction as "after" and extrapolate backwards
+    after = predictions[0];
+    before = predictions[1];
+    // Swap direction since we're going backwards
+    const height = after.height;
+    const direction = after.type === 'H' ? 'rising' : 'falling';
+    return { height, direction };
   }
 
   // Linear interpolation
@@ -199,14 +209,12 @@ export async function fetchTideData(stationId: string, stationName: string): Pro
 
   try {
     const now = new Date();
-    // Start from yesterday to ensure we have predictions before current time
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const beginDate = formatDateForAPI(yesterday);
+    // Start from today - NOAA API requires begin_date to be today or later for predictions
+    const beginDate = formatDateForAPI(now);
 
     // Fetch both hi/lo and hourly data in parallel
     const [predictions, hourly] = await Promise.all([
-      fetchHiLoPredictions(stationId, beginDate, 96), // 4 days of hi/lo (yesterday + 3 days)
+      fetchHiLoPredictions(stationId, beginDate, 96), // 4 days of hi/lo
       fetchHourlyPredictions(stationId, beginDate, 96), // 4 days hourly for chart
     ]);
 
