@@ -113,6 +113,18 @@ export function useTriggers(
         };
       }
 
+      // Check for duplicate condition for this spot
+      const existingCondition = triggers.find(
+        t => t.spotId === trigger.spotId && t.condition === trigger.condition
+      );
+
+      if (existingCondition) {
+        return {
+          data: null,
+          error: `A ${trigger.condition} trigger already exists for this spot.`,
+        };
+      }
+
       const dbTrigger = toDbTriggerInsert({ ...trigger, userId });
 
       const { data, error: insertError } = await supabase
@@ -137,7 +149,7 @@ export function useTriggers(
 
       return { data: null, error: 'No data returned' };
     },
-    [userId, canAddTrigger, tier, triggerLimit]
+    [userId, canAddTrigger, tier, triggerLimit, triggers]
   );
 
   const updateTrigger = useCallback(
