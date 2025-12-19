@@ -7,6 +7,32 @@ export interface ParseResult {
 }
 
 /**
+ * Normalize trigger ranges by swapping min/max values when inverted.
+ * This fixes AI parsing errors like "14-12 seconds" becoming properly ordered.
+ */
+function normalizeRanges(trigger: Partial<TriggerTier>): Partial<TriggerTier> {
+  const normalized = { ...trigger };
+
+  // Helper to swap if min > max
+  const fixRange = (minKey: keyof TriggerTier, maxKey: keyof TriggerTier) => {
+    const min = normalized[minKey] as number | undefined;
+    const max = normalized[maxKey] as number | undefined;
+    if (min !== undefined && max !== undefined && min > max) {
+      (normalized[minKey] as number) = max;
+      (normalized[maxKey] as number) = min;
+    }
+  };
+
+  fixRange('minHeight', 'maxHeight');
+  fixRange('minPeriod', 'maxPeriod');
+  fixRange('minWindSpeed', 'maxWindSpeed');
+  fixRange('minTideHeight', 'maxTideHeight');
+  // Note: swell direction ranges can wrap around 360°, so we don't swap those
+
+  return normalized;
+}
+
+/**
  * Primary parser: Call Claude Haiku API to parse natural language trigger description
  * @param spotId - Optional spot ID used to fetch locals_knowledge server-side
  */
@@ -36,7 +62,7 @@ export async function parseTriggerCommand(
         // Fall back to keyword parser on server error
         const fallbackResult = parseTriggerKeywords(text);
         if (Object.keys(fallbackResult).length > 0) {
-          return { success: true, trigger: fallbackResult };
+          return { success: true, trigger: normalizeRanges(fallbackResult) };
         }
         return { success: false, error: 'AI service unavailable. Try using specific values.' };
       }
@@ -49,9 +75,14 @@ export async function parseTriggerCommand(
       // Try fallback parser
       const fallbackResult = parseTriggerKeywords(text);
       if (Object.keys(fallbackResult).length > 0) {
-        return { success: true, trigger: fallbackResult };
+        return { success: true, trigger: normalizeRanges(fallbackResult) };
       }
       return { success: false, error: data.error || 'Could not understand the description.' };
+    }
+
+    // Normalize ranges from AI response to fix any inverted min/max values
+    if (data.trigger) {
+      data.trigger = normalizeRanges(data.trigger);
     }
 
     return data;
@@ -59,7 +90,7 @@ export async function parseTriggerCommand(
     // Network error - try fallback
     const fallbackResult = parseTriggerKeywords(text);
     if (Object.keys(fallbackResult).length > 0) {
-      return { success: true, trigger: fallbackResult };
+      return { success: true, trigger: normalizeRanges(fallbackResult) };
     }
 
     if (err instanceof TypeError && err.message.includes('fetch')) {
