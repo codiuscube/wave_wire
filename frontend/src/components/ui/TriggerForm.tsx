@@ -654,6 +654,7 @@ export function TriggerForm({
                         spotName={spotName}
                         spotRegion={spot?.region}
                         onParsed={handleAIParsed}
+                        autoFocus
                     />
                 )}
 
@@ -670,7 +671,7 @@ export function TriggerForm({
                                 value={trigger.name}
                                 onChange={(e) => setTrigger({ ...trigger, name: e.target.value })}
                                 placeholder="e.g. Dawn Patrol"
-                                autoFocus
+                                autoFocus={!!initialData}
                             />
                         </div>
                         <div>

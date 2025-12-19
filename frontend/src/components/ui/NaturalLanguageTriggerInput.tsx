@@ -10,6 +10,7 @@ interface NaturalLanguageTriggerInputProps {
   spotRegion?: string;
   onParsed: (trigger: Partial<TriggerTier>) => void;
   disabled?: boolean;
+  autoFocus?: boolean;
 }
 
 export function NaturalLanguageTriggerInput({
@@ -17,6 +18,7 @@ export function NaturalLanguageTriggerInput({
   spotRegion,
   onParsed,
   disabled = false,
+  autoFocus = false,
 }: NaturalLanguageTriggerInputProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [description, setDescription] = useState('');
@@ -111,6 +113,7 @@ export function NaturalLanguageTriggerInput({
                   placeholder={`e.g. "Alert me when it's 4-6ft with offshore wind and low tide"`}
                   className="w-full h-24 p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground/60"
                   disabled={isLoading || disabled}
+                  autoFocus={autoFocus}
                 />
                 <p className="text-xs text-muted-foreground">
                   Try: overhead waves, NW swell, low tide, offshore wind, epic conditions
