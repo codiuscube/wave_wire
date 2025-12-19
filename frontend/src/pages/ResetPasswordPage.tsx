@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2, Lock, CheckCircle } from 'lucide-react';
+import { Lock, CheckCircle } from '@solar-icons/react';
 import { Logo } from '../components/ui/Logo';
 
 export function ResetPasswordPage() {
@@ -81,7 +81,7 @@ export function ResetPasswordPage() {
 
           {success ? (
             <div className="space-y-6 text-center">
-              <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
+              <CheckCircle weight="BoldDuotone" size={48} className="mx-auto text-green-500" />
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Password Updated</h3>
                 <p className="text-sm text-muted-foreground">
@@ -130,12 +130,12 @@ export function ResetPasswordPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Updating...
                   </>
                 ) : (
                   <>
-                    <Lock className="w-4 h-4" />
+                    <Lock weight="Bold" size={16} />
                     Update Password
                   </>
                 )}

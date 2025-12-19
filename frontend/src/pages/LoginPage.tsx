@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2, Mail, Key, ArrowLeft } from 'lucide-react';
+import { Letter, Key, ArrowLeft } from '@solar-icons/react';
 import { Logo } from '../components/ui/Logo';
 
 type AuthMode = 'password' | 'email-otp' | 'verify-otp' | 'forgot-password' | 'reset-sent';
@@ -160,12 +160,12 @@ export function LoginPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Signing in...
                   </>
                 ) : (
                   <>
-                    <Key className="w-4 h-4" />
+                    <Key weight="Bold" size={16} />
                     Sign In with Password
                   </>
                 )}
@@ -185,7 +185,7 @@ export function LoginPage() {
                 onClick={() => setAuthMode('email-otp')}
                 className="w-full py-3 px-4 bg-secondary/50 text-foreground font-semibold rounded-lg hover:bg-secondary/70 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-all flex items-center justify-center gap-2"
               >
-                <Mail className="w-4 h-4" />
+                <Letter weight="Bold" size={16} />
                 Sign In with Email Code
               </button>
 
@@ -228,12 +228,12 @@ export function LoginPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Sending code...
                   </>
                 ) : (
                   <>
-                    <Mail className="w-4 h-4" />
+                    <Letter weight="Bold" size={16} />
                     Send Code
                   </>
                 )}
@@ -244,7 +244,7 @@ export function LoginPage() {
                 onClick={resetToPassword}
                 className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft weight="Bold" size={16} />
                 Back to password login
               </button>
             </form>
@@ -254,7 +254,7 @@ export function LoginPage() {
           {authMode === 'verify-otp' && (
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="text-center">
-                <Mail className="w-12 h-12 mx-auto mb-4 text-primary" />
+                <Letter weight="BoldDuotone" size={48} className="mx-auto mb-4 text-primary" />
                 <p className="text-sm text-muted-foreground">
                   We sent a code to <span className="text-foreground font-medium">{email}</span>
                 </p>
@@ -283,7 +283,7 @@ export function LoginPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Verifying...
                   </>
                 ) : (
@@ -304,7 +304,7 @@ export function LoginPage() {
                 onClick={resetToPassword}
                 className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft weight="Bold" size={16} />
                 Back to password login
               </button>
             </form>
@@ -339,7 +339,7 @@ export function LoginPage() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Sending...
                   </>
                 ) : (
@@ -352,7 +352,7 @@ export function LoginPage() {
                 onClick={resetToPassword}
                 className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft weight="Bold" size={16} />
                 Back to login
               </button>
             </form>
@@ -361,7 +361,7 @@ export function LoginPage() {
           {/* Reset Email Sent Confirmation */}
           {authMode === 'reset-sent' && (
             <div className="space-y-6 text-center">
-              <Mail className="w-12 h-12 mx-auto text-primary" />
+              <Letter weight="BoldDuotone" size={48} className="mx-auto text-primary" />
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Check your email</h3>
                 <p className="text-sm text-muted-foreground">
@@ -373,7 +373,7 @@ export function LoginPage() {
                 onClick={resetToPassword}
                 className="w-full py-3 px-4 bg-secondary/50 text-foreground font-semibold rounded-lg hover:bg-secondary/70 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-all flex items-center justify-center gap-2"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft weight="Bold" size={16} />
                 Back to login
               </button>
             </div>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Navbar, Footer } from '../components/landing';
 import { AdminHeader } from '../components/admin';
-import { Check, CircleQuestionMark } from 'lucide-react';
+import { VerifiedCheck, QuestionCircle } from '@solar-icons/react';
 
 const timelineSlides = [
     {
@@ -287,7 +287,7 @@ export function InvestmentPage() {
                             <div className="mb-4">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">SHAUN</h3>
-                                    <Check className="text-white mt-1 bg-brand-rogue p-1 rounded-full font-bold" />
+                                    <VerifiedCheck weight="Bold" size={20} className="text-white mt-1 bg-brand-rogue p-1 rounded-full" />
                                 </div>
                                 <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mt-2 tape">OPS & COMPLIANCE</span>
                             </div>
@@ -312,7 +312,7 @@ export function InvestmentPage() {
                             <div className="mb-4">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">CODY</h3>
-                                    <Check className="text-white mt-1 bg-brand-rogue p-1 rounded-full font-bold" />
+                                    <VerifiedCheck weight="Bold" size={20} className="text-white mt-1 bg-brand-rogue p-1 rounded-full" />
                                 </div>
                                 <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform rotate-1 font-mono text-xs font-bold tracking-widest mt-2 tape">TECHNICAL LEAD</span>
                             </div>
@@ -331,7 +331,7 @@ export function InvestmentPage() {
                             <div className="mb-4">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-2xl sm:text-3xl font-bold text-white group-hover:text-brand-acid transition-colors font-display tracking-tight">PARTNER 3</h3>
-                                    <CircleQuestionMark className="text-white mt-1 bg-brand-rogue/50 p-1 rounded-full font-bold" />
+                                    <QuestionCircle weight="Bold" size={20} className="text-white mt-1 bg-brand-rogue/50 p-1 rounded-full" />
                                 </div>
                                 <span className="inline-block bg-brand-rogue text-brand-abyss px-2 py-0.5 transform -rotate-1 font-mono text-xs font-bold tracking-widest mt-2 tape">MARKETING LEAD</span>
                             </div>

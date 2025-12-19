@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Moon, Sun, Zap, Bell, Info, AlertCircle } from 'lucide-react';
+import { ClockCircle, Moon, Sun, Bolt, Bell, InfoCircle, DangerCircle } from '@solar-icons/react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Card,
@@ -46,10 +46,10 @@ const defaultSchedules: AlertSchedule[] = [
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const alertIcons: Record<string, typeof Clock> = {
+const alertIcons: Record<string, typeof ClockCircle> = {
   forecast: Moon,
   realtime: Sun,
-  popup: Zap,
+  popup: Bolt,
 };
 
 const alertDetails: Record<string, { trigger: string; example: string }> = {
@@ -87,7 +87,7 @@ export function AlertsPage() {
         <Card className="border-dashed">
           <CardContent className="pt-8 pb-8 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <Clock className="w-8 h-8 text-primary" />
+              <ClockCircle weight="BoldDuotone" size={32} className="text-primary" />
             </div>
             <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
@@ -130,7 +130,7 @@ export function AlertsPage() {
       <Card className="mb-6 lg:mb-8 bg-primary/10 border-primary/30">
         <CardContent className="pt-4 sm:pt-6">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+            <DangerCircle weight="Bold" size={20} className="text-primary mt-0.5 shrink-0" />
             <div>
               <p className="font-medium text-foreground">No Spam, Only Signals</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -157,7 +157,7 @@ export function AlertsPage() {
                       : 'bg-secondary text-muted-foreground'
                       }`}
                   >
-                    <Icon className="w-6 h-6" />
+                    <Icon weight="BoldDuotone" size={24} />
                   </div>
 
                   <div className="flex-1">
@@ -196,7 +196,7 @@ export function AlertsPage() {
                         {/* Time Setting */}
                         {schedule.type !== 'popup' && (
                           <div className="flex items-center gap-4">
-                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <ClockCircle weight="Bold" size={16} className="text-muted-foreground" />
                             <Input
                               type="time"
                               value={schedule.time}
@@ -213,7 +213,7 @@ export function AlertsPage() {
 
                         {schedule.type === 'popup' && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Zap className="w-4 h-4" />
+                            <Bolt weight="Bold" size={16} />
                             Checks every 2 hours during daylight (6am - 8pm)
                           </div>
                         )}
@@ -254,7 +254,7 @@ export function AlertsPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
+                <Bell weight="Bold" size={20} />
                 Quiet Hours
               </CardTitle>
               <CardDescription>
@@ -305,7 +305,7 @@ export function AlertsPage() {
       <Card className="mt-6 lg:mt-8 bg-muted/50 border-border">
         <CardContent className="pt-4 sm:pt-6">
           <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+            <InfoCircle weight="Bold" size={20} className="text-muted-foreground mt-0.5 shrink-0" />
             <div>
               <p className="font-medium">Alert Flow</p>
               <div className="text-sm text-muted-foreground mt-3 space-y-3">

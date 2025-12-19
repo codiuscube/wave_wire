@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronRight, Home, MapPin, Zap, Waves } from "lucide-react";
+import { VerifiedCheck, AltArrowRight, Home, MapPoint, Bolt, Water } from '@solar-icons/react';
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { AddSpotContent } from "./AddSpotContent";
@@ -152,7 +152,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 return (
                     <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Waves className="w-10 h-10 text-primary" />
+                            <Water weight="BoldDuotone" size={40} className="text-primary" />
                         </div>
                         <h2 className="text-3xl font-black uppercase tracking-tighter">Welcome to Home Break</h2>
                         <p className="text-muted-foreground text-lg max-w-md mx-auto">
@@ -163,7 +163,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                             className="w-full max-w-sm mx-auto h-12 text-lg"
                             variant="rogue"
                         >
-                            Get Started <ChevronRight className="w-5 h-5 ml-2" />
+                            Get Started <AltArrowRight weight="Bold" size={20} className="ml-2" />
                         </Button>
                     </div>
                 );
@@ -173,7 +173,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
                         <div className="text-center mb-8">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Home className="w-6 h-6 text-primary" />
+                                <Home weight="BoldDuotone" size={24} className="text-primary" />
                             </div>
                             <h3 className="text-xl font-bold uppercase">Where do you live?</h3>
                             <p className="text-muted-foreground text-sm">
@@ -206,7 +206,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300 flex flex-col h-[600px]">
                         <div className="shrink-0 text-center mb-2">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <MapPin className="w-6 h-6 text-primary" />
+                                <MapPoint weight="BoldDuotone" size={24} className="text-primary" />
                             </div>
                             <h3 className="text-xl font-bold uppercase">Add your first spot</h3>
                             <p className="text-muted-foreground text-sm">
@@ -228,7 +228,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300 flex flex-col h-[600px]">
                         <div className="shrink-0 text-center mb-2">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <Zap className="w-6 h-6 text-primary" />
+                                <Bolt weight="BoldDuotone" size={24} className="text-primary" />
                             </div>
                             <h3 className="text-xl font-bold uppercase">Set up an alert</h3>
                             <p className="text-muted-foreground text-sm">
@@ -249,7 +249,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 return (
                     <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 py-12">
                         <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-                            <Check className="w-12 h-12 text-green-500" />
+                            <VerifiedCheck weight="BoldDuotone" size={48} className="text-green-500" />
                         </div>
                         <h2 className="text-3xl font-black uppercase tracking-tighter"> all set!</h2>
                         <p className="text-muted-foreground text-lg max-w-md mx-auto">

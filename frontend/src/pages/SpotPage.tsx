@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Crosshair, Plus, Trash2, Waves, ChevronDown, Loader2, AlertTriangle } from "lucide-react";
+import { Target, AddCircle, TrashBinMinimalistic, Water, AltArrowDown, DangerTriangle, MapPoint } from '@solar-icons/react';
 import {
   Button,
-  Badge,
   AddSpotModal,
 } from "../components/ui";
 import { IconPickerModal, AVAILABLE_ICONS } from "../components/ui/IconPickerModal";
@@ -125,7 +124,7 @@ export function SpotPage() {
   if (authLoading || profileLoading || isLoading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -141,219 +140,227 @@ export function SpotPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-8 lg:mb-12">
-        <div>
+    <div className="relative p-4 min-h-[calc(100vh-4rem)] flex flex-col items-center">
+      {/* Background Tech Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[20%] left-[10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl opacity-50" />
+        <div className="absolute bottom-[20%] right-[10%] w-80 h-80 bg-blue-500/5 rounded-full blur-3xl opacity-50" />
+      </div>
+
+      <div className="w-full max-w-2xl flex flex-col items-center">
+        {/* Header - Centered */}
+        <div className="mb-12 text-center">
           <div className="inline-block bg-brand-rogue text-brand-abyss font-bold font-mono text-xs px-2 py-1 mb-4 transform -rotate-1 tracking-widest tape">
             // MY_SPOTS
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="HOME BREAK CONFIG">
-            HOME BREAK CONFIG
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="HOMEBREAK">
+            HOMEBREAK
           </h1>
-          <p className="font-mono text-muted-foreground text-base max-w-xl border-l-2 border-muted pl-4">
+          <p className="font-mono text-muted-foreground text-sm sm:text-base border-muted px-4">
             Configure your spots and buoy sources.
           </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            variant="rogue"
-            className="shrink-0 h-auto py-3 px-6"
-            disabled={!canAddSpot}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            ADD A SPOT
-          </Button>
-          <span className="font-mono text-xs text-muted-foreground">
-            {spotCount} / {spotLimit === Infinity ? '∞' : spotLimit} spots
-          </span>
-        </div>
-      </div>
 
-      {/* Tier Limit Warning */}
-      {!canAddSpot && (
-        <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/10 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-mono text-sm text-amber-500 font-medium">Spot Limit Reached</p>
-            <p className="font-mono text-xs text-muted-foreground mt-1">
-              Free tier allows {spotLimit} spot{spotLimit === 1 ? '' : 's'}. Upgrade to add more spots.
-            </p>
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <span className="font-mono text-xs text-muted-foreground bg-secondary/10 px-2 py-1 rounded">
+              {spotCount} / {spotLimit === Infinity ? '∞' : spotLimit} spots active
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Saved Spots */}
-      {mySpots.length > 0 ? (
-        <div className="tech-card rounded-lg bg-card/50 backdrop-blur-md">
-          <div className="flex items-center justify-between p-6 border-b border-border/50">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 bg-primary animate-pulse" />
-              <h2 className="font-mono text-base tracking-widest text-muted-foreground uppercase">Your Spots</h2>
+        {/* Tier Limit Warning */}
+        {!canAddSpot && (
+          <div className="w-full mb-6 p-4 border border-amber-500/50 bg-amber-500/10 flex items-start gap-3 rounded-md">
+            <DangerTriangle weight="Bold" size={20} className="text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-mono text-sm text-amber-500 font-medium">Spot Limit Reached</p>
+              <p className="font-mono text-xs text-muted-foreground mt-1">
+                Free tier allows {spotLimit} spot{spotLimit === 1 ? '' : 's'}. Upgrade to add more spots.
+              </p>
             </div>
-            <Badge variant="outline" className="font-mono rounded-none border-primary/50 text-primary">{mySpots.length}</Badge>
           </div>
+        )}
 
-          <div className="p-6">
-            <div className="space-y-4">
-              {mySpots.map((spot) => (
-                <div
-                  key={spot.id}
-                  className="border border-border/50 bg-secondary/10 hover:bg-secondary/20 transition-colors group"
-                >
-                  <div className="flex items-center justify-between p-4 gap-4 border-b border-border/30">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <button
-                        onClick={() => {
-                          setSelectedSpotForIcon(spot.id);
-                          setIsIconModalOpen(true);
-                        }}
-                        className="h-12 w-12 bg-secondary/30 flex items-center justify-center shrink-0 border border-border/30 hover:bg-primary/20 hover:border-primary/50 transition-all group/icon"
-                        title="Change Icon"
-                      >
-                        {(() => {
-                          const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
-                            ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
-                            : Crosshair;
-                          return <IconComponent className="w-6 h-6 text-primary/80 group-hover/icon:text-primary transition-colors" />;
-                        })()}
-                      </button>
-                      <div className="min-w-0">
-                        <h4 className="font-mono font-bold text-lg uppercase tracking-tight text-foreground truncate">{spot.name}</h4>
-                        <p className="font-mono text-sm text-muted-foreground/70 uppercase tracking-wide">
+        {/* Spots List */}
+        <div className="w-full space-y-4 mb-8">
+          {mySpots.length > 0 ? (
+            mySpots.map((spot) => (
+              <div
+                key={spot.id}
+                className="group relative overflow-hidden border border-border/30 bg-card/60 backdrop-blur-sm hover:border-primary/30 transition-all duration-300"
+              >
+                {/* Spot Header */}
+                <div className="flex items-center justify-between p-4 sm:p-5 gap-4 border-b border-border/10">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <button
+                      onClick={() => {
+                        setSelectedSpotForIcon(spot.id);
+                        setIsIconModalOpen(true);
+                      }}
+                      className="h-12 w-12 bg-secondary/30 flex items-center justify-center shrink-0 border border-border/30 hover:bg-primary/20 hover:border-primary/50 transition-all group/icon"
+                      title="Change Icon"
+                    >
+                      {(() => {
+                        const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                          ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                          : Target;
+                        return <IconComponent weight="BoldDuotone" size={24} className="text-primary/80 group-hover/icon:text-primary transition-colors" />;
+                      })()}
+                    </button>
+                    <div className="min-w-0">
+                      <h4 className="font-mono font-bold text-lg uppercase tracking-tight text-foreground truncate">{spot.name}</h4>
+                      <div className="flex items-center gap-2 text-muted-foreground/70">
+                        <MapPoint weight="Bold" size={12} />
+                        <p className="font-mono text-xs uppercase tracking-wide">
                           {spot.region}
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => removeSpot(spot.id)}
-                      disabled={isDeleting === spot.id}
-                      className="p-3 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
-                      title="Remove target"
-                    >
-                      {isDeleting === spot.id ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-5 h-5" />
-                      )}
-                    </button>
                   </div>
 
-                  {/* Buoy Assignment */}
-                  <div className="p-4 bg-background/20">
-                    {spot.buoyId ? (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider shrink-0">Buoy:</span>
-                          <div className="flex items-center gap-2">
-                            {/* Stale Data Indicator */}
-                            <div
-                              className={`w-2 h-2 rounded-full ${!spot.buoy?.timestamp || (new Date().getTime() - new Date(spot.buoy.timestamp).getTime() > 24 * 60 * 60 * 1000)
-                                ? "bg-red-500 animate-pulse"
-                                : "bg-green-500 animate-pulse"
-                                }`}
-                              title={spot.buoy?.timestamp ? `Data from: ${new Date(spot.buoy.timestamp).toLocaleString()}` : "No data timestamp"}
-                            />
-                            <a
-                              href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-mono text-sm text-primary/80 hover:text-primary transition-colors truncate border-b border-primary/30 hover:border-primary"
-                            >
-                              {spot.buoyName || `Buoy ${spot.buoyId}`}
-                            </a>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
-                          className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider underline underline-offset-4 decoration-dotted"
-                        >
-                          [ RECONFIGURE BUOY ]
-                        </button>
-                      </div>
+                  <button
+                    onClick={() => removeSpot(spot.id)}
+                    disabled={isDeleting === spot.id}
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                    title="Remove target"
+                  >
+                    {isDeleting === spot.id ? (
+                      <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-current rounded-full animate-spin" />
                     ) : (
+                      <TrashBinMinimalistic weight="Bold" size={20} />
+                    )}
+                  </button>
+                </div>
+
+                {/* Buoy Section */}
+                <div className="p-4 sm:p-5 bg-secondary/5">
+                  {spot.buoyId ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider shrink-0 px-1.5 py-0.5 border border-border/30 bg-background/50">
+                          LINKED BUOY
+                        </div>
+
+                        {/* Stale Data Indicator */}
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${!spot.buoy?.timestamp || (new Date().getTime() - new Date(spot.buoy.timestamp).getTime() > 24 * 60 * 60 * 1000)
+                            ? "bg-red-500"
+                            : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                            }`}
+                          title={spot.buoy?.timestamp ? `Data from: ${new Date(spot.buoy.timestamp).toLocaleString()}` : "No data timestamp"}
+                        />
+
+                        <a
+                          href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-sm font-bold text-foreground/80 hover:text-primary transition-colors truncate"
+                        >
+                          {spot.buoyName || `Station ${spot.buoyId}`}
+                        </a>
+                      </div>
                       <button
                         onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
-                        className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn"
+                        className="font-mono text-xs text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider underline underline-offset-4 decoration-dotted"
                       >
-                        <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">Assign Buoy</span>
-                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedSpotId === spot.id ? 'rotate-180' : ''}`} />
+                        [ RECONFIGURE ]
                       </button>
-                    )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn bg-background/50"
+                    >
+                      <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">Assign Buoy Source</span>
+                      <AltArrowDown weight="Bold" size={16} className={`transition-transform ${expandedSpotId === spot.id ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
 
-                    {/* Buoy Selector Dropdown */}
-                    {expandedSpotId === spot.id && (
-                      <div className="mt-4 p-1 border border-border/50 bg-background/50 backdrop-blur-sm max-h-80 overflow-y-auto">
-                        <div className="px-4 py-2 border-b border-border/30">
-                          <span className="font-mono text-xs text-muted-foreground/60 uppercase tracking-wider">
-                            Nearest Buoys to {spot.name}
-                          </span>
-                        </div>
+                  {/* Buoy Selector Dropdown */}
+                  {expandedSpotId === spot.id && (
+                    <div className="mt-4 border border-border/50 bg-background z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="px-4 py-2 border-b border-border/30 bg-secondary/10">
+                        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+                          Nearest Signal Sources
+                        </span>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto">
                         {getSpotBuoys(spot).map((buoy, index) => (
                           <button
                             key={buoy.id}
                             onClick={() => assignBuoy(spot.id, buoy)}
                             className={`w-full text-left px-4 py-3 text-sm transition-colors border-l-2 ${spot.buoyId === buoy.id
-                              ? "bg-primary/10 text-primary border-primary"
+                              ? "bg-primary/5 text-primary border-primary"
                               : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground border-transparent hover:border-primary/50"
                               }`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <span className="font-mono text-xs text-muted-foreground/50 w-4">
-                                  {index + 1}.
+                                  {index + 1}
                                 </span>
                                 <div>
-                                  <span className="font-mono font-bold mr-2">{buoy.id}</span>
+                                  <span className="font-mono font-bold mr-2 text-xs">{buoy.id}</span>
                                   <span className="font-mono text-xs uppercase opacity-80">
                                     {buoy.name}
                                   </span>
                                 </div>
                               </div>
-                              <span className="font-mono text-xs text-muted-foreground/60 shrink-0 ml-2">
+                              <span className="font-mono text-xs text-muted-foreground/60 shrink-0 ml-2 bg-secondary/20 px-1 py-0.5 rounded">
                                 {formatDistance(buoy.distance)}
                               </span>
-                            </div>
-                            <div className="font-mono text-xs text-muted-foreground/40 mt-1 ml-7">
-                              {buoy.region}
                             </div>
                           </button>
                         ))}
                         {getSpotBuoys(spot).length === 0 && (
                           <div className="px-4 py-6 text-center text-muted-foreground/50 font-mono text-xs">
-                            No buoys found within range
+                            No signal sources found within range
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
+            ))
+          ) : (
+            /* Empty State */
+            <div className="w-full border border-dashed border-border/50 bg-secondary/5 rounded-lg p-12 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-secondary/20 mb-6 border border-border/50 flex items-center justify-center text-muted-foreground">
+                <Water weight="BoldDuotone" size={32} />
+              </div>
+              <h3 className="font-mono text-xl font-bold uppercase mb-3 text-foreground">No Spots Configured</h3>
+              <p className="text-muted-foreground text-sm font-mono max-w-sm mb-8 leading-relaxed">
+                Add your home breaks to begin monitoring swell conditions.
+              </p>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                variant="rogue-secondary"
+                disabled={!canAddSpot}
+                className="h-auto py-3 px-8"
+              >
+                <AddCircle weight="Bold" size={16} className="mr-2" />
+                INITIATE TARGET SPOT
+              </Button>
             </div>
-          </div>
+          )}
         </div>
-      ) : (
-        /* Empty State */
-        <div className="tech-card border-dashed border-border p-12">
-          <div className="text-center max-w-md mx-auto">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/20 mb-6 border border-border/50">
-              <Waves className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-mono text-xl font-bold uppercase mb-3 text-foreground">No Spots</h3>
-            <p className="text-muted-foreground text-base mb-8 leading-relaxed">
-              Configure your first spots to begin intercepting swell signals.
-            </p>
+
+        {/* Add Spot Button (Only show if we have spots, otherwise empty state handles it) */}
+        {mySpots.length > 0 && (
+          <div className="flex justify-center pb-20">
             <Button
               onClick={() => setIsModalOpen(true)}
-              className="btn-brutal bg-transparent text-primary hover:bg-primary hover:text-background border-primary rounded-none h-auto py-3 px-8"
+              variant="rogue-secondary"
+              disabled={!canAddSpot}
+              className="h-auto py-3 px-8"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              INITIATE TARGET
+              <AddCircle weight="Bold" size={16} className="mr-2" />
+              ADD ANOTHER SPOT
             </Button>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
 
       {/* Add Spot Modal */}
       <AddSpotModal

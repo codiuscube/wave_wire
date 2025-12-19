@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Select } from "./ui/Select";
 import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
-import { Crosshair, MapPin } from "lucide-react";
+import { Target, MapPoint } from '@solar-icons/react';
 import { fetchForecastDataForTime, getTidePredictionsForDay, type ForecastTime } from "../services/api";
 import { useTideData } from "../hooks/useTideData";
 import { TideChart } from "./TideChart";
@@ -258,7 +258,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
 
   const Icon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
     ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
-    : Crosshair;
+    : Target;
 
   return (
     <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
@@ -266,7 +266,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
       <div className="p-4 flex items-center justify-between border-b border-border/30">
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-primary/80 group-hover:text-primary transition-colors" />
+            <Icon weight="BoldDuotone" size={20} className="text-primary/80 group-hover:text-primary transition-colors" />
           </div>
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
@@ -280,7 +280,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
             title="View on Google Maps"
             onClick={(e) => e.stopPropagation()}
           >
-            <MapPin className="w-4 h-4" />
+            <MapPoint weight="Bold" size={16} />
             <span className="font-mono text-xs whitespace-nowrap tracking-tighter hover:underline decoration-primary/50 underline-offset-4">
               {spot.lat.toFixed(3)} / {spot.lon.toFixed(3)}
             </span>

@@ -1,18 +1,17 @@
 import { useState, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import {
-  Search,
+  Magnifer,
   CheckCircle,
-  AlertCircle,
-  Edit2,
-  Plus,
-  MapPin,
+  DangerCircle,
+  Pen,
+  AddCircle,
+  MapPoint,
   Filter,
-  X,
-  Save,
-  ChevronDown,
-  Loader2,
-} from "lucide-react";
+  CloseCircle,
+  Diskette,
+  AltArrowDown,
+} from '@solar-icons/react';
 import { Button, Input, AddSpotModal } from "../components/ui";
 import { AdminHeader } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
@@ -162,7 +161,7 @@ export function AdminSpotsPage() {
   if (authLoading || spotsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -205,14 +204,14 @@ export function AdminSpotsPage() {
           </div>
           <div className="tech-card p-4">
             <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
-              <CheckCircle className="w-3 h-3 text-green-500" />
+              <CheckCircle weight="Bold" size={12} className="text-green-500" />
               Verified
             </div>
             <div className="font-mono text-2xl font-bold text-green-500">{stats.verified}</div>
           </div>
           <div className="tech-card p-4">
             <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
-              <AlertCircle className="w-3 h-3 text-yellow-500" />
+              <DangerCircle weight="Bold" size={12} className="text-yellow-500" />
               Unverified
             </div>
             <div className="font-mono text-2xl font-bold text-yellow-500">{stats.unverified}</div>
@@ -224,7 +223,7 @@ export function AdminSpotsPage() {
           <div className="flex flex-wrap items-center gap-4">
             {/* Search */}
             <div className="relative flex-1 min-w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Magnifer weight="Bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search spots by name, region, or ID..."
                 value={searchQuery}
@@ -235,7 +234,7 @@ export function AdminSpotsPage() {
 
             {/* Status Filter */}
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Filter weight="Bold" size={16} className="text-muted-foreground" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
@@ -253,9 +252,9 @@ export function AdminSpotsPage() {
                 onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-2 bg-secondary/20 border border-border/50 rounded font-mono text-sm"
               >
-                <MapPin className="w-4 h-4" />
+                <MapPoint weight="Bold" size={16} />
                 {filterCountry === "all" ? "All Regions" : COUNTRY_GROUP_LABELS[filterCountry].label}
-                <ChevronDown className={`w-4 h-4 transition-transform ${countryDropdownOpen ? 'rotate-180' : ''}`} />
+                <AltArrowDown weight="Bold" size={16} className={`transition-transform ${countryDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {countryDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-card border border-border/50 rounded shadow-lg z-20">
@@ -280,7 +279,7 @@ export function AdminSpotsPage() {
 
             {/* Add Spot Button */}
             <Button onClick={() => setIsAddModalOpen(true)} className="ml-auto">
-              <Plus className="w-4 h-4 mr-2" />
+              <AddCircle weight="Bold" size={16} className="mr-2" />
               Add Spot
             </Button>
           </div>
@@ -331,12 +330,12 @@ export function AdminSpotsPage() {
                       >
                         {spot.verified ? (
                           <>
-                            <CheckCircle className="w-3 h-3" />
+                            <CheckCircle weight="Bold" size={12} />
                             Verified
                           </>
                         ) : (
                           <>
-                            <AlertCircle className="w-3 h-3" />
+                            <DangerCircle weight="Bold" size={12} />
                             Unverified
                           </>
                         )}
@@ -357,7 +356,7 @@ export function AdminSpotsPage() {
                         onClick={() => handleEditSpot(spot)}
                         className="p-2 hover:bg-secondary/30 rounded transition-colors text-muted-foreground hover:text-foreground"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Pen weight="Bold" size={16} />
                       </button>
                     </td>
                   </tr>
@@ -388,7 +387,7 @@ export function AdminSpotsPage() {
                 onClick={() => setEditingSpot(null)}
                 className="p-2 hover:bg-secondary/30 rounded transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseCircle weight="Bold" size={20} />
               </button>
             </div>
 
@@ -475,12 +474,12 @@ export function AdminSpotsPage() {
                 <Button onClick={handleSaveEdit} className="flex-1" disabled={isSaving}>
                   {isSaving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <div className="w-4 h-4 mr-2 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Diskette weight="Bold" size={16} className="mr-2" />
                       Save Changes
                     </>
                   )}

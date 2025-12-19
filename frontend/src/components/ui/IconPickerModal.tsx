@@ -1,27 +1,26 @@
 import { createPortal } from "react-dom";
 import {
-    X,
-    MapPin,
-    Crosshair,
+    CloseCircle,
+    MapPoint,
+    Target,
     Star,
-    Palmtree,
-    Waves,
+    Leaf,
+    Water,
     Sun,
     Cloud,
-    Anchor,
-    Zap,
-    Skull,
+    Compass,
+    Bolt,
+    Fire,
     Ghost,
     Rocket,
-    Fish,
+    Waterdrop,
     Radio,
-    Triangle,
-    Hexagon,
-    Circle,
-    Square,
-    Droplet,
+    DangerTriangle,
+    Planet,
+    Atom,
+    Widget,
     Wind,
-} from "lucide-react";
+} from '@solar-icons/react';
 
 interface IconPickerModalProps {
     isOpen: boolean;
@@ -31,25 +30,24 @@ interface IconPickerModalProps {
 }
 
 export const AVAILABLE_ICONS = {
-    Crosshair,
-    MapPin,
+    Target,
+    MapPoint,
     Star,
-    Palmtree,
-    Waves,
+    Leaf,
+    Water,
     Sun,
     Cloud,
-    Anchor,
-    Zap,
-    Skull,
+    Compass,
+    Bolt,
+    Fire,
     Ghost,
     Rocket,
-    Fish,
+    Waterdrop,
     Radio,
-    Triangle,
-    Hexagon,
-    Circle,
-    Square,
-    Droplet,
+    DangerTriangle,
+    Planet,
+    Atom,
+    Widget,
     Wind,
 };
 
@@ -88,14 +86,14 @@ export function IconPickerModal({
                         onClick={onClose}
                         className="p-2 hover:bg-secondary/50 rounded-md transition-colors text-muted-foreground hover:text-foreground"
                     >
-                        <X className="w-6 h-6" />
+                        <CloseCircle weight="BoldDuotone" size={24} />
                     </button>
                 </div>
 
                 {/* Content */}
                 <div className="p-6 grid grid-cols-4 sm:grid-cols-5 gap-4">
                     {Object.entries(AVAILABLE_ICONS).map(([name, Icon]) => {
-                        const isSelected = currentIcon === name || (!currentIcon && name === "Crosshair");
+                        const isSelected = currentIcon === name || (!currentIcon && name === "Target");
                         return (
                             <button
                                 key={name}
@@ -108,7 +106,7 @@ export function IconPickerModal({
                                     : "bg-secondary/10 border-border/50 text-muted-foreground hover:bg-secondary/30 hover:text-foreground hover:border-primary/50"
                                     }`}
                             >
-                                <Icon className={`w-6 h-6 ${isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary transition-colors"}`} />
+                                <Icon weight="BoldDuotone" size={24} className={isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary transition-colors"} />
                                 <span className="font-mono text-[10px] uppercase tracking-wider opacity-60">
                                     {name}
                                 </span>

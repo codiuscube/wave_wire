@@ -1,22 +1,22 @@
-import { Skull, Crosshair, Orbit, Radio } from "lucide-react";
+import { Fire, Target, Planet, Radio } from '@solar-icons/react';
 
 const features = [
   {
-    icon: Crosshair,
+    icon: Target,
     title: "YOUR_CONDITIONS",
     description:
-      'Dial in custom ranges. Swell direction, period, height. If it doesn’t hit your numbers, it doesn’t hit your phone.',
+      "Dial in custom ranges. Swell direction, period, height. If it doesn't hit your numbers, it doesn't hit your phone.",
     className: "rotate-1 z-10",
   },
   {
-    icon: Orbit,
+    icon: Planet,
     title: "PRIVATE_ALERTS",
     description:
-      'Private alerts minimize crowds — we don’t blow it up. Built for true locals.',
+      "Private alerts minimize crowds — we don't blow it up. Built for true locals.",
     className: "-rotate-2 -ml-8 mt-12 z-20",
   },
   {
-    icon: Skull,
+    icon: Fire,
     title: "ALERT_PROTOCOL",
     description:
       "Configure the output. Choose 'The Local' (Cynical), 'The Frother' (Hyped), or 'Raw Data' (Pure Stats). The intel adapts to your mindset.",
@@ -67,7 +67,7 @@ export function Features() {
               {/* Grunge Icon Container */}
               <div className="mb-8 relative">
                 <div className="absolute -inset-4 bg-brand-rogue/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
-                <feature.icon className="text-white w-12 h-12 stroke-[1.5] group-hover:stroke-brand-acid transition-colors" />
+                <feature.icon weight="BoldDuotone" size={48} className="text-white group-hover:text-brand-acid transition-colors" />
               </div>
 
               <h3 className="font-black font-display text-2xl sm:text-3xl text-white mb-4 uppercase tracking-tighter">

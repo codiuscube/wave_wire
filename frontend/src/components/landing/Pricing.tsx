@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Zap } from 'lucide-react';
+import { Bolt } from '@solar-icons/react';
 import { Link } from 'react-router-dom';
 import { ComingSoonModal } from '../ui';
 import { isProduction } from '../../utils/environment';
@@ -40,13 +40,13 @@ export function Pricing() {
 
               <ul className="space-y-4 mb-8 font-mono text-sm text-brand-foam/60 flex-1">
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-concrete" /> 1 spot
+                  <Bolt weight="Bold" size={16} className="text-brand-concrete" /> 1 spot
                 </li>
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-concrete" /> 1 trigger
+                  <Bolt weight="Bold" size={16} className="text-brand-concrete" /> 1 trigger
                 </li>
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-concrete" /> 5 SMS alerts / mo
+                  <Bolt weight="Bold" size={16} className="text-brand-concrete" /> 5 SMS alerts / mo
                 </li>
               </ul>
 
@@ -80,19 +80,19 @@ export function Pricing() {
 
               <ul className="space-y-4 mb-8 font-mono text-sm text-white flex-1 relative z-10">
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-acid" /> <span className="font-bold">Unlimited spots</span>
+                  <Bolt weight="Bold" size={16} className="text-brand-acid" /> <span className="font-bold">Unlimited spots</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-acid" /> <span className="font-bold">Unlimited triggers</span>
+                  <Bolt weight="Bold" size={16} className="text-brand-acid" /> <span className="font-bold">Unlimited triggers</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-acid" /> <span className="font-bold">Unlimited SMS</span>
+                  <Bolt weight="Bold" size={16} className="text-brand-acid" /> <span className="font-bold">Unlimited SMS</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Zap className="w-4 h-4 text-brand-acid" /> <span className="font-bold">Buoy Verification</span>
+                  <Bolt weight="Bold" size={16} className="text-brand-acid" /> <span className="font-bold">Buoy Verification</span>
                 </li>
                 <li className="flex items-center gap-3 opacity-60">
-                  <Zap className="w-4 h-4 text-brand-acid" /> Early access features
+                  <Bolt weight="Bold" size={16} className="text-brand-acid" /> Early access features
                 </li>
               </ul>
 
