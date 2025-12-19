@@ -8,6 +8,8 @@ interface AddSpotModalProps {
   onClose: () => void;
   savedSpots: Spot[];
   onAddSpot: (spot: Spot) => void;
+  /** User's home location for showing nearby spots */
+  userLocation?: { lat: number; lon: number } | null;
 }
 
 export type SpotOption = Spot;
@@ -17,6 +19,7 @@ export function AddSpotModal({
   onClose,
   savedSpots,
   onAddSpot,
+  userLocation,
 }: AddSpotModalProps) {
   console.log('[AddSpotModal] Rendering', { isOpen });
 
@@ -59,6 +62,7 @@ export function AddSpotModal({
         savedSpots={savedSpots}
         onAddSpot={handleAddSpot}
         className="flex-1 overflow-hidden"
+        userLocation={userLocation}
       />
     </Sheet>
   );

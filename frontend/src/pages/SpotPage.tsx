@@ -387,6 +387,7 @@ export function SpotPage() {
         onClose={() => setIsModalOpen(false)}
         savedSpots={mySpots}
         onAddSpot={addSpot}
+        userLocation={profile?.homeLat && profile?.homeLon ? { lat: profile.homeLat, lon: profile.homeLon } : null}
       />
 
       <IconPickerModal

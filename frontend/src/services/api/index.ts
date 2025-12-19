@@ -37,3 +37,10 @@ export {
   parseTriggerKeywords,
   type ParseResult,
 } from './aiService';
+
+// Address autocomplete service (Photon/OpenStreetMap)
+export {
+  searchAddresses,
+  type AddressSuggestion,
+  type AddressSearchResult,
+} from './addressService';

@@ -27,12 +27,28 @@ interface AddSpotContentProps {
     savedSpots: Spot[];
     onAddSpot: (spot: Spot) => void;
     className?: string;
+    /** User's home location for showing nearby spots */
+    userLocation?: { lat: number; lon: number } | null;
+}
+
+// Calculate distance between two points using Haversine formula (returns km)
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
 }
 
 export function AddSpotContent({
     savedSpots,
     onAddSpot,
     className = "",
+    userLocation,
 }: AddSpotContentProps) {
     const [activeTab, setActiveTab] = useState<"popular" | "custom">("popular");
     const [searchQuery, setSearchQuery] = useState("");
@@ -57,20 +73,50 @@ export function AddSpotContent({
     ];
 
     // Fetch spots from Supabase with filters
-    const shouldFetch = searchQuery.length >= MIN_SEARCH_LENGTH;
+    const isSearching = searchQuery.length >= MIN_SEARCH_LENGTH;
+    const shouldFetchForSearch = isSearching;
+    const shouldFetchForNearby = !isSearching && !!userLocation;
+
+    // Fetch for search results
     const {
-        spots: dbSpots,
-        isLoading,
+        spots: searchSpots,
+        isLoading: isSearchLoading,
     } = useSurfSpots({
         countryGroup: selectedRegion,
-        search: shouldFetch ? searchQuery : undefined,
+        search: shouldFetchForSearch ? searchQuery : undefined,
         limit: 50,
     });
 
+    // Fetch all spots in region for nearby calculation (when user has location set)
+    const {
+        spots: allRegionSpots,
+        isLoading: isNearbyLoading,
+    } = useSurfSpots({
+        countryGroup: selectedRegion,
+        limit: 500, // Fetch more to find nearby ones
+    });
+
+    const isLoading = isSearchLoading || (shouldFetchForNearby && isNearbyLoading);
+
+    // Calculate nearby spots sorted by distance
+    const nearbySpots = useMemo(() => {
+        if (!userLocation || !allRegionSpots.length) return [];
+
+        const spotsWithDistance = allRegionSpots.map(spot => ({
+            ...spot,
+            distance: getDistanceKm(userLocation.lat, userLocation.lon, spot.lat, spot.lon)
+        }));
+
+        // Sort by distance and take closest 20
+        return spotsWithDistance
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 20);
+    }, [userLocation, allRegionSpots]);
+
     const filteredSpots = useMemo(() => {
-        if (!shouldFetch) return [];
-        return dbSpots;
-    }, [dbSpots, shouldFetch]);
+        if (isSearching) return searchSpots;
+        return [];
+    }, [searchSpots, isSearching]);
 
     const convertToSpot = (surfSpot: SurfSpot): Spot => ({
         id: surfSpot.id,
@@ -186,10 +232,71 @@ export function AddSpotContent({
                             </div>
                         </div>
 
-                        {/* Search Results or Prompt */}
+                        {/* Search Results, Nearby Spots, or Prompt */}
                         <div className="space-y-3">
-                            {searchQuery.length < MIN_SEARCH_LENGTH ? (
-                                // Show search prompt before user types
+                            {searchQuery.length < MIN_SEARCH_LENGTH && nearbySpots.length > 0 ? (
+                                // Show nearby spots when user has location set
+                                <>
+                                    <p className="font-mono text-xs text-muted-foreground/60 uppercase mb-4">
+                                        Spots near you
+                                    </p>
+                                    {nearbySpots.map((spot) => {
+                                        const saved = isSpotSaved(spot.id);
+                                        const distanceMiles = Math.round(spot.distance * 0.621371);
+                                        return (
+                                            <div
+                                                key={spot.id}
+                                                className={`flex items-center justify-between p-4 rounded-sm border transition-all ${saved
+                                                        ? "border-primary/50 bg-primary/5"
+                                                        : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    <div
+                                                        className={`h-10 w-10 rounded-sm flex items-center justify-center shrink-0 ${saved ? "bg-primary/20" : "bg-card border border-border/50"
+                                                            }`}
+                                                    >
+                                                        {spot.verified ? (
+                                                            <CheckCircle weight="Bold" size={16} className="text-primary" />
+                                                        ) : (
+                                                            <MapPoint weight="Bold" size={16} className="text-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
+                                                                {spot.name}
+                                                            </h4>
+                                                            <span className="font-mono text-[10px] text-muted-foreground/50">
+                                                                {distanceMiles} mi
+                                                            </span>
+                                                        </div>
+                                                        <p className="font-mono text-xs text-muted-foreground/60 uppercase">
+                                                            {spot.region}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {saved ? (
+                                                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/50">
+                                                        <VerifiedCheck weight="Bold" size={16} className="text-primary" />
+                                                    </div>
+                                                ) : (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleAddSpot(spot)}
+                                                        className="shrink-0 font-mono text-xs uppercase"
+                                                    >
+                                                        <AddCircle weight="Bold" size={16} className="mr-2" />
+                                                        Add
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            ) : searchQuery.length < MIN_SEARCH_LENGTH ? (
+                                // Show search prompt before user types (no nearby spots available)
                                 <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
                                     <Magnifer weight="BoldDuotone" size={32} className="mx-auto mb-4 text-muted-foreground/30" />
                                     <p className="font-mono text-sm text-muted-foreground/70">

@@ -20,3 +20,4 @@ export { SegmentedControl } from './SegmentedControl';
 export { TideStateSelector } from './TideStateSelector';
 export { WaveConditionsForm } from './WaveConditionsForm';
 export { LocalsKnowledgeForm } from './LocalsKnowledgeForm';
+export { AddressAutocomplete } from './AddressAutocomplete';
