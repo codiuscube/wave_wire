@@ -8,5 +8,6 @@ export { LoginPage } from './LoginPage';
 export { SignupPage } from './SignupPage';
 export { ResetPasswordPage } from './ResetPasswordPage';
 export { AdminSpotsPage } from './AdminSpotsPage';
+export { AdminSpotDetailPage } from './AdminSpotDetailPage';
 export { UserManagementPage } from './UserManagementPage';
 export { InvestmentPage } from './InvestmentPage';

@@ -509,6 +509,11 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251218230549_pro_tier_unlimited.sql` | Pro tier gets unlimited access during beta |
 | `20251218230741_add_pro_tier_constraint.sql` | Add 'pro' to subscription_tier constraint |
 | `20251218231941_add_admin_user_stats_view.sql` | Admin user stats view for user management |
+| `20251219000001_add_alert_settings.sql` | Base alert_settings table |
+| `20251219000002_simplify_alert_window.sql` | Window mode, start/end times |
+| `20251219000003_add_active_days.sql` | Active days for scheduling |
+| `20251219000004_add_two_day_forecast.sql` | Two-day forecast alert type |
+| `20251219180000_add_five_day_forecast.sql` | Five-day forecast alert type |
 
 ---
 

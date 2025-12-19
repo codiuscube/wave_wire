@@ -78,6 +78,7 @@ export type Database = {
           active_days: string[] | null
           forecast_alerts_enabled: boolean | null
           two_day_forecast_enabled: boolean | null
+          five_day_forecast_enabled: boolean | null
           live_alerts_enabled: boolean | null
           created_at: string | null
           updated_at: string | null
@@ -91,6 +92,7 @@ export type Database = {
           active_days?: string[] | null
           forecast_alerts_enabled?: boolean | null
           two_day_forecast_enabled?: boolean | null
+          five_day_forecast_enabled?: boolean | null
           live_alerts_enabled?: boolean | null
           created_at?: string | null
           updated_at?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           active_days?: string[] | null
           forecast_alerts_enabled?: boolean | null
           two_day_forecast_enabled?: boolean | null
+          five_day_forecast_enabled?: boolean | null
           live_alerts_enabled?: boolean | null
           created_at?: string | null
           updated_at?: string | null
@@ -322,6 +325,7 @@ export type Database = {
           created_at: string | null
           id: string
           lat: number
+          locals_knowledge: Json | null
           lon: number
           name: string
           region: string
@@ -337,6 +341,7 @@ export type Database = {
           created_at?: string | null
           id: string
           lat: number
+          locals_knowledge?: Json | null
           lon: number
           name: string
           region: string
@@ -352,6 +357,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           lat?: number
+          locals_knowledge?: Json | null
           lon?: number
           name?: string
           region?: string

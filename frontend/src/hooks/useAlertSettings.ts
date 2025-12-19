@@ -22,6 +22,7 @@ const DEFAULT_SETTINGS: Omit<AlertSettings, 'id' | 'userId' | 'createdAt' | 'upd
   activeDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   forecastAlertsEnabled: false,
   twoDayForecastEnabled: false,
+  fiveDayForecastEnabled: false,
   liveAlertsEnabled: true,
 };
 
@@ -79,6 +80,7 @@ export function useAlertSettings(userId: string | undefined): UseAlertSettingsRe
               active_days: DEFAULT_SETTINGS.activeDays,
               forecast_alerts_enabled: DEFAULT_SETTINGS.forecastAlertsEnabled,
               two_day_forecast_enabled: DEFAULT_SETTINGS.twoDayForecastEnabled,
+              five_day_forecast_enabled: DEFAULT_SETTINGS.fiveDayForecastEnabled,
               live_alerts_enabled: DEFAULT_SETTINGS.liveAlertsEnabled,
             })
             .select()

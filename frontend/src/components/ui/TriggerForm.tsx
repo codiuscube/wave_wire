@@ -412,6 +412,10 @@ export function TriggerForm({
         return !!((initialData?.tideType && initialData.tideType !== 'any') || (autofillData?.tideType && autofillData.tideType !== 'any'));
     });
 
+    const [secondarySwellExpanded, setSecondarySwellExpanded] = useState(() => {
+        return !!(initialData?.secondarySwellEnabled || autofillData?.secondarySwellEnabled);
+    });
+
 
 
     const toggleWind = (expanded: boolean) => {
@@ -435,6 +439,33 @@ export function TriggerForm({
                 tideType: 'any',
                 minTideHeight: -2,
                 maxTideHeight: 6
+            }));
+        }
+    };
+
+    const toggleSecondarySwell = (expanded: boolean) => {
+        setSecondarySwellExpanded(expanded);
+        if (!expanded) {
+            setTrigger(prev => ({
+                ...prev,
+                secondarySwellEnabled: false,
+                minSecondarySwellDirection: undefined,
+                maxSecondarySwellDirection: undefined,
+                minSecondarySwellHeight: undefined,
+                maxSecondarySwellHeight: undefined,
+                minSecondarySwellPeriod: undefined,
+                maxSecondarySwellPeriod: undefined
+            }));
+        } else {
+            setTrigger(prev => ({
+                ...prev,
+                secondarySwellEnabled: true,
+                minSecondarySwellDirection: prev.minSecondarySwellDirection ?? 0,
+                maxSecondarySwellDirection: prev.maxSecondarySwellDirection ?? 360,
+                minSecondarySwellHeight: prev.minSecondarySwellHeight ?? 1,
+                maxSecondarySwellHeight: prev.maxSecondarySwellHeight ?? 5,
+                minSecondarySwellPeriod: prev.minSecondarySwellPeriod ?? 6,
+                maxSecondarySwellPeriod: prev.maxSecondarySwellPeriod ?? 15
             }));
         }
     };
@@ -543,6 +574,14 @@ export function TriggerForm({
             maxWindDirection: trigger.maxWindDirection ?? 360,
             minSwellDirection: trigger.minSwellDirection ?? 0,
             maxSwellDirection: trigger.maxSwellDirection ?? 360,
+            // Optional secondary swell fields
+            secondarySwellEnabled: trigger.secondarySwellEnabled,
+            minSecondarySwellDirection: trigger.minSecondarySwellDirection,
+            maxSecondarySwellDirection: trigger.maxSecondarySwellDirection,
+            minSecondarySwellHeight: trigger.minSecondarySwellHeight,
+            maxSecondarySwellHeight: trigger.maxSecondarySwellHeight,
+            minSecondarySwellPeriod: trigger.minSecondarySwellPeriod,
+            maxSecondarySwellPeriod: trigger.maxSecondarySwellPeriod,
             tideType: (trigger.tideType as "rising" | "falling" | "any") || "any",
             minTideHeight: trigger.minTideHeight ?? -2,
             maxTideHeight: trigger.maxTideHeight ?? 6,
@@ -653,6 +692,7 @@ export function TriggerForm({
                     <NaturalLanguageTriggerInput
                         spotName={spotName}
                         spotRegion={spot?.region}
+                        spotId={spot?.id}
                         onParsed={handleAIParsed}
                         autoFocus
                     />
@@ -758,6 +798,72 @@ export function TriggerForm({
                         </div>
                     </div>
                 </section>
+
+                {/* Secondary Swell - Collapsible */}
+                <CollapsibleSection
+                    title="Secondary Swell"
+                    step="3"
+                    isExpanded={secondarySwellExpanded}
+                    onToggle={toggleSecondarySwell}
+                    description={!secondarySwellExpanded ? "Any Swell" : `${formatRange(trigger.minSecondarySwellHeight ?? 1, trigger.maxSecondarySwellHeight ?? 5, 15, 'ft')} @ ${formatRange(trigger.minSecondarySwellPeriod ?? 6, trigger.maxSecondarySwellPeriod ?? 15, 20, 's')}`}
+                >
+                    <div className="space-y-6">
+                        {/* Secondary Swell Height */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-baseline">
+                                <label className="text-sm font-medium">Secondary Wave Height</label>
+                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                    {formatRange(trigger.minSecondarySwellHeight ?? 1, trigger.maxSecondarySwellHeight ?? 5, 15, 'ft')}
+                                </span>
+                            </div>
+                            <div className="px-2">
+                                <DualSlider
+                                    min={0} max={15} step={0.5}
+                                    value={[trigger.minSecondarySwellHeight ?? 1, trigger.maxSecondarySwellHeight ?? 5]}
+                                    onValueChange={([min, max]) => setTrigger({ ...trigger, minSecondarySwellHeight: min, maxSecondarySwellHeight: max })}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Secondary Swell Period */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-baseline">
+                                <label className="text-sm font-medium">Secondary Wave Period</label>
+                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                    {formatRange(trigger.minSecondarySwellPeriod ?? 6, trigger.maxSecondarySwellPeriod ?? 15, 20, 's')}
+                                </span>
+                            </div>
+                            <div className="px-2">
+                                <DualSlider
+                                    min={0} max={20} step={1}
+                                    value={[trigger.minSecondarySwellPeriod ?? 6, trigger.maxSecondarySwellPeriod ?? 15]}
+                                    onValueChange={([min, max]) => setTrigger({ ...trigger, minSecondarySwellPeriod: min, maxSecondarySwellPeriod: max })}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Secondary Swell Direction */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-baseline">
+                                <label className="text-sm font-medium">Secondary Swell Direction</label>
+                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                    {trigger.minSecondarySwellDirection ?? 0}° - {trigger.maxSecondarySwellDirection ?? 360}°
+                                </span>
+                            </div>
+                            <div className="flex justify-center py-4 bg-muted/20 rounded-lg p-2">
+                                <DirectionSelector
+                                    min={trigger.minSecondarySwellDirection ?? 0}
+                                    max={trigger.maxSecondarySwellDirection ?? 360}
+                                    onChange={(min, max) => setTrigger({
+                                        ...trigger,
+                                        minSecondarySwellDirection: min,
+                                        maxSecondarySwellDirection: max
+                                    })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </CollapsibleSection>
 
 
 

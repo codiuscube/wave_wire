@@ -181,6 +181,8 @@ Status is determined by matching current conditions against user triggers:
 
 | Type | Time | Purpose |
 |------|------|---------|
+| **5 Days Out** | 12:00 PM | Early planning alert. Get notified 5 days before good conditions. |
+| **2 Days Out** | 12:00 PM | Early warning check. Received two days before conditions arrive. |
 | **Night Before Hype** | 8:00 PM | Checks tomorrow's forecast. Get hyped or sleep in. |
 | **Morning Reality Check** | 6:00 AM | Live buoy validation + traffic check. |
 | **Pop-Up Alert** | Every 2h | Catches sudden wind switches or pulses. |

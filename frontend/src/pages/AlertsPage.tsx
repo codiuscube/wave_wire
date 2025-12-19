@@ -1,4 +1,4 @@
-import { Sun, Moon, Bolt, InfoCircle, ClockCircle, History3, Lock } from '@solar-icons/react';
+import { Sun, Moon, Bolt, InfoCircle, ClockCircle, History3, Lock, Calendar } from '@solar-icons/react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlertSettings } from '../hooks';
@@ -23,10 +23,10 @@ export function AlertsPage() {
   ) || profile?.isAdmin;
 
   const handleToggle = async (
-    field: 'forecastAlertsEnabled' | 'liveAlertsEnabled' | 'twoDayForecastEnabled',
+    field: 'forecastAlertsEnabled' | 'liveAlertsEnabled' | 'twoDayForecastEnabled' | 'fiveDayForecastEnabled',
     value: boolean
   ) => {
-    if (!canUsePremiumAlerts && (field === 'twoDayForecastEnabled' || field === 'forecastAlertsEnabled')) {
+    if (!canUsePremiumAlerts && (field === 'twoDayForecastEnabled' || field === 'forecastAlertsEnabled' || field === 'fiveDayForecastEnabled')) {
       return;
     }
     await update({ [field]: value });
@@ -91,6 +91,173 @@ export function AlertsPage() {
           <p className="font-mono text-muted-foreground text-sm sm:text-base border-muted px-4">
             Configure active surveillance windows and notification types.
           </p>
+        </div>
+
+        {/* Alert Types Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="w-2 h-2 bg-destructive animate-pulse rounded-full" />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Alert Types</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+
+
+
+            {/* Night Before Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!settings?.forecastAlertsEnabled)}>
+                      <Moon weight="BoldDuotone" size={32} />
+                    </div>
+                    {canUsePremiumAlerts ? (
+                      <Switch
+                        checked={settings?.forecastAlertsEnabled ?? true}
+                        onChange={(checked) => handleToggle('forecastAlertsEnabled', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                        <Lock size={12} weight="Bold" />
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">Night Before</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Final confirmation. Received at 6pm the night before conditions arrive.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Live Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className="tech-card h-full">
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!settings?.liveAlertsEnabled)}>
+                      <Bolt weight="BoldDuotone" size={32} />
+                    </div>
+                    <Switch
+                      checked={settings?.liveAlertsEnabled ?? true}
+                      onChange={(checked) => handleToggle('liveAlertsEnabled', checked)}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">Live Data</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Real-time buoy monitoring. Instant alerts when conditions trigger.
+                    </p>
+
+
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Five Days Out Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.05 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!settings?.fiveDayForecastEnabled)}>
+                      <Calendar weight="BoldDuotone" size={32} />
+                    </div>
+                    {canUsePremiumAlerts ? (
+                      <Switch
+                        checked={settings?.fiveDayForecastEnabled ?? false}
+                        onChange={(checked) => handleToggle('fiveDayForecastEnabled', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                        <Lock size={12} weight="Bold" />
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">5 Days Out</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Early planning alert. Get notified 5 days before good conditions arrive.
+                    </p>
+
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Two Days Before Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!settings?.twoDayForecastEnabled)}>
+                      <History3 weight="BoldDuotone" size={32} />
+                    </div>
+                    {canUsePremiumAlerts ? (
+                      <Switch
+                        checked={settings?.twoDayForecastEnabled ?? false}
+                        onChange={(checked) => handleToggle('twoDayForecastEnabled', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                        <Lock size={12} weight="Bold" />
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">2 Days Out</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Early warning check. Received at 12pm, two days before conditions arrive.
+                    </p>
+
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
         </div>
 
         {/* Surveillance Window Section */}
@@ -209,130 +376,7 @@ export function AlertsPage() {
           </Card>
         </div>
 
-        {/* Alert Types Section */}
-        <div className="w-full mb-8">
-          <div className="flex items-center gap-3 mb-4 px-1">
-            <div className="w-2 h-2 bg-destructive animate-pulse rounded-full" />
-            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Alert Types</h2>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-            {/* Two Days Before Alerts */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="relative group h-full"
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
-              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={getIconStyle(!!settings?.twoDayForecastEnabled)}>
-                      <History3 weight="BoldDuotone" size={32} />
-                    </div>
-                    {canUsePremiumAlerts ? (
-                      <Switch
-                        checked={settings?.twoDayForecastEnabled ?? false}
-                        onChange={(checked) => handleToggle('twoDayForecastEnabled', checked)}
-                      />
-                    ) : (
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
-                        <Lock size={12} weight="Bold" />
-                        PREMIUM
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold">2 Days Out</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-4 h-12">
-                      Early warning check. Received at 12pm, two days before conditions arrive.
-                    </p>
-
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Night Before Alerts */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="relative group h-full"
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
-              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={getIconStyle(!!settings?.forecastAlertsEnabled)}>
-                      <Moon weight="BoldDuotone" size={32} />
-                    </div>
-                    {canUsePremiumAlerts ? (
-                      <Switch
-                        checked={settings?.forecastAlertsEnabled ?? true}
-                        onChange={(checked) => handleToggle('forecastAlertsEnabled', checked)}
-                      />
-                    ) : (
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
-                        <Lock size={12} weight="Bold" />
-                        PREMIUM
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold">Night Before</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-4 h-12">
-                      Final confirmation. Received at 6pm the night before conditions arrive.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Live Alerts */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="relative group h-full"
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
-              <Card className="tech-card h-full">
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={getIconStyle(!!settings?.liveAlertsEnabled)}>
-                      <Bolt weight="BoldDuotone" size={32} />
-                    </div>
-                    <Switch
-                      checked={settings?.liveAlertsEnabled ?? true}
-                      onChange={(checked) => handleToggle('liveAlertsEnabled', checked)}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-bold">Live Data</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-4 h-12">
-                      Real-time buoy monitoring. Instant alerts when conditions trigger.
-                    </p>
-
-
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-        </div>
 
         {/* Info Section */}
         <div className="w-full pb-20">

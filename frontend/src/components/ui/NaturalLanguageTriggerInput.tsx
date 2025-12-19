@@ -8,6 +8,7 @@ import type { TriggerTier } from "../../types";
 interface NaturalLanguageTriggerInputProps {
   spotName: string;
   spotRegion?: string;
+  spotId?: string; // Optional: used to fetch locals_knowledge for AI context
   onParsed: (trigger: Partial<TriggerTier>) => void;
   disabled?: boolean;
   autoFocus?: boolean;
@@ -16,6 +17,7 @@ interface NaturalLanguageTriggerInputProps {
 export function NaturalLanguageTriggerInput({
   spotName,
   spotRegion,
+  spotId,
   onParsed,
   disabled = false,
   autoFocus = false,
@@ -34,7 +36,7 @@ export function NaturalLanguageTriggerInput({
     setSuccess(false);
 
     try {
-      const result = await parseTriggerCommand(description, spotName, spotRegion);
+      const result = await parseTriggerCommand(description, spotName, spotRegion, spotId);
 
       if (result.success && result.trigger) {
         setSuccess(true);
@@ -49,7 +51,7 @@ export function NaturalLanguageTriggerInput({
     } finally {
       setIsLoading(false);
     }
-  }, [description, spotName, spotRegion, onParsed, isLoading]);
+  }, [description, spotName, spotRegion, spotId, onParsed, isLoading]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Submit on Cmd/Ctrl + Enter

@@ -17,3 +17,6 @@ export { OnboardingModal } from './OnboardingModal';
 export { UpgradeModal } from './UpgradeModal';
 export { Sheet } from './Sheet';
 export { SegmentedControl } from './SegmentedControl';
+export { TideStateSelector } from './TideStateSelector';
+export { WaveConditionsForm } from './WaveConditionsForm';
+export { LocalsKnowledgeForm } from './LocalsKnowledgeForm';

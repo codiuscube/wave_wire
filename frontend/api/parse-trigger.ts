@@ -1,17 +1,122 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Create Supabase client with service role key for server-side access
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
 interface ParseTriggerRequest {
   description: string;
   spotName: string;
   spotRegion?: string;
+  spotId?: string; // Optional: used to fetch locals_knowledge
 }
 
-const SYSTEM_PROMPT = `You are a surf conditions parser for a surf alert app. Your job is to extract trigger parameters from natural language descriptions.
+interface SpotConditionTier {
+  minHeight?: number;
+  maxHeight?: number;
+  minPeriod?: number;
+  maxPeriod?: number;
+  minSwellDirection?: number;
+  maxSwellDirection?: number;
+  minWindDirection?: number;
+  maxWindDirection?: number;
+  maxWindSpeed?: number;
+  optimalTideStates?: ('low' | 'mid' | 'high')[];
+  optimalTideDirection?: 'rising' | 'falling' | 'any';
+}
+
+interface SpotLocalsKnowledge {
+  conditions?: SpotConditionTier;
+  summary?: string;
+  notes?: string;
+}
+
+// Format a tier for the prompt
+function formatTierForPrompt(tier: SpotConditionTier): string {
+  const parts: string[] = [];
+  if (tier.minHeight !== undefined || tier.maxHeight !== undefined) {
+    parts.push(`Height: ${tier.minHeight ?? 0}-${tier.maxHeight ?? 15}ft`);
+  }
+  if (tier.minPeriod !== undefined || tier.maxPeriod !== undefined) {
+    parts.push(`Period: ${tier.minPeriod ?? 0}-${tier.maxPeriod ?? 20}s`);
+  }
+  if (tier.minSwellDirection !== undefined || tier.maxSwellDirection !== undefined) {
+    parts.push(`Swell direction: ${tier.minSwellDirection ?? 0}° - ${tier.maxSwellDirection ?? 360}°`);
+  }
+  if (tier.minWindDirection !== undefined || tier.maxWindDirection !== undefined) {
+    parts.push(`Offshore wind direction: ${tier.minWindDirection ?? 0}° - ${tier.maxWindDirection ?? 360}°`);
+  }
+  if (tier.maxWindSpeed !== undefined) {
+    parts.push(`Max wind: ${tier.maxWindSpeed}mph`);
+  }
+  if (tier.optimalTideStates?.length) {
+    parts.push(`Tide: ${tier.optimalTideStates.join(', ')}`);
+  }
+  if (tier.optimalTideDirection && tier.optimalTideDirection !== 'any') {
+    parts.push(`Tide direction: ${tier.optimalTideDirection}`);
+  }
+  return parts.map(p => `  - ${p}`).join('\n');
+}
+
+// Build dynamic system prompt with locals_knowledge
+function buildSystemPrompt(localsKnowledge?: SpotLocalsKnowledge | null): string {
+  let prompt = BASE_SYSTEM_PROMPT;
+
+  if (localsKnowledge && localsKnowledge.conditions) {
+    prompt += `\n\n## LOCAL EXPERT KNOWLEDGE FOR THIS SPOT\n`;
+    prompt += `Use these values as DEFAULTS when the user doesn't specify exact numbers.\n`;
+    prompt += `IMPORTANT: If the user provides SPECIFIC numbers (like "8ft" or "12 second period"), those OVERRIDE the local knowledge.\n\n`;
+
+    if (localsKnowledge.summary) {
+      prompt += `Summary: ${localsKnowledge.summary}\n\n`;
+    }
+
+    prompt += `### OPTIMAL CONDITIONS:\n`;
+    prompt += formatTierForPrompt(localsKnowledge.conditions) + '\n\n';
+
+    if (localsKnowledge.notes) {
+      prompt += `### Additional Notes:\n${localsKnowledge.notes}\n\n`;
+    }
+
+    prompt += `## OVERRIDE RULES\n`;
+    prompt += `1. Use the optimal conditions above as defaults for qualitative requests like "good", "epic", "firing"\n`;
+    prompt += `2. If user specifies a value (e.g., "8ft waves"), that value takes priority over local knowledge\n`;
+    prompt += `3. Mix and match: "good conditions but 2ft waves" = use local knowledge for everything except height (use 2ft)\n`;
+  }
+
+  return prompt;
+}
+
+// Fetch locals_knowledge for a spot
+async function fetchLocalsKnowledge(spotId: string): Promise<SpotLocalsKnowledge | null> {
+  try {
+    const { data, error } = await supabase
+      .from('surf_spots')
+      .select('locals_knowledge')
+      .eq('id', spotId)
+      .single();
+
+    if (error || !data) {
+      console.log('No locals_knowledge found for spot:', spotId);
+      return null;
+    }
+
+    return data.locals_knowledge as SpotLocalsKnowledge | null;
+  } catch (err) {
+    console.error('Error fetching locals_knowledge:', err);
+    return null;
+  }
+}
+
+const BASE_SYSTEM_PROMPT = `You are a surf conditions parser for a surf alert app. Your job is to extract trigger parameters from natural language descriptions.
 
 ## Output Format
 Return ONLY valid JSON. No markdown, no explanations. Just the JSON object.
@@ -99,7 +204,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const { description, spotName, spotRegion } = req.body as ParseTriggerRequest;
+  const { description, spotName, spotRegion, spotId } = req.body as ParseTriggerRequest;
 
   if (!description || typeof description !== 'string') {
     return res.status(400).json({ success: false, error: 'Missing description' });
@@ -109,16 +214,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ success: false, error: 'Description cannot be empty' });
   }
 
+  // Fetch locals_knowledge if spotId is provided (server-side only - hidden from client)
+  let localsKnowledge: SpotLocalsKnowledge | null = null;
+  if (spotId) {
+    localsKnowledge = await fetchLocalsKnowledge(spotId);
+  }
+
   // Build context
   const spotContext = spotRegion
     ? `${spotName} in ${spotRegion}`
     : spotName || 'a surf spot';
 
+  // Build system prompt with locals_knowledge if available
+  const systemPrompt = buildSystemPrompt(localsKnowledge);
+
   try {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 300,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         {
           role: 'user',

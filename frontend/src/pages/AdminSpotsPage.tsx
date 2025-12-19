@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import {
   Magnifer,
   CheckCircle,
@@ -11,6 +11,7 @@ import {
   CloseCircle,
   Diskette,
   AltArrowDown,
+  Book,
 } from '@solar-icons/react';
 import { Button, Input, AddSpotModal, DnaLogo } from "../components/ui";
 import { AdminHeader } from "../components/admin";
@@ -352,12 +353,22 @@ export function AdminSpotsPage() {
                       {spot.lat.toFixed(4)}, {spot.lon.toFixed(4)}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleEditSpot(spot)}
-                        className="p-2 hover:bg-secondary/30 rounded transition-colors text-muted-foreground hover:text-foreground"
-                      >
-                        <Pen weight="Bold" size={16} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEditSpot(spot)}
+                          className="p-2 hover:bg-secondary/30 rounded transition-colors text-muted-foreground hover:text-foreground"
+                          title="Edit Spot"
+                        >
+                          <Pen weight="Bold" size={16} />
+                        </button>
+                        <Link
+                          to={`/admin/spots/${spot.id}`}
+                          className="p-2 hover:bg-secondary/30 rounded transition-colors text-muted-foreground hover:text-primary"
+                          title="Edit Locals Knowledge"
+                        >
+                          <Book weight="Bold" size={16} />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
