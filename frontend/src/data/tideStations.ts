@@ -25,10 +25,6 @@ export const TIDE_STATIONS: TideStation[] = [
   { id: "9410580", name: "Newport Bay Entrance", lat: 33.6033, lon: -117.8833, region: "Orange County" },
   { id: "9410680", name: "Long Beach", lat: 33.7517, lon: -118.2267, region: "Los Angeles" },
 
-  // California - Orange County / North San Diego
-  { id: "9410500", name: "Dana Point Harbor", lat: 33.4617, lon: -117.6967, region: "Orange County" },
-  { id: "9410370", name: "Oceanside Harbor", lat: 33.21, lon: -117.395, region: "San Diego" },
-
   // California - Central Coast
   { id: "9412110", name: "Port San Luis", lat: 35.1767, lon: -120.76, region: "Central California" },
   { id: "9413450", name: "Monterey", lat: 36.605, lon: -121.8883, region: "Central California" },
