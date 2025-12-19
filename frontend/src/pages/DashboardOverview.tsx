@@ -182,8 +182,9 @@ export function DashboardOverview() {
   }
 
   // Show onboarding if incomplete (and not admin) OR if forced by URL param
+  // TODO: Re-enable onboarding when ready
   const forceShowOnboarding = searchParams.get('onboarding') === 'true';
-  const showOnboarding = (!!profile && !profile.onboardingCompleted && !isAdmin) || (isAdmin && forceShowOnboarding);
+  const showOnboarding = forceShowOnboarding; // Temporarily disabled - was: (!!profile && !profile.onboardingCompleted && !isAdmin) || (isAdmin && forceShowOnboarding);
 
   const handleOnboardingClose = () => {
     // Remove query param
