@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   CloseCircle,
   User,
@@ -11,8 +12,10 @@ import {
   CheckCircle,
   CloseSquare,
   Pen,
+  Link,
 } from '@solar-icons/react';
 import { Button, Sheet } from '../ui';
+import { supabase } from '../../lib/supabase';
 import type { AdminUserStats } from '../../lib/mappers';
 
 interface UserDetailModalProps {
@@ -43,6 +46,30 @@ function formatRelativeTime(date: Date): string {
 }
 
 export function UserDetailModal({ user, onClose, onEdit, isOpen = true }: UserDetailModalProps) {
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+  const handleResendLoginLink = async () => {
+    if (!user.email) return;
+
+    setResendStatus('sending');
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: user.email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/dashboard`,
+        },
+      });
+
+      if (error) throw error;
+      setResendStatus('sent');
+      setTimeout(() => setResendStatus('idle'), 3000);
+    } catch {
+      setResendStatus('error');
+      setTimeout(() => setResendStatus('idle'), 3000);
+    }
+  };
+
   const customHeader = (
     <div className="flex-shrink-0 bg-card border-b border-border/50 p-6 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -68,14 +95,43 @@ export function UserDetailModal({ user, onClose, onEdit, isOpen = true }: UserDe
   );
 
   const customFooter = (
-    <div className="flex-shrink-0 bg-card border-t border-border/50 p-6 flex justify-end gap-3">
-      <Button variant="outline" onClick={onClose}>
-        Close
+    <div className="flex-shrink-0 bg-card border-t border-border/50 p-6 flex justify-between">
+      <Button
+        variant="outline"
+        onClick={handleResendLoginLink}
+        disabled={!user.email || resendStatus === 'sending'}
+      >
+        {resendStatus === 'sending' ? (
+          <>
+            <div className="w-4 h-4 mr-2 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+            Sending...
+          </>
+        ) : resendStatus === 'sent' ? (
+          <>
+            <CheckCircle weight="Bold" size={16} className="mr-2 text-green-500" />
+            Link Sent!
+          </>
+        ) : resendStatus === 'error' ? (
+          <>
+            <CloseSquare weight="Bold" size={16} className="mr-2 text-red-500" />
+            Failed
+          </>
+        ) : (
+          <>
+            <Link weight="Bold" size={16} className="mr-2" />
+            Resend Login Link
+          </>
+        )}
       </Button>
-      <Button onClick={() => onEdit(user)}>
-        <Pen weight="Bold" size={16} className="mr-2" />
-        Edit User
-      </Button>
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={onClose}>
+          Close
+        </Button>
+        <Button onClick={() => onEdit(user)}>
+          <Pen weight="Bold" size={16} className="mr-2" />
+          Edit User
+        </Button>
+      </div>
     </div>
   );
 
