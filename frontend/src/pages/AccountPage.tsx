@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Phone,
@@ -12,6 +13,7 @@ import {
   Infinity,
   Routing,
   Home,
+  Logout,
 } from '@solar-icons/react';
 import {
   Card,
@@ -28,8 +30,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useProfile } from "../hooks";
 
 export function AccountPage() {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
   const { profile, isLoading, error, update } = useProfile(user?.id);
+  const navigate = useNavigate();
 
   // Local form state (initialized from profile)
   const [phone, setPhone] = useState("");
@@ -80,6 +83,11 @@ export function AccountPage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
   if (authLoading || isLoading) {
@@ -326,6 +334,14 @@ export function AccountPage() {
           </Button>
           <Button variant="outline" className="w-full justify-start">
             Download My Data
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-start text-red-400 hover:text-red-500 hover:bg-red-500/10"
+            onClick={handleLogout}
+          >
+            <Logout size={20} className="mr-2" />
+            Log Out
           </Button>
           <Button
             variant="outline"

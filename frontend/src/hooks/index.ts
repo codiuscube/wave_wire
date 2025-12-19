@@ -10,3 +10,4 @@ export { useSentAlerts } from './useSentAlerts';
 export { useTriggers } from './useTriggers';
 export { useAlertSettings } from './useAlertSettings';
 export { useMinimumLoading } from './useMinimumLoading';
+export { useMediaQuery } from './useMediaQuery';
