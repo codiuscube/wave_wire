@@ -5,6 +5,7 @@ import { Button } from "./Button";
 import { Input } from "./Input";
 import { Select } from "./Select";
 import { DualSlider } from "./DualSlider";
+import { SegmentedControl } from "./SegmentedControl";
 import { DirectionSelector } from "./DirectionSelector";
 import type { TriggerTier, SurfSpot } from "../../types";
 import { getOffshoreWindow, getSwellWindow } from "../../data/noaaBuoys";
@@ -844,28 +845,15 @@ export function TriggerForm({
 
                     <div className="space-y-4">
                         {/* Style Selector with Tooltips */}
-                        <div className="flex bg-muted p-1 rounded-lg">
-                            {([
-                                { id: "local", label: "Local", tooltip: "Chill, no-nonsense updates like a buddy texting you the morning report. Straight to the point." },
-                                { id: "hype", label: "Hype", tooltip: "FIRED UP energy for when it's going off! All the stoke, emojis, and \"drop everything\" vibes." },
-                                { id: "custom", label: "Custom", tooltip: "Build your own message with drag-and-drop fields." }
-                            ] as const).map((style) => (
-                                <div key={style.id} className="flex-1 relative group">
-                                    <button
-                                        onClick={() => handleStyleChange(style.id)}
-                                        className={`w-full text-sm font-medium py-1.5 px-3 rounded-md transition-all ${notificationStyle === style.id
-                                            ? "bg-background shadow text-foreground"
-                                            : "text-muted-foreground hover:text-foreground"
-                                            }`}
-                                    >
-                                        {style.label}
-                                    </button>
-                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg hidden group-hover:block z-50 border pointer-events-none">
-                                        {style.tooltip}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <SegmentedControl
+                            options={[
+                                { value: "local", label: "Local", tooltip: "Chill, no-nonsense updates like a buddy texting you the morning report. Straight to the point." },
+                                { value: "hype", label: "Hype", tooltip: "FIRED UP energy for when it's going off! All the stoke, emojis, and \"drop everything\" vibes." },
+                                { value: "custom", label: "Custom", tooltip: "Build your own message with drag-and-drop fields." }
+                            ]}
+                            value={notificationStyle}
+                            onChange={(val) => handleStyleChange(val as "local" | "hype" | "custom")}
+                        />
 
                         {/* Preview / Editor Area */}
                         <div className="bg-muted/30 border rounded-lg overflow-hidden">

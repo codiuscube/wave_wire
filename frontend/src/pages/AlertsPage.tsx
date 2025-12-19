@@ -7,6 +7,7 @@ import {
   CardContent,
   Input,
   Switch,
+  SegmentedControl,
 } from '../components/ui';
 import { DnaLogo } from '../components/ui/DnaLogo';
 
@@ -104,22 +105,15 @@ export function AlertsPage() {
               <div className="flex flex-col gap-6">
 
                 {/* Mode Selector */}
-                <div className="flex p-1 bg-secondary/50 rounded-lg">
-                  {(['solar', 'clock', 'always'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => handleModeChange(mode)}
-                      className={`flex-1 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-md transition-all ${settings?.windowMode === mode
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                        }`}
-                    >
-                      {mode === 'solar' && 'Solar Cycle'}
-                      {mode === 'clock' && 'Fixed Hours'}
-                      {mode === 'always' && '24/7 Active'}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  options={[
+                    { value: 'solar', label: 'Solar Cycle' },
+                    { value: 'clock', label: 'Fixed Hours' },
+                    { value: 'always', label: '24/7 Active' },
+                  ]}
+                  value={settings?.windowMode || 'solar'}
+                  onChange={(val) => handleModeChange(val as 'solar' | 'clock' | 'always')}
+                />
 
                 {/* Day Selector */}
                 <div className="flex justify-between gap-1 sm:gap-2">

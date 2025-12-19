@@ -16,3 +16,4 @@ export { TriggerModal } from './TriggerModal';
 export { OnboardingModal } from './OnboardingModal';
 export { UpgradeModal } from './UpgradeModal';
 export { Sheet } from './Sheet';
+export { SegmentedControl } from './SegmentedControl';
