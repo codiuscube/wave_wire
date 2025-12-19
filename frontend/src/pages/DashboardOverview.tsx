@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
 import { AlertsModal } from '../components/dashboard/AlertsModal';
@@ -241,9 +242,20 @@ export function DashboardOverview() {
               </div>
             ) : recentAlerts.length > 0 ? (
               <div className="space-y-3">
-                {recentAlerts.map((alert) => (
-                  <AlertCard key={alert.id} alert={alert} />
-                ))}
+                <AnimatePresence>
+                  {recentAlerts.map((alert, index) => (
+                    <motion.div
+                      key={alert.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative group"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-destructive/50 transition-colors group-hover:bg-destructive z-10 rounded-l" />
+                      <AlertCard alert={alert} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             ) : (
               <div className="border border-dashed border-border/50 bg-secondary/5 rounded-lg p-6 text-center">
@@ -265,9 +277,20 @@ export function DashboardOverview() {
 
           <div className="space-y-4 pb-20">
             {userSpots.length > 0 ? (
-              userSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
-              ))
+              <AnimatePresence>
+                {userSpots.map((spot, index) => (
+                  <motion.div
+                    key={spot.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 + 0.2 }}
+                    className="relative group"
+                  >
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+                    <SpotCard spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             ) : (
               <div className="w-full border border-dashed border-border/50 bg-secondary/5 rounded-lg p-12 flex flex-col items-center justify-center text-center">
                 <div className="mb-6">

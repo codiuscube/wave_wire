@@ -35,7 +35,7 @@ export function AlertCard({ alert, className = '' }: AlertCardProps) {
     };
 
     return (
-        <div className={`relative flex items-start gap-4 p-5 border border-border/50 bg-secondary/10 transition-colors pb-12 sm:pb-5 ${className}`}>
+        <div className={`relative flex items-start gap-4 p-5 border border-border/30 bg-card/60 backdrop-blur-sm transition-colors pb-12 sm:pb-5 ${className}`}>
 
 
             <div className="flex-1 min-w-0 z-10">

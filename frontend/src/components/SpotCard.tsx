@@ -262,7 +262,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
     : Target;
 
   return (
-    <div className="border border-border/50 bg-secondary/10 transition-colors group relative overflow-hidden">
+    <div className="border border-border/30 bg-card/60 backdrop-blur-sm transition-colors group relative overflow-hidden">
       {/* Header Row */}
       <div className="p-4 flex items-center justify-between border-b border-border/30">
         <div className="flex items-center gap-3">
