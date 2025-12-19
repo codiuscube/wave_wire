@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Target, AddCircle, TrashBinMinimalistic, Water, AltArrowDown, DangerTriangle, MapPoint } from '@solar-icons/react';
+import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint } from '@solar-icons/react';
 import {
   Button,
   AddSpotModal,
+  UpgradeModal,
 } from "../components/ui";
+import { DnaLogo } from "../components/ui/DnaLogo";
 import { IconPickerModal, AVAILABLE_ICONS } from "../components/ui/IconPickerModal";
 import type { SpotOption } from "../components/ui";
 import {
@@ -12,7 +14,7 @@ import {
   type BuoyRecommendation,
 } from "../data/noaaBuoys";
 import { useAuth } from "../contexts/AuthContext";
-import { useUserSpots, useProfile } from "../hooks";
+import { useUserSpots, useProfile, useMinimumLoading } from "../hooks";
 import type { UserSpot } from "../lib/mappers";
 
 // Convert UserSpot (DB) to SpotOption (UI)
@@ -36,7 +38,7 @@ export function SpotPage() {
 
   const {
     spots: userSpots,
-    isLoading,
+    isLoading: dataLoading,
     error,
     canAddSpot,
     spotCount,
@@ -56,6 +58,9 @@ export function SpotPage() {
   // Icon Picker State
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
   const [selectedSpotForIcon, setSelectedSpotForIcon] = useState<string | null>(null);
+
+  // Upgrade Modal State
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   const isSpotSaved = (spotId: string) => mySpots.some((s) => s.id === spotId);
 
@@ -121,10 +126,13 @@ export function SpotPage() {
     }
   };
 
-  if (authLoading || profileLoading || isLoading) {
+  // Loading state
+  const isLoading = useMinimumLoading(authLoading || profileLoading || dataLoading);
+
+  if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+      <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <DnaLogo className="w-16 h-16" />
       </div>
     );
   }
@@ -167,17 +175,20 @@ export function SpotPage() {
           </div>
         </div>
 
-        {/* Tier Limit Warning */}
+        {/* Tier Limit Warning - Clickable to open upgrade modal */}
         {!canAddSpot && (
-          <div className="w-full mb-6 p-4 border border-amber-500/50 bg-amber-500/10 flex items-start gap-3 rounded-md">
+          <button
+            onClick={() => setIsUpgradeModalOpen(true)}
+            className="w-full mb-6 p-4 border border-amber-500/50 bg-amber-500/10 flex items-start gap-3 rounded-md hover:bg-amber-500/20 hover:border-amber-500 transition-all cursor-pointer text-left group"
+          >
             <DangerTriangle weight="Bold" size={20} className="text-amber-500 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="font-mono text-sm text-amber-500 font-medium">Spot Limit Reached</p>
               <p className="font-mono text-xs text-muted-foreground mt-1">
-                Free tier allows {spotLimit} spot{spotLimit === 1 ? '' : 's'}. Upgrade to add more spots.
+                Free (Limited) allows {spotLimit} spot{spotLimit === 1 ? '' : 's'}. <span className="underline underline-offset-2 group-hover:text-amber-500 transition-colors">Click to upgrade to Free (Beta)</span>
               </p>
             </div>
-          </div>
+          </button>
         )}
 
         {/* Spots List */}
@@ -196,14 +207,14 @@ export function SpotPage() {
                         setSelectedSpotForIcon(spot.id);
                         setIsIconModalOpen(true);
                       }}
-                      className="h-12 w-12 bg-secondary/30 flex items-center justify-center shrink-0 border border-border/30 hover:bg-primary/20 hover:border-primary/50 transition-all group/icon"
+                      className="h-12 w-12 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20 group/icon hover:bg-cyan-950/40 transition-all cursor-pointer"
                       title="Change Icon"
                     >
                       {(() => {
                         const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
                           ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
                           : Target;
-                        return <IconComponent weight="BoldDuotone" size={24} className="text-primary/80 group-hover/icon:text-primary transition-colors" />;
+                        return <IconComponent weight="BoldDuotone" size={24} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)] transition-all duration-300 group-hover/icon:scale-110 group-hover/icon:text-cyan-300" />;
                       })()}
                     </button>
                     <div className="min-w-0">
@@ -270,7 +281,7 @@ export function SpotPage() {
                       onClick={() => setExpandedSpotId(expandedSpotId === spot.id ? null : spot.id)}
                       className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn bg-background/50"
                     >
-                      <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">Assign Buoy Source</span>
+                      <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">ASSIGN BUOY SOURCE</span>
                       <AltArrowDown weight="Bold" size={16} className={`transition-transform ${expandedSpotId === spot.id ? 'rotate-180' : ''}`} />
                     </button>
                   )}
@@ -325,8 +336,8 @@ export function SpotPage() {
           ) : (
             /* Empty State */
             <div className="w-full border border-dashed border-border/50 bg-secondary/5 rounded-lg p-12 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-secondary/20 mb-6 border border-border/50 flex items-center justify-center text-muted-foreground">
-                <Water weight="BoldDuotone" size={32} />
+              <div className="mb-6">
+                <DnaLogo className="w-16 h-16" />
               </div>
               <h3 className="font-mono text-xl font-bold uppercase mb-3 text-foreground">No Spots Configured</h3>
               <p className="text-muted-foreground text-sm font-mono max-w-sm mb-8 leading-relaxed">
@@ -339,7 +350,7 @@ export function SpotPage() {
                 className="h-auto py-3 px-8"
               >
                 <AddCircle weight="Bold" size={16} className="mr-2" />
-                INITIATE TARGET SPOT
+                ADD TARGET SPOTS
               </Button>
             </div>
           )}
@@ -355,7 +366,7 @@ export function SpotPage() {
               className="h-auto py-3 px-8"
             >
               <AddCircle weight="Bold" size={16} className="mr-2" />
-              ADD ANOTHER SPOT
+              ADD TARGET SPOTS
             </Button>
           </div>
         )}
@@ -375,6 +386,14 @@ export function SpotPage() {
         onClose={() => setIsIconModalOpen(false)}
         onSelectIcon={updateSpotIcon}
         currentIcon={selectedSpotForIcon ? mySpots.find(s => s.id === selectedSpotForIcon)?.icon : undefined}
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        feature="spots"
+        currentTier={tier as 'free' | 'pro' | 'premium'}
       />
     </div>
   );

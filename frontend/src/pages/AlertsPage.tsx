@@ -1,345 +1,347 @@
-import { useState } from 'react';
-import { ClockCircle, Moon, Sun, Bolt, Bell, InfoCircle, DangerCircle } from '@solar-icons/react';
+import { Sun, Moon, Bolt, InfoCircle, ClockCircle, Radar, History3, Lock } from '@solar-icons/react';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlertSettings } from '../hooks';
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
-  Button,
   Input,
   Switch,
-  Badge,
 } from '../components/ui';
-import type { AlertSchedule } from '../types';
+import { DnaLogo } from '../components/ui/DnaLogo';
 
-const defaultSchedules: AlertSchedule[] = [
-  {
-    id: '1',
-    name: 'Night Before Hype',
-    description: 'Checks tomorrow\'s forecast against your triggers. Only alerts if conditions look promising.',
-    time: '20:00',
-    type: 'forecast',
-    enabled: true,
-    days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu'],
-  },
-  {
-    id: '2',
-    name: 'Morning Reality Check',
-    description: 'Validates live buoy data against your triggers. Only alerts if conditions are actually good + includes traffic estimate.',
-    time: '06:00',
-    type: 'realtime',
-    enabled: true,
-    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  },
-  {
-    id: '3',
-    name: 'Pop-Up Alerts',
-    description: 'Monitors for sudden condition changes. Only alerts when conditions improve to match a trigger.',
-    time: '*/2',
-    type: 'popup',
-    enabled: true,
-    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  },
-];
-
-const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-const alertIcons: Record<string, typeof ClockCircle> = {
-  forecast: Moon,
-  realtime: Sun,
-  popup: Bolt,
-};
-
-const alertDetails: Record<string, { trigger: string; example: string }> = {
-  forecast: {
-    trigger: 'Tomorrow\'s forecast matches a trigger',
-    example: '"Tomorrow looking good! Forecast shows 4ft @ 10s with NW winds. Set that alarm."',
-  },
-  realtime: {
-    trigger: 'Live buoy data matches a trigger',
-    example: '"Morning check: Buoy 42035 reading 4.2ft @ 12s (SE), wind 8mph NW. Traffic: 45min. Verdict: GO!"',
-  },
-  popup: {
-    trigger: 'Conditions change to match a trigger',
-    example: '"Wind just switched offshore! Buoy 42035: 3.5ft @ 9s (SE). Surfside cleaning up - glassy for the next few hours."',
-  },
-};
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function AlertsPage() {
-  const { isAdmin } = useAuth();
-  const [schedules, setSchedules] = useState<AlertSchedule[]>(defaultSchedules);
-  const [quietHoursEnabled, setQuietHoursEnabled] = useState(true);
-  const [quietStart, setQuietStart] = useState('22:00');
-  const [quietEnd, setQuietEnd] = useState('05:00');
+  const { user, profile } = useAuth();
+  const { settings, isLoading, update } = useAlertSettings(user?.id);
 
-  // Show "Coming Soon" for non-admin users
-  if (!isAdmin) {
+  // 'pro' = Free Beta tier in DB, 'premium' = paid tier
+  const canUsePremiumAlerts = ['premium', 'pro'].includes(
+    profile?.subscriptionTier?.toLowerCase() || ''
+  ) || profile?.isAdmin;
+
+  const handleToggle = async (
+    field: 'forecastAlertsEnabled' | 'liveAlertsEnabled' | 'twoDayForecastEnabled',
+    value: boolean
+  ) => {
+    if (!canUsePremiumAlerts && (field === 'twoDayForecastEnabled' || field === 'forecastAlertsEnabled')) {
+      return;
+    }
+    await update({ [field]: value });
+  };
+
+  const handleModeChange = async (mode: 'solar' | 'clock' | 'always') => {
+    await update({ windowMode: mode });
+  };
+
+  const handleTimeChange = async (
+    field: 'windowStartTime' | 'windowEndTime',
+    value: string
+  ) => {
+    await update({ [field]: value });
+  };
+
+  const handleDayToggle = async (day: string) => {
+    if (!settings?.activeDays) return;
+
+    const newDays = settings.activeDays.includes(day)
+      ? settings.activeDays.filter(d => d !== day)
+      : [...settings.activeDays, day];
+
+    // Optional: Prevent deselecting all days? 
+    // For now we allow it, effectively pausing all alerts.
+
+    await update({ activeDays: newDays });
+  };
+
+  if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
-        <div className="mb-6 lg:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">Alert Schedule</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Control when we check conditions and send notifications.
-          </p>
-        </div>
-        <Card className="border-dashed">
-          <CardContent className="pt-8 pb-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <ClockCircle weight="BoldDuotone" size={32} className="text-primary" />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Custom alert schedules are coming soon. You'll be able to configure night-before forecasts, morning reality checks, and pop-up alerts.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="relative p-4 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <DnaLogo className="w-16 h-16" />
       </div>
     );
   }
 
-  const updateSchedule = (id: string, updates: Partial<AlertSchedule>) => {
-    setSchedules((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-    );
-  };
-
-  const toggleDay = (scheduleId: string, day: string) => {
-    const schedule = schedules.find((s) => s.id === scheduleId);
-    if (!schedule) return;
-
-    const newDays = schedule.days.includes(day)
-      ? schedule.days.filter((d) => d !== day)
-      : [...schedule.days, day];
-
-    updateSchedule(scheduleId, { days: newDays });
-  };
+  // Helper for glowing icon styles - Monochromatic
+  const getIconStyle = (active: boolean) =>
+    `h-10 w-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${active
+      ? 'bg-primary-foreground text-muted-foreground shadow-md'
+      : 'bg-primary-foreground/20 text-muted-foreground/20'
+    }`;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
-      {/* Header */}
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Alert Schedule</h1>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Control when we check conditions. Alerts only fire when triggers are matched.
-        </p>
+    <div className="relative p-4 min-h-[calc(100vh-4rem)] flex flex-col items-center">
+      {/* Background Tech Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[20%] left-[10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl opacity-50" />
+        <div className="absolute bottom-[20%] right-[10%] w-80 h-80 bg-blue-500/5 rounded-full blur-3xl opacity-50" />
       </div>
 
-      {/* Key Info Banner */}
-      <Card className="mb-6 lg:mb-8 bg-primary/10 border-primary/30">
-        <CardContent className="pt-4 sm:pt-6">
-          <div className="flex items-start gap-3">
-            <DangerCircle weight="Bold" size={20} className="text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">No Spam, Only Signals</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                All alerts require conditions to match your triggers. You won't get "nothing happening" messages -
-                only notifications when it's actually worth checking.
-              </p>
-            </div>
+      <div className="w-full max-w-2xl flex flex-col items-center">
+        {/* Header - Centered */}
+        <div className="mb-12 text-center">
+          <div className="inline-block bg-brand-rogue text-brand-abyss font-bold font-mono text-xs px-2 py-1 mb-4 transform -rotate-1 tracking-widest tape">
+            // ALERT_PROTOCOLS
           </div>
-        </CardContent>
-      </Card>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase font-display glitch-text mb-2" data-text="ALERTS">
+            ALERTS
+          </h1>
+          <p className="font-mono text-muted-foreground text-sm sm:text-base border-muted px-4">
+            Configure active surveillance windows and notification types.
+          </p>
+        </div>
 
-      {/* Scheduled Alerts */}
-      <div className="space-y-4 mb-6 lg:mb-8">
-        {schedules.map((schedule) => {
-          const Icon = alertIcons[schedule.type];
-          const details = alertDetails[schedule.type];
-          return (
-            <Card key={schedule.id}>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                  <div
-                    className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${schedule.enabled
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-muted-foreground'
-                      }`}
-                  >
-                    <Icon weight="BoldDuotone" size={24} />
-                  </div>
+        {/* Surveillance Window Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className={`w-2 h-2 rounded-full ${settings?.windowMode !== 'always' ? 'bg-primary animate-pulse' : 'bg-primary'}`} />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Surveillance Window</h2>
+          </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-bold">{schedule.name}</h3>
-                        {schedule.type === 'popup' && (
-                          <Badge variant="outline">Real-time</Badge>
-                        )}
+          <Card className="tech-card overflow-hidden">
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-6">
+
+                {/* Mode Selector */}
+                <div className="flex p-1 bg-secondary/50 rounded-lg">
+                  {(['solar', 'clock', 'always'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => handleModeChange(mode)}
+                      className={`flex-1 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-md transition-all ${settings?.windowMode === mode
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                        }`}
+                    >
+                      {mode === 'solar' && 'Solar Cycle'}
+                      {mode === 'clock' && 'Fixed Hours'}
+                      {mode === 'always' && '24/7 Active'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Day Selector */}
+                <div className="flex justify-between gap-1 sm:gap-2">
+                  {DAYS.map((day) => {
+                    const isActive = settings?.activeDays?.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => handleDayToggle(day)}
+                        className={`
+                          flex-1 aspect-square sm:aspect-auto sm:h-10 
+                          flex items-center justify-center rounded-md font-mono text-xs font-bold transition-all
+                          ${isActive
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-white/5 bg-muted/20'
+                          }
+                        `}
+                      >
+                        {day.slice(0, 2)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Mode Content */}
+                <div className="min-h-12 flex items-center">
+
+                  {settings?.windowMode === 'solar' && (
+                    <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <Sun weight="BoldDuotone" size={20} />
                       </div>
-                      <Switch
-                        checked={schedule.enabled}
-                        onChange={(checked) =>
-                          updateSchedule(schedule.id, { enabled: checked })
-                        }
-                      />
+                      <div>
+                        <h3 className="font-bold text-sm">Follow the Sun</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Alerts are active from <span className="text-primary font-mono">Sunrise</span> to <span className="text-primary font-mono">Sunset</span> based on each spot's location.
+                        </p>
+                      </div>
                     </div>
+                  )}
 
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {schedule.description}
-                    </p>
-
-                    {/* When it triggers */}
-                    <div className="p-3 bg-secondary/30 rounded-lg mb-4">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        Triggers when:
-                      </p>
-                      <p className="text-sm">{details.trigger}</p>
-                      <p className="text-xs text-muted-foreground mt-2 italic">
-                        Example: {details.example}
-                      </p>
-                    </div>
-
-                    {schedule.enabled && (
-                      <div className="space-y-4">
-                        {/* Time Setting */}
-                        {schedule.type !== 'popup' && (
-                          <div className="flex items-center gap-4">
-                            <ClockCircle weight="Bold" size={16} className="text-muted-foreground" />
-                            <Input
-                              type="time"
-                              value={schedule.time}
-                              onChange={(e) =>
-                                updateSchedule(schedule.id, { time: e.target.value })
-                              }
-                              className="w-32"
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              Check time (your local timezone)
-                            </span>
+                  {settings?.windowMode === 'clock' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <ClockCircle weight="BoldDuotone" size={20} />
                           </div>
-                        )}
-
-                        {schedule.type === 'popup' && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Bolt weight="Bold" size={16} />
-                            Checks every 2 hours during daylight (6am - 8pm)
-                          </div>
-                        )}
-
-                        {/* Days Selection */}
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Active days (check runs on these days):
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {daysOfWeek.map((day) => (
-                              <button
-                                key={day}
-                                onClick={() => toggleDay(schedule.id, day)}
-                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-md text-xs font-medium transition-colors ${schedule.days.includes(day)
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-transparent border border-border text-muted-foreground hover:bg-secondary'
-                                  }`}
-                              >
-                                {day}
-                              </button>
-                            ))}
+                          <div>
+                            <h3 className="font-bold text-sm">Fixed Schedule</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Set specific active hours
+                            </p>
                           </div>
                         </div>
+
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={settings?.windowStartTime ?? '06:00'}
+                            onChange={(e) => handleTimeChange('windowStartTime', e.target.value)}
+                            className="w-24 font-mono text-center bg-background"
+                          />
+                          <span className="text-muted-foreground font-mono">→</span>
+                          <Input
+                            type="time"
+                            value={settings?.windowEndTime ?? '22:00'}
+                            onChange={(e) => handleTimeChange('windowEndTime', e.target.value)}
+                            className="w-24 font-mono text-center bg-background"
+                          />
+                        </div>
                       </div>
-                    )}
+                    </div>
+                  )}
+
+                  {settings?.windowMode === 'always' && (
+                    <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <Bolt weight="BoldDuotone" size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">Always On</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Active 24/7 on selected days.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Alert Types Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="w-2 h-2 bg-destructive animate-pulse rounded-full" />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Alert Types</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            {/* Two Days Before Alerts */}
+            <Card className={`tech-card group ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={getIconStyle(!!settings?.twoDayForecastEnabled)}>
+                    <History3 weight="BoldDuotone" size={32} />
                   </div>
+                  {canUsePremiumAlerts ? (
+                    <Switch
+                      checked={settings?.twoDayForecastEnabled ?? false}
+                      onChange={(checked) => handleToggle('twoDayForecastEnabled', checked)}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                      <Lock size={12} weight="Bold" />
+                      PREMIUM
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-bold">2 Days Out</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4 h-12">
+                    Early warning check. Received at 12pm, two days before conditions arrive.
+                  </p>
+
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
 
-      {/* Quiet Hours */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Bell weight="Bold" size={20} />
-                Quiet Hours
-              </CardTitle>
-              <CardDescription>
-                No alerts during these hours, even if conditions match
-              </CardDescription>
-            </div>
-            <Switch
-              checked={quietHoursEnabled}
-              onChange={setQuietHoursEnabled}
-            />
+            {/* Night Before Alerts */}
+            <Card className={`tech-card group ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={getIconStyle(!!settings?.forecastAlertsEnabled)}>
+                    <Moon weight="BoldDuotone" size={32} />
+                  </div>
+                  {canUsePremiumAlerts ? (
+                    <Switch
+                      checked={settings?.forecastAlertsEnabled ?? true}
+                      onChange={(checked) => handleToggle('forecastAlertsEnabled', checked)}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                      <Lock size={12} weight="Bold" />
+                      PREMIUM
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-bold">Night Before</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4 h-12">
+                    Final confirmation. Received at 6pm the night before conditions arrive.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Live Alerts */}
+            <Card className="tech-card group">
+              <CardContent className="pt-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={getIconStyle(!!settings?.liveAlertsEnabled)}>
+                    <Bolt weight="BoldDuotone" size={32} />
+                  </div>
+                  <Switch
+                    checked={settings?.liveAlertsEnabled ?? true}
+                    onChange={(checked) => handleToggle('liveAlertsEnabled', checked)}
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-bold">Live Data</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4 h-12">
+                    Real-time buoy monitoring. Instant alerts when conditions trigger.
+                  </p>
+
+
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-        {quietHoursEnabled && (
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">
-                  Start
-                </label>
-                <Input
-                  type="time"
-                  value={quietStart}
-                  onChange={(e) => setQuietStart(e.target.value)}
-                  className="w-32"
-                />
-              </div>
-              <span className="text-muted-foreground mt-5">to</span>
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">
-                  End
-                </label>
-                <Input
-                  type="time"
-                  value={quietEnd}
-                  onChange={(e) => setQuietEnd(e.target.value)}
-                  className="w-32"
-                />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Pop-up alerts during quiet hours will be queued and sent when quiet hours end (if still valid).
-            </p>
-          </CardContent>
-        )}
-      </Card>
 
-      {/* How It Works */}
-      <Card className="mt-6 lg:mt-8 bg-muted/50 border-border">
-        <CardContent className="pt-4 sm:pt-6">
-          <div className="flex items-start gap-3">
-            <InfoCircle weight="Bold" size={20} className="text-muted-foreground mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium">Alert Flow</p>
-              <div className="text-sm text-muted-foreground mt-3 space-y-3">
-                <div className="flex gap-3">
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">1</span>
-                  <p>At scheduled time, we check conditions for <strong>all your spots</strong></p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">2</span>
-                  <p>Each spot's conditions are compared against <strong>its triggers</strong></p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">3</span>
-                  <p>If a trigger matches, AI generates a message with your <strong>personality setting</strong></p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded font-mono">4</span>
-                  <p>You receive one consolidated alert (not spam for each spot)</p>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-xs text-muted-foreground">
-                  <strong>Free tier:</strong> 1 spot, 1 trigger, 5 SMS/month. After SMS limit, Night Before alerts fall back to email.
-                  Upgrade to Unlimited for unlimited spots, triggers, and SMS.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Save */}
-      <div className="mt-8 flex justify-end">
-        <Button size="lg">Save Schedule</Button>
+        {/* Info Section */}
+        <div className="w-full pb-20">
+          <Card className="bg-muted/30 border-border/50 border-dashed">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <InfoCircle weight="Bold" size={20} className="text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium font-mono text-sm">System Logic</p>
+                  <div className="text-sm text-muted-foreground mt-3 space-y-2 font-mono text-xs">
+                    <div className="flex gap-3 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                      <p>Conditions checked against <span className="text-foreground">Triggers</span></p>
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                      <p>Alerts filtered by <span className="text-foreground">Window</span> & <span className="text-foreground">Active Days</span></p>
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                      <p>One consolidated msg / check</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

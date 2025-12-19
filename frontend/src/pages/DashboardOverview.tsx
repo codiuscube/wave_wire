@@ -8,9 +8,10 @@ import { AlertCard } from '../components/dashboard/AlertCard';
 import { useMultipleBuoyData } from '../hooks/useBuoyData';
 import { useMultipleForecastData } from '../hooks/useForecastData';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserSpots, useSentAlerts, useProfile } from '../hooks';
-import { Water, AddCircle } from '@solar-icons/react';
+import { useUserSpots, useSentAlerts, useMinimumLoading } from '../hooks';
+import { AddCircle } from '@solar-icons/react';
 import type { UserSpot, SentAlert } from '../lib/mappers';
+import { DnaLogo } from '../components/ui/DnaLogo';
 
 // Convert UserSpot to base spot format for the dashboard
 interface BaseSpot {
@@ -78,8 +79,7 @@ function sentAlertToAlertCard(alert: SentAlert): AlertCardData {
 
 
 export function DashboardOverview() {
-  const { user, loading: authLoading, isAdmin } = useAuth();
-  const { profile, isLoading: profileLoading, refresh: refreshProfile } = useProfile(user?.id);
+  const { user, profile, loading: authLoading, isAdmin } = useAuth();
   // Admins automatically get premium tier access
   const tier = isAdmin ? 'premium' : (profile?.subscriptionTier || 'free');
 
@@ -159,10 +159,12 @@ export function DashboardOverview() {
   }, [baseSpots, buoyDataMap, forecastDataMap]);
 
   // Loading state
-  if (authLoading || profileLoading || spotsLoading) {
+  const isLoading = useMinimumLoading(authLoading || spotsLoading);
+
+  if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+      <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <DnaLogo className="w-16 h-16" />
       </div>
     );
   }
@@ -187,7 +189,7 @@ export function DashboardOverview() {
     searchParams.delete('onboarding');
     setSearchParams(searchParams);
 
-    refreshProfile();
+
     refreshSpots();
   };
 
@@ -227,7 +229,7 @@ export function DashboardOverview() {
                 size="sm"
                 className="h-auto py-1 px-2 text-[10px] uppercase font-mono text-muted-foreground hover:text-primary tracking-wider"
               >
-                View All Logs
+                VIEW ALL LOGS
               </Button>
             )}
           </div>
@@ -235,7 +237,7 @@ export function DashboardOverview() {
           <div className="space-y-3">
             {alertsLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+                <DnaLogo className="w-10 h-10" />
               </div>
             ) : recentAlerts.length > 0 ? (
               <div className="space-y-3">
@@ -268,8 +270,8 @@ export function DashboardOverview() {
               ))
             ) : (
               <div className="w-full border border-dashed border-border/50 bg-secondary/5 rounded-lg p-12 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 bg-secondary/20 mb-6 border border-border/50 flex items-center justify-center text-muted-foreground">
-                  <Water weight="BoldDuotone" size={32} />
+                <div className="mb-6">
+                  <DnaLogo className="w-16 h-16" />
                 </div>
                 <h3 className="font-mono text-xl font-bold uppercase mb-3 text-foreground">No Spots Configured</h3>
                 <p className="text-muted-foreground text-sm font-mono max-w-sm mb-8 leading-relaxed">
@@ -294,6 +296,6 @@ export function DashboardOverview() {
           onClose={handleOnboardingClose}
         />
       </div>
-    </div>
+    </div >
   );
 }

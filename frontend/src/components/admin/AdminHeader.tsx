@@ -1,8 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, GraphUp } from '@solar-icons/react';
+import { ArrowLeft, Shield, GraphUp, UsersGroupRounded } from '@solar-icons/react';
 
 const adminNavItems = [
   { to: "/admin/spots", icon: Shield, label: "Spot Management" },
+  { to: "/admin/users", icon: UsersGroupRounded, label: "User Management" },
   { to: "/admin/investment", icon: GraphUp, label: "Investment" },
 ];
 

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AddCircle, TrashBinMinimalistic, MapPoint, Pen, AltArrowDown, Lock, InfoCircle } from '@solar-icons/react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
-import { useProfile, useUserSpots, useTriggers } from "../hooks";
+import { useProfile, useUserSpots, useTriggers, useMinimumLoading } from "../hooks";
 import {
   Button,
   TriggerModal,
   Badge,
 } from "../components/ui";
+import { DnaLogo } from "../components/ui/DnaLogo";
 import type { TriggerTier } from "../types";
 import type { Trigger } from "../lib/mappers";
 import { generateTriggerSummary } from "../lib/triggerUtils";
@@ -121,16 +122,21 @@ export function TriggersPage() {
   const isLoading = profileLoading || spotsLoading || triggersLoading;
   const hasSpots = userSpots.length > 0;
 
-  // Set default selected spot when spots load - REMOVED to allow "center" state
-  // if (hasSpots && !selectedSpotId && userSpots[0]) {
-  //   setSelectedSpotId(userSpots[0].id);
-  // }
+  // Set default selected spot when spots load
+  useEffect(() => {
+    if (hasSpots && !selectedSpotId && userSpots[0]) {
+      setSelectedSpotId(userSpots[0].id);
+    }
+  }, [hasSpots, selectedSpotId, userSpots]);
 
   // Loading state
-  if (isLoading) {
+  // Loading state
+  const isPageLoading = useMinimumLoading(isLoading);
+
+  if (isPageLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl min-h-[400px] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+      <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <DnaLogo className="w-16 h-16" />
       </div>
     );
   }
@@ -336,11 +342,19 @@ export function TriggersPage() {
               )}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Link to="/dashboard/spot">
-                <Button variant="rogue-secondary" className="font-mono uppercase text-xs">
-                  <AddCircle weight="Bold" size={12} className="mr-2" />
-                  Create Target Spot First
+            /* Empty State */
+            <div className="w-full border border-dashed border-border/50 bg-secondary/5 rounded-lg p-12 flex flex-col items-center justify-center text-center">
+              <div className="mb-6">
+                <DnaLogo className="w-16 h-16" />
+              </div>
+              <h3 className="font-mono text-xl font-bold uppercase mb-3 text-foreground">No Spots Configured</h3>
+              <p className="text-muted-foreground text-sm font-mono max-w-sm mb-8 leading-relaxed">
+                Add spots to start monitoring conditions.
+              </p>
+              <Link to="/spots">
+                <Button variant="rogue-secondary" className="px-4 py-2">
+                  <AddCircle weight="Bold" size={16} className="mr-2" />
+                  ADD TARGET SPOTS
                 </Button>
               </Link>
             </div>
@@ -487,7 +501,7 @@ export function TriggersPage() {
                             `}
                           >
                             <AddCircle weight="Bold" size={12} className="mr-2" />
-                            Configure
+                            CONFIGURE
                           </Button>
                         </div>
                       )}

@@ -17,7 +17,7 @@ CREATE TABLE public.profiles (
   phone TEXT,
   phone_verified BOOLEAN DEFAULT FALSE,
   home_address TEXT,
-  subscription_tier TEXT DEFAULT 'free' CHECK (subscription_tier IN ('free', 'unlimited')),
+  subscription_tier TEXT DEFAULT 'free' CHECK (subscription_tier IN ('free', 'pro', 'unlimited')),
   is_admin BOOLEAN DEFAULT FALSE,
   onboarding_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -25,9 +25,15 @@ CREATE TABLE public.profiles (
 );
 ```
 
+**Subscription Tiers:**
+- `free` - Free (Limited): 1 spot, 1 trigger
+- `pro` - Free (Beta): Unlimited access during beta
+- `unlimited` - Premium: Unlimited access ($5/month)
+
 **RLS Policies:**
 - Users can read/update their own profile
-- Trigger prevents users from modifying `is_admin` or `subscription_tier`
+- Admins can read/update all profiles (via `is_admin()` function)
+- Trigger prevents non-admins from modifying `is_admin` or `subscription_tier`
 
 ---
 
@@ -381,9 +387,29 @@ CREATE TRIGGER protect_profile_sensitive_columns
 
 ---
 
+### Check Admin Status
+
+Security definer function to check if current user is admin (avoids RLS recursion):
+
+```sql
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND is_admin = TRUE
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+```
+
+Used in RLS policies for admin access to all profiles.
+
+---
+
 ### Enforce Spot Limit
 
-Free tier users limited to 1 spot:
+Free tier users limited to 1 spot. Admins, pro, and unlimited tiers have no limit:
 
 ```sql
 CREATE OR REPLACE FUNCTION check_spot_limit()
@@ -391,15 +417,21 @@ RETURNS TRIGGER AS $$
 DECLARE
   spot_count INTEGER;
   user_tier TEXT;
+  user_is_admin BOOLEAN;
 BEGIN
-  SELECT subscription_tier INTO user_tier
+  SELECT subscription_tier, is_admin INTO user_tier, user_is_admin
   FROM public.profiles WHERE id = NEW.user_id;
+
+  -- Admins and unlimited/pro tier users have no limits
+  IF user_is_admin = TRUE OR user_tier = 'unlimited' OR user_tier = 'pro' THEN
+    RETURN NEW;
+  END IF;
 
   SELECT COUNT(*) INTO spot_count
   FROM public.user_spots WHERE user_id = NEW.user_id;
 
   IF user_tier = 'free' AND spot_count >= 1 THEN
-    RAISE EXCEPTION 'Free tier limit: 1 spot maximum. Upgrade to add more.';
+    RAISE EXCEPTION 'Free tier limit: 1 spot maximum. Upgrade to Free (Beta) for unlimited access.';
   END IF;
 
   RETURN NEW;
@@ -436,6 +468,34 @@ CREATE TRIGGER update_profiles_updated_at
 
 ---
 
+## Views
+
+### `admin_user_stats`
+
+Aggregated view for admin user management panel. Joins profiles with activity counts.
+
+```sql
+CREATE OR REPLACE VIEW public.admin_user_stats AS
+SELECT
+  p.id, p.email, p.phone, p.phone_verified, p.home_address,
+  p.subscription_tier, p.is_admin, p.onboarding_completed,
+  p.created_at, p.updated_at,
+  -- Activity counts
+  COALESCE(us.spots_count, 0)::integer AS spots_count,
+  COALESCE(t.triggers_count, 0)::integer AS triggers_count,
+  COALESCE(sa.alerts_sent, 0)::integer AS alerts_sent,
+  -- Last activity
+  GREATEST(p.updated_at, us.last_spot_activity, t.last_trigger_activity, sa.last_alert_sent) AS last_activity
+FROM public.profiles p
+LEFT JOIN (SELECT user_id, COUNT(*) AS spots_count, MAX(updated_at) AS last_spot_activity FROM public.user_spots GROUP BY user_id) us ON p.id = us.user_id
+LEFT JOIN (SELECT user_id, COUNT(*) AS triggers_count, MAX(updated_at) AS last_trigger_activity FROM public.triggers GROUP BY user_id) t ON p.id = t.user_id
+LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_sent FROM public.sent_alerts GROUP BY user_id) sa ON p.id = sa.user_id;
+```
+
+**Access:** Inherits RLS from profiles table. Admins can query via `is_admin()` policy.
+
+---
+
 ## Migration History
 
 | Migration | Description |
@@ -444,6 +504,11 @@ CREATE TRIGGER update_profiles_updated_at
 | `20251216050123_add_admin_and_surf_spots.sql` | Add is_admin, surf_spots table, spot limit trigger |
 | `20251218041315_add_notification_style_to_triggers.sql` | Add notification_style column to triggers |
 | `20251218085033_add_trigger_columns.sql` | Additional trigger columns |
+| `20251218222925_fix_admin_spot_limits.sql` | Admin bypass for spot limits, admin RLS policies |
+| `20251218223752_fix_admin_policy_recursion.sql` | Add is_admin() function to prevent RLS recursion |
+| `20251218230549_pro_tier_unlimited.sql` | Pro tier gets unlimited access during beta |
+| `20251218230741_add_pro_tier_constraint.sql` | Add 'pro' to subscription_tier constraint |
+| `20251218231941_add_admin_user_stats_view.sql` | Admin user stats view for user management |
 
 ---
 
@@ -451,10 +516,11 @@ CREATE TRIGGER update_profiles_updated_at
 
 | Table | Select | Insert | Update | Delete |
 |-------|--------|--------|--------|--------|
-| profiles | Own | Auto (trigger) | Own (protected) | - |
+| profiles | Own + Admin (all) | Auto (trigger) | Own + Admin (all) | - |
 | surf_spots | Verified + Admin | Admin | Admin | Admin |
 | user_spots | Own | Own (limited) | Own | Own |
 | triggers | Own | Own | Own | Own |
 | alert_schedules | Own | Own | Own | Own |
 | user_preferences | Own | Own | Own | Own |
 | sent_alerts | Own | System | - | - |
+| admin_user_stats | Admin only | - | - | - |

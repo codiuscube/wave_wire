@@ -1,5 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMinimumLoading } from '../../hooks/useMinimumLoading';
+import { DnaLogo } from '../../components/ui/DnaLogo';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -7,11 +9,12 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const isLoading = useMinimumLoading(loading);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="text-cyan-400 text-lg">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <DnaLogo className="w-24 h-24" />
       </div>
     );
   }

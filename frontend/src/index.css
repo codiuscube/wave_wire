@@ -394,8 +394,34 @@ body {
 }
 
 /* Dashboard Minimal Utilities */
-.theme-dashboard button {
-  font-family: "Inter", system-ui, sans-serif;
-  text-transform: none;
-  box-shadow: none;
+
+/* DNA Strand Animation */
+/* Infinite Pulse Wave Animation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+.animate-pulse-wave {
+  animation: dash 3s linear infinite;
 }

@@ -6,7 +6,7 @@ type SubscriptionTier = 'free' | 'pro' | 'premium';
 
 const SPOT_LIMITS: Record<SubscriptionTier, number> = {
   free: 1,
-  pro: 5,
+  pro: Infinity, // Free (Beta) - same as premium during beta
   premium: Infinity,
 };
 
@@ -54,7 +54,7 @@ export function useUserSpots(
   tier: SubscriptionTier = 'free'
 ): UseUserSpotsReturn {
   const [spots, setSpots] = useState<UserSpot[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!userId);
   const [error, setError] = useState<string | null>(null);
 
   const spotLimit = SPOT_LIMITS[tier];

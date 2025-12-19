@@ -108,6 +108,40 @@ When users create custom spots:
 
 ---
 
+## Admin User Management
+
+**Route:** `/admin/users`
+
+### Features
+
+- **Stats Dashboard** - Total users, admins, premium, free counts + MRR
+- **MRR Display** - Monthly recurring revenue (Premium users × $5.00/mo)
+- **Activity Metrics** - Total alerts sent across all users
+- **User Table** - Email, tier, spots, triggers, alerts, last activity, join date
+- **Search & Filter** - By email/ID, filter by tier
+- **User Detail Modal** - Click row to see comprehensive user info
+- **Edit Modal** - Change subscription tier and admin status
+
+### User Detail Modal
+
+Shows:
+- **Contact Info** - Phone (with verification status), home address
+- **Activity Metrics** - Spots count, triggers count, alerts sent, last active
+- **Subscription** - Current tier, admin badge, account created/updated dates
+- TODO: Subscription history (after payment integration)
+
+### Stats Grid (5 columns)
+
+| Total Users | Admins | Premium | Free | Total Alerts |
+|-------------|--------|---------|------|--------------|
+| count | count | count + MRR | count | aggregate |
+
+### Database
+
+Uses `admin_user_stats` view for efficient aggregation of user activity data.
+
+---
+
 ## Triggers System
 
 Triggers define when users want to be alerted about conditions.
@@ -228,20 +262,31 @@ Monitor conditions across all configured spots at a glance:
 
 ## Pricing Tiers
 
-### Free Tier ($0/month)
+### Free (Limited) - $0/month
 
 - 1 spot
 - 1 trigger per spot
 - 5 SMS alerts per month
 - Email fallback after SMS limit
 
-### Unlimited Tier ($5/month)
+### Free (Beta) - $0/month
 
+During beta, users can upgrade to Free (Beta) for full access:
+- Unlimited spots
+- Unlimited triggers
+- Unlimited SMS alerts
+- All alert types
+
+### Premium - $5/month
+
+Post-beta paid tier:
 - Unlimited spots
 - Unlimited triggers
 - Unlimited SMS alerts
 - All alert types
 - Priority support
+
+**TODO:** Payment integration (Stripe) for Premium tier billing
 
 ---
 
@@ -307,14 +352,19 @@ interface SpotLocalsKnowledge {
 | `TriggerForm.tsx` | Configure trigger parameters |
 | `AddSpotModal.tsx` | Add spots from database |
 | `DirectionSelector.tsx` | Multi-select compass directions |
+| `UserDetailModal.tsx` | Admin user detail view |
+| `UpgradeModal.tsx` | Subscription upgrade prompt |
+| `AdminHeader.tsx` | Admin panel navigation |
 
 ### Pages
 
 | Page | Route |
 |------|-------|
 | `DashboardOverview.tsx` | `/dashboard` |
-| `SpotPage.tsx` | `/dashboard/spot` |
-| `TriggersPage.tsx` | `/dashboard/triggers` |
-| `AlertsPage.tsx` | `/dashboard/alerts` |
-| `AccountPage.tsx` | `/dashboard/account` |
+| `SpotPage.tsx` | `/spots` |
+| `TriggersPage.tsx` | `/triggers` |
+| `AlertsPage.tsx` | `/alerts` |
+| `AccountPage.tsx` | `/account` |
 | `AdminSpotsPage.tsx` | `/admin/spots` |
+| `UserManagementPage.tsx` | `/admin/users` |
+| `InvestmentPage.tsx` | `/admin/investment` |

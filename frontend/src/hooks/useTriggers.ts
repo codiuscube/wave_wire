@@ -6,7 +6,7 @@ type SubscriptionTier = 'free' | 'pro' | 'premium';
 
 const TRIGGER_LIMITS: Record<SubscriptionTier, number> = {
   free: 1,
-  pro: 5,
+  pro: Infinity, // Free (Beta) - same as premium during beta
   premium: Infinity,
 };
 

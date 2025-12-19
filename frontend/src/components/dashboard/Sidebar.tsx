@@ -10,6 +10,7 @@ import {
   MenuDots,
   CloseCircle,
   Logout,
+  UsersGroupRounded,
 } from "@solar-icons/react";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -20,10 +21,10 @@ const ICON_SIZE = 24;
 
 const navItems = [
   { to: "/dashboard", icon: Water, label: "Overview", end: true },
-  { to: "/dashboard/spot", icon: MapPoint, label: "My Spots" },
-  { to: "/dashboard/triggers", icon: Bolt, label: "Triggers" },
-  { to: "/dashboard/alerts", icon: ChatRoundDots, label: "Alerts" },
-  { to: "/dashboard/account", icon: Scanner, label: "Account" },
+  { to: "/spots", icon: MapPoint, label: "My Spots" },
+  { to: "/triggers", icon: Bolt, label: "Triggers" },
+  { to: "/alerts", icon: ChatRoundDots, label: "Alerts" },
+  { to: "/account", icon: Scanner, label: "Account" },
 ];
 
 export function Sidebar() {
@@ -132,6 +133,19 @@ export function Sidebar() {
                 >
                   <Database size={ICON_SIZE} weight="BoldDuotone" />
                   Spot Management
+                </NavLink>
+                <NavLink
+                  to="/admin/users"
+                  onClick={() => setIsMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
+                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+                    }`
+                  }
+                >
+                  <UsersGroupRounded size={ICON_SIZE} weight="BoldDuotone" />
+                  User Management
                 </NavLink>
                 <NavLink
                   to="/admin/investment"

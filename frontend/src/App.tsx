@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -16,6 +16,7 @@ import {
   SignupPage,
   ResetPasswordPage,
   AdminSpotsPage,
+  UserManagementPage,
   InvestmentPage,
 } from './pages';
 
@@ -36,26 +37,34 @@ function App() {
 
                 {/* Protected Dashboard Routes */}
                 <Route
-                  path="/dashboard"
                   element={
                     <ProtectedRoute>
                       <DashboardLayout />
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<DashboardOverview />} />
-                  <Route path="triggers" element={<TriggersPage />} />
-                  <Route path="spot" element={<SpotPage />} />
-                  <Route path="alerts" element={<AlertsPage />} />
-                  <Route path="account" element={<AccountPage />} />
+                  <Route path="/dashboard" element={<DashboardOverview />} />
+                  <Route path="/triggers" element={<TriggersPage />} />
+                  <Route path="/spots" element={<SpotPage />} />
+                  <Route path="/alerts" element={<AlertsPage />} />
+                  <Route path="/account" element={<AccountPage />} />
                 </Route>
 
                 {/* Admin Routes (protected by isAdmin check in component) */}
+                <Route path="/admin" element={<Navigate to="/admin/spots" replace />} />
                 <Route
                   path="/admin/spots"
                   element={
                     <ProtectedRoute>
                       <AdminSpotsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute>
+                      <UserManagementPage />
                     </ProtectedRoute>
                   }
                 />

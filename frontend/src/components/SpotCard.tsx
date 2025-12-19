@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Select } from "./ui/Select";
 import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
 import { Target, MapPoint } from '@solar-icons/react';
+import { DnaLogo } from "./ui/DnaLogo";
 import { fetchForecastDataForTime, getTidePredictionsForDay, type ForecastTime } from "../services/api";
 import { useTideData } from "../hooks/useTideData";
 import { TideChart } from "./TideChart";
@@ -265,8 +266,8 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
       {/* Header Row */}
       <div className="p-4 flex items-center justify-between border-b border-border/30">
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 flex items-center justify-center">
-            <Icon weight="BoldDuotone" size={20} className="text-primary/80 group-hover:text-primary transition-colors" />
+          <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
+            <Icon weight="BoldDuotone" size={24} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)] transition-all duration-300 group-hover:scale-110 group-hover:text-cyan-300" />
           </div>
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
@@ -285,7 +286,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
               {spot.lat.toFixed(3)} / {spot.lon.toFixed(3)}
             </span>
           </a>
-        )} 
+        )}
       </div>
 
 
@@ -312,7 +313,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground/20">
                 <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20 animate-pulse" />
-                <span>Loading...</span>
+                <DnaLogo className="w-8 h-8" />
               </div>
               <SkeletonRow label="PRI" format="value-at-unit" />
               <SkeletonRow label="WND" format="value-dir" />

@@ -33,7 +33,7 @@ interface UseProfileReturn {
  */
 export function useProfile(userId: string | undefined): UseProfileReturn {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!userId);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {

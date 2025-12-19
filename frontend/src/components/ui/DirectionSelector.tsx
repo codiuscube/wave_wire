@@ -54,38 +54,82 @@ export function DirectionSelector({
         return Math.round(compassDeg);
     };
 
+    const lastDeg = useRef<number | null>(null);
+
     // Main Drag Logic
     const handleDrag = useCallback((clientX: number, clientY: number) => {
-        if (!isDragging.current) return;
+        if (!isDragging.current || lastDeg.current === null) return;
 
-        const deg = getDegreeFromEvent(clientX, clientY);
-        const currentMin = dragValues.current.min;
-        const currentMax = dragValues.current.max;
+        const currentDeg = getDegreeFromEvent(clientX, clientY);
+        let delta = currentDeg - lastDeg.current;
+
+        // Handle wrapping for delta
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+
+        // Update lastDeg for next frame
+        lastDeg.current = currentDeg;
+
+        let { min, max } = dragValues.current;
+
+        // Calculate current width of the sector
+        let width = max - min;
+        if (width <= 0) width += 360;
+
+        // Constraints
+        const MIN_WIDTH = 15;
+        // If we are already full circle (approx 360), allow it to stay 360, else cap at 355 to prevents snapping to ambiguous full circle
+        const MAX_WIDTH = width >= 359 ? 360 : 355;
 
         if (isDragging.current === 'min') {
-            // Prevent overlap with max (keep at least 10 degrees apart)
-            let diff = currentMax - deg;
-            if (diff < 0) diff += 360;
+            // Moving Start (Min) 
+            // Clockwise (+delta) -> Shrinks width
+            // Counter-Clockwise (-delta) -> Grows width
+            let newWidth = width - delta;
 
-            if (diff < 10) return; // Too close
-            if (deg === currentMax) return; // Exact match not allowed
+            // Layout clamping
+            if (newWidth < MIN_WIDTH) newWidth = MIN_WIDTH;
+            if (newWidth > MAX_WIDTH) newWidth = MAX_WIDTH;
 
-            dragValues.current.min = deg;
-            setInternalMin(deg);
-            onChange(deg, currentMax);
+            // Recalculate min based on max and new width
+            // Min is "Start", Max is "End" (Clockwise)
+            // Min = Max - Width
+            let newMin = (max - newWidth);
+            // Normalize
+            newMin = (newMin % 360 + 360) % 360;
+
+            if (newMin !== min) {
+                setInternalMin(newMin);
+                dragValues.current.min = newMin;
+                onChange(newMin, max);
+            }
+
         } else {
-            // Prevent overlap with min
-            let diff = deg - currentMin;
-            if (diff < 0) diff += 360;
+            // Moving End (Max)
+            // Clockwise (+delta) -> Grows width
+            // Counter-Clockwise (-delta) -> Shrinks width
+            let newWidth = width + delta;
 
-            if (diff < 10) return; // Too close
-            if (deg === currentMin) return; // Exact match not allowed
+            // Layout clamping
+            if (newWidth < MIN_WIDTH) newWidth = MIN_WIDTH;
+            if (newWidth > MAX_WIDTH) newWidth = MAX_WIDTH;
 
-            dragValues.current.max = deg;
-            setInternalMax(deg);
-            onChange(currentMin, deg);
+            // Recalculate max based on min and new width
+            // Max = Min + Width
+            let newMax = (min + newWidth);
+            // Normalize
+            newMax = (newMax % 360 + 360) % 360;
+
+            // Special case handles: preserve 360 if we are explicitly at full width
+            if (newWidth === 360 && min === 0) newMax = 360;
+
+            if (newMax !== max) {
+                setInternalMax(newMax);
+                dragValues.current.max = newMax;
+                onChange(min, newMax);
+            }
         }
-    }, [onChange]); // Stable dependency
+    }, [onChange]);
 
     // Mouse Handlers
     const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -94,14 +138,18 @@ export function DirectionSelector({
 
     const handleMouseUp = useCallback(() => {
         isDragging.current = null;
+        lastDeg.current = null;
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
     }, [handleMouseMove]);
 
     const handleMouseDown = (type: 'min' | 'max') => (e: React.MouseEvent) => {
         e.stopPropagation();
-        e.preventDefault(); // Prevent text selection
+        e.preventDefault();
         isDragging.current = type;
+
+        // Initialize lastDeg with current mouse position to prevent jump
+        lastDeg.current = getDegreeFromEvent(e.clientX, e.clientY);
 
         // Ensure refs are fresh
         dragValues.current = { min: internalMin, max: internalMax };
@@ -112,7 +160,7 @@ export function DirectionSelector({
 
     // Touch Handlers
     const handleTouchMove = useCallback((e: TouchEvent) => {
-        e.preventDefault(); // Prevent scrolling while dragging
+        e.preventDefault();
         if (e.touches.length > 0) {
             handleDrag(e.touches[0].clientX, e.touches[0].clientY);
         }
@@ -120,6 +168,7 @@ export function DirectionSelector({
 
     const handleTouchEnd = useCallback(() => {
         isDragging.current = null;
+        lastDeg.current = null;
         document.removeEventListener('touchmove', handleTouchMove);
         document.removeEventListener('touchend', handleTouchEnd);
     }, [handleTouchMove]);
@@ -127,6 +176,10 @@ export function DirectionSelector({
     const handleTouchStart = (type: 'min' | 'max') => (e: React.TouchEvent) => {
         e.stopPropagation();
         isDragging.current = type;
+
+        if (e.touches.length > 0) {
+            lastDeg.current = getDegreeFromEvent(e.touches[0].clientX, e.touches[0].clientY);
+        }
 
         // Ensure refs are fresh
         dragValues.current = { min: internalMin, max: internalMax };

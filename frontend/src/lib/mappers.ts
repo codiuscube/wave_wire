@@ -22,6 +22,13 @@ export interface Profile {
   updatedAt: string | null;
 }
 
+export interface AdminUserStats extends Profile {
+  spotsCount: number;
+  triggersCount: number;
+  alertsSent: number;
+  lastActivity: string | null;
+}
+
 export interface SurfSpot {
   id: string;
   name: string;
@@ -116,6 +123,20 @@ export interface UserPreferences {
   updatedAt: string | null;
 }
 
+export interface AlertSettings {
+  id: string;
+  userId: string;
+  windowMode: 'solar' | 'clock' | 'always';
+  windowStartTime: string;
+  windowEndTime: string;
+  activeDays: string[];
+  forecastAlertsEnabled: boolean;
+  twoDayForecastEnabled: boolean;
+  liveAlertsEnabled: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 // =============================================================================
 // DB Row Types (for reference)
 // =============================================================================
@@ -127,23 +148,78 @@ type DbTrigger = Tables<'triggers'>;
 type DbSentAlert = Tables<'sent_alerts'>;
 type DbAlertSchedule = Tables<'alert_schedules'>;
 type DbUserPreferences = Tables<'user_preferences'>;
+type DbAlertSettings = Tables<'alert_settings'>;
 
 // =============================================================================
 // Mappers: DB -> Frontend
 // =============================================================================
 
 export function mapProfile(row: DbProfile): Profile {
+  // Map database tier to frontend tier (unlimited -> premium, pro = Free Beta)
+  const tierMap: Record<string, Profile['subscriptionTier']> = {
+    free: 'free',
+    pro: 'pro',        // 'pro' in DB = Free Beta tier
+    premium: 'premium',
+    unlimited: 'premium', // DB stores 'unlimited', frontend uses 'premium'
+  };
+  const tier = tierMap[row.subscription_tier?.toLowerCase() ?? 'free'] ?? 'free';
+
   return {
     id: row.id,
     email: row.email,
     phone: row.phone,
     phoneVerified: row.phone_verified ?? false,
     homeAddress: row.home_address,
-    subscriptionTier: (row.subscription_tier as Profile['subscriptionTier']) ?? 'free',
+    subscriptionTier: tier,
     isAdmin: row.is_admin ?? false,
     onboardingCompleted: row.onboarding_completed ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+// Database row type for admin_user_stats view
+interface DbAdminUserStats {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  phone_verified: boolean | null;
+  home_address: string | null;
+  subscription_tier: string | null;
+  is_admin: boolean | null;
+  onboarding_completed: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+  spots_count: number;
+  triggers_count: number;
+  alerts_sent: number;
+  last_activity: string | null;
+}
+
+export function mapAdminUserStats(row: DbAdminUserStats): AdminUserStats {
+  const tierMap: Record<string, Profile['subscriptionTier']> = {
+    free: 'free',
+    pro: 'pro',
+    premium: 'premium',
+    unlimited: 'premium',
+  };
+  const tier = tierMap[row.subscription_tier ?? 'free'] ?? 'free';
+
+  return {
+    id: row.id,
+    email: row.email,
+    phone: row.phone,
+    phoneVerified: row.phone_verified ?? false,
+    homeAddress: row.home_address,
+    subscriptionTier: tier,
+    isAdmin: row.is_admin ?? false,
+    onboardingCompleted: row.onboarding_completed ?? false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    spotsCount: row.spots_count ?? 0,
+    triggersCount: row.triggers_count ?? 0,
+    alertsSent: row.alerts_sent ?? 0,
+    lastActivity: row.last_activity,
   };
 }
 
@@ -249,6 +325,22 @@ export function mapUserPreferences(row: DbUserPreferences): UserPreferences {
     includeEmoji: row.include_emoji ?? true,
     includeBuoyData: row.include_buoy_data ?? true,
     includeTraffic: row.include_traffic ?? false,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapAlertSettings(row: DbAlertSettings): AlertSettings {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    windowMode: row.window_mode ?? 'solar',
+    windowStartTime: row.window_start_time ?? '06:00',
+    windowEndTime: row.window_end_time ?? '22:00',
+    activeDays: row.active_days ?? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    forecastAlertsEnabled: row.forecast_alerts_enabled ?? false,
+    twoDayForecastEnabled: row.two_day_forecast_enabled ?? false,
+    liveAlertsEnabled: row.live_alerts_enabled ?? true,
+    createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
@@ -435,5 +527,34 @@ export function toDbSurfSpotUpdate(
   if (spot.buoyName !== undefined) update.buoy_name = spot.buoyName;
   if (spot.verified !== undefined) update.verified = spot.verified;
   if (spot.source !== undefined) update.source = spot.source;
+  return update;
+}
+
+export function toDbAlertSettingsInsert(
+  settings: Omit<AlertSettings, 'id' | 'createdAt' | 'updatedAt'>
+): TablesInsert<'alert_settings'> {
+  return {
+    user_id: settings.userId,
+    window_mode: settings.windowMode,
+    window_start_time: settings.windowStartTime,
+    window_end_time: settings.windowEndTime,
+    active_days: settings.activeDays,
+    forecast_alerts_enabled: settings.forecastAlertsEnabled,
+    two_day_forecast_enabled: settings.twoDayForecastEnabled,
+    live_alerts_enabled: settings.liveAlertsEnabled,
+  };
+}
+
+export function toDbAlertSettingsUpdate(
+  settings: Partial<Omit<AlertSettings, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
+): TablesUpdate<'alert_settings'> {
+  const update: TablesUpdate<'alert_settings'> = {};
+  if (settings.windowMode !== undefined) update.window_mode = settings.windowMode;
+  if (settings.windowStartTime !== undefined) update.window_start_time = settings.windowStartTime;
+  if (settings.windowEndTime !== undefined) update.window_end_time = settings.windowEndTime;
+  if (settings.activeDays !== undefined) update.active_days = settings.activeDays;
+  if (settings.forecastAlertsEnabled !== undefined) update.forecast_alerts_enabled = settings.forecastAlertsEnabled;
+  if (settings.twoDayForecastEnabled !== undefined) update.two_day_forecast_enabled = settings.twoDayForecastEnabled;
+  if (settings.liveAlertsEnabled !== undefined) update.live_alerts_enabled = settings.liveAlertsEnabled;
   return update;
 }

@@ -22,6 +22,7 @@ import {
   Button,
   Input,
   Badge,
+  DnaLogo,
 } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useProfile } from "../hooks";
@@ -84,7 +85,7 @@ export function AccountPage() {
   if (authLoading || isLoading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+        <DnaLogo className="w-16 h-16" />
       </div>
     );
   }

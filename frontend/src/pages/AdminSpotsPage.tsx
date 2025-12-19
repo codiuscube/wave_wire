@@ -12,7 +12,7 @@ import {
   Diskette,
   AltArrowDown,
 } from '@solar-icons/react';
-import { Button, Input, AddSpotModal } from "../components/ui";
+import { Button, Input, AddSpotModal, DnaLogo } from "../components/ui";
 import { AdminHeader } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
 import { useSurfSpots } from "../hooks";
@@ -161,7 +161,7 @@ export function AdminSpotsPage() {
   if (authLoading || spotsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+        <DnaLogo className="w-16 h-16" />
       </div>
     );
   }

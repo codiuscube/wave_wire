@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Bolt, QuestionCircle, AddCircle, CloseCircle, HamburgerMenu } from '@solar-icons/react';
-import { Reorder, useDragControls, AnimatePresence } from "framer-motion";
+import { Bolt, QuestionCircle, AddCircle, CloseCircle, HamburgerMenu, AltArrowDown } from '@solar-icons/react';
+import { Reorder, useDragControls, AnimatePresence, motion } from "framer-motion";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Select } from "./Select";
@@ -47,6 +47,14 @@ const degreesToCardinal = (deg: number): string => {
     const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
     const index = Math.round(deg / 22.5) % 16;
     return directions[index];
+};
+
+const formatDirectionRange = (min: number, max: number): string => {
+    if (min === 0 && max === 360) return "All Directions";
+    const start = degreesToCardinal(min);
+    const end = degreesToCardinal(max);
+    if (start === end) return start;
+    return `${start} - ${end}`;
 };
 
 // Format height range for templates
@@ -218,6 +226,67 @@ const buildTemplateFromFields = (fields: { id: string; enabled: boolean }[]) => 
         .join(" ");
 };
 
+// Collapsible Section Component
+interface CollapsibleSectionProps {
+    title: string;
+    step?: string;
+    description?: string;
+    isExpanded: boolean;
+    onToggle: (expanded: boolean) => void;
+    children: React.ReactNode;
+}
+
+function CollapsibleSection({ title, step, description, isExpanded, onToggle, children }: CollapsibleSectionProps) {
+    return (
+        <div className={`border rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'bg-card border-border' : 'bg-card border-border/50 hover:border-border'}`}>
+            <div
+                className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors ${isExpanded ? 'bg-muted/30' : ''}`}
+                onClick={() => onToggle(!isExpanded)}
+            >
+                <div className="flex items-center gap-3">
+                    {step && (
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                            {step}
+                        </span>
+                    )}
+                    <div className="flex flex-col">
+                        <span className="text-sm font-semibold">{title}</span>
+                        {description && <span className="text-sm text-muted-foreground">{description}</span>}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className={`text-xs uppercase tracking-wider font-semibold px-2 py-1 rounded-md transition-colors ${isExpanded ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                        {isExpanded ? 'Custom' : 'Any'}
+                    </span>
+                    <AltArrowDown
+                        size={16}
+                        className={`text-muted-foreground transition-transform duration-200 ${!isExpanded ? 'rotate-[-90deg]' : ''}`}
+                    />
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                    >
+                        <div className="p-4 pt-0 border-t border-border/50">
+                            <div className="pt-4">
+                                {children}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
 // Draggable field component with proper touch handling
 interface DraggableFieldProps {
     field: { id: string; enabled: boolean };
@@ -307,10 +376,10 @@ export function TriggerForm({
         maxPeriod: 12,
         minWindSpeed: 0,
         maxWindSpeed: 10,
-        minWindDirection: defaultMinWind,
-        maxWindDirection: defaultMaxWind,
-        minSwellDirection: defaultMinSwell,
-        maxSwellDirection: defaultMaxSwell,
+        minWindDirection: 0,
+        maxWindDirection: 360,
+        minSwellDirection: 0,
+        maxSwellDirection: 360,
         tideType: "any",
         minTideHeight: -2,
         maxTideHeight: 6,
@@ -319,6 +388,54 @@ export function TriggerForm({
         ...initialData,
         ...autofillData, // Apply autofill data (e.g. from existing sibling trigger)
     });
+
+
+
+    const [windExpanded, setWindExpanded] = useState(() => {
+        // Expand if wind speed or direction is restricted
+        const hasCustomSpeed = (initialData?.minWindSpeed !== undefined && initialData.minWindSpeed > 0) ||
+            (initialData?.maxWindSpeed !== undefined && initialData.maxWindSpeed < 20);
+
+        const hasCustomDirection = (initialData?.minWindDirection !== undefined && (initialData.minWindDirection !== 0 || initialData.maxWindDirection !== 360));
+
+        // Check autofill too
+        const autoSpeed = (autofillData?.minWindSpeed !== undefined && autofillData.minWindSpeed > 0) ||
+            (autofillData?.maxWindSpeed !== undefined && autofillData.maxWindSpeed < 20);
+        const autoDirection = (autofillData?.minWindDirection !== undefined && (autofillData.minWindDirection !== 0 || autofillData.maxWindDirection !== 360));
+
+        return hasCustomSpeed || hasCustomDirection || autoSpeed || autoDirection;
+    });
+
+    const [tideExpanded, setTideExpanded] = useState(() => {
+        return !!((initialData?.tideType && initialData.tideType !== 'any') || (autofillData?.tideType && autofillData.tideType !== 'any'));
+    });
+
+
+
+    const toggleWind = (expanded: boolean) => {
+        setWindExpanded(expanded);
+        if (!expanded) {
+            setTrigger(prev => ({
+                ...prev,
+                minWindSpeed: 0,
+                maxWindSpeed: 20,
+                minWindDirection: 0,
+                maxWindDirection: 360
+            }));
+        }
+    };
+
+    const toggleTide = (expanded: boolean) => {
+        setTideExpanded(expanded);
+        if (!expanded) {
+            setTrigger(prev => ({
+                ...prev,
+                tideType: 'any',
+                minTideHeight: -2,
+                maxTideHeight: 6
+            }));
+        }
+    };
 
     // Ensure condition is locked if prop is provided, even if initialData says otherwise (though usually they aligned)
     // AND Ensure we respect specific overrides
@@ -548,7 +665,7 @@ export function TriggerForm({
                     </div>
                 </section>
 
-                <div className="h-px bg-border/50" />
+
 
                 {/* Wave Conditions */}
                 <section className="space-y-6">
@@ -613,54 +730,67 @@ export function TriggerForm({
                     </div>
                 </section>
 
-                <div className="h-px bg-border/50" />
 
-                {/* Wind & Tide */}
-                <section className="space-y-6">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">3</span>
-                        Wind & Tide
-                    </h3>
 
-                    {/* Wind Speed */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-baseline">
-                            <label className="text-sm font-medium">Wind Speed</label>
-                            <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
-                                {trigger.minWindSpeed} - {trigger.maxWindSpeed} mph
-                            </span>
+                {/* Wind Criteria - Collapsible */}
+                <CollapsibleSection
+                    title="Wind"
+                    step="4"
+                    isExpanded={windExpanded}
+                    onToggle={toggleWind}
+                    description={!windExpanded ? "Any Wind" : `${trigger.minWindSpeed}-${trigger.maxWindSpeed}mph • ${formatDirectionRange(trigger.minWindDirection ?? 0, trigger.maxWindDirection ?? 360)}`}
+                >
+                    <div className="space-y-6">
+                        {/* Wind Speed */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-baseline">
+                                <label className="text-sm font-medium">Wind Speed</label>
+                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                    {trigger.minWindSpeed} - {trigger.maxWindSpeed} mph
+                                </span>
+                            </div>
+                            <div className="px-2">
+                                <DualSlider
+                                    min={0} max={20} step={1}
+                                    value={[trigger.minWindSpeed || 0, trigger.maxWindSpeed || 20]}
+                                    onValueChange={([min, max]) => setTrigger({ ...trigger, minWindSpeed: min, maxWindSpeed: max })}
+                                />
+                            </div>
                         </div>
-                        <div className="px-2">
-                            <DualSlider
-                                min={0} max={20} step={1}
-                                value={[trigger.minWindSpeed || 0, trigger.maxWindSpeed || 20]}
-                                onValueChange={([min, max]) => setTrigger({ ...trigger, minWindSpeed: min, maxWindSpeed: max })}
-                            />
+
+                        {/* Wind Direction */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-baseline">
+                                <label className="text-sm font-medium">Wind Direction</label>
+                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                    {trigger.minWindDirection}° - {trigger.maxWindDirection}°
+                                </span>
+                            </div>
+                            <div className="flex justify-center py-4 bg-muted/20 rounded-lg p-2">
+                                <DirectionSelector
+                                    min={trigger.minWindDirection || 0}
+                                    max={trigger.maxWindDirection || 360}
+                                    onChange={(min, max) => setTrigger({
+                                        ...trigger,
+                                        minWindDirection: min,
+                                        maxWindDirection: max
+                                    })}
+                                />
+                            </div>
                         </div>
                     </div>
+                </CollapsibleSection>
 
-                    {/* Wind Direction - NEW UI */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-baseline">
-                            <label className="text-sm font-medium">Wind Direction</label>
-                            <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
-                                {trigger.minWindDirection}° - {trigger.maxWindDirection}°
-                            </span>
-                        </div>
-                        <div className="flex justify-center py-4 bg-muted/20 rounded-lg p-2">
-                            <DirectionSelector
-                                min={trigger.minWindDirection || 0}
-                                max={trigger.maxWindDirection || 360}
-                                onChange={(min, max) => setTrigger({
-                                    ...trigger,
-                                    minWindDirection: min,
-                                    maxWindDirection: max
-                                })}
-                            />
-                        </div>
-                    </div>
 
-                    {/* Tide State */}
+
+                {/* Tide Criteria - Collapsible */}
+                <CollapsibleSection
+                    title="Tide"
+                    step="5"
+                    isExpanded={tideExpanded}
+                    onToggle={toggleTide}
+                    description={!tideExpanded ? "Any Tide" : `${trigger.tideType !== 'any' ? (trigger.tideType === 'rising' ? 'Rising' : 'Falling') : 'Any State'} • ${getTideLabel(trigger.minTideHeight ?? -2)} - ${getTideLabel(trigger.maxTideHeight ?? 6)}`}
+                >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium mb-1.5 block">Tide State</label>
@@ -693,15 +823,15 @@ export function TriggerForm({
                             </div>
                         </div>
                     </div>
-                </section>
+                </CollapsibleSection>
 
-                <div className="h-px bg-border/50" />
+
 
                 {/* Personality & Message */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold flex items-center gap-2">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">4</span>
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">6</span>
                             Notification Message
                         </h3>
                         <div className="group relative">
@@ -857,6 +987,6 @@ export function TriggerForm({
                     {initialData ? "Save Changes" : "Create Trigger"}
                 </Button>
             </div>
-        </div>
+        </div >
     );
 }
