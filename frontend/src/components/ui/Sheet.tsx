@@ -112,7 +112,7 @@ function MobileDrawer({
   children,
   title,
   description,
-  className,
+  className: _className,
   zIndex = 50,
   indicatorColor = 'bg-primary',
   header,
