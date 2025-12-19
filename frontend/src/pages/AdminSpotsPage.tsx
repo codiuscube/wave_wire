@@ -148,6 +148,7 @@ export function AdminSpotsPage() {
       buoyName: spot.buoyName || null,
       verified: true,
       source: 'official' as const,
+      localsKnowledge: null,
     };
 
     const { error } = await addSurfSpot(newSpot);
