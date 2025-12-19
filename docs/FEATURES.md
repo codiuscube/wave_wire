@@ -292,48 +292,66 @@ Post-beta paid tier:
 
 ---
 
-## Locals Knowledge (Planned)
+## Locals Knowledge
 
-Add "locals knowledge" to surf spots - admin-configurable parameters that define optimal conditions.
+Admin-configurable optimal conditions for surf spots. Used by the Magic Fill AI to generate better triggers when users request qualitative conditions like "alert me when it's good".
+
+**Route:** `/admin/spots/:id`
 
 ### Data Structure
 
 ```typescript
 interface SpotConditionTier {
-  minHeight: number;
-  maxHeight: number;
-  minPeriod: number;
-  swellDirections: string[];
-  offshoreWindDirections: string[];
-  maxWindSpeed: number;
+  minHeight?: number;
+  maxHeight?: number;
+  minPeriod?: number;
+  maxPeriod?: number;
+  minSwellDirection?: number;  // 0-360 degrees
+  maxSwellDirection?: number;  // 0-360 degrees
+  minWindDirection?: number;   // 0-360 degrees (offshore)
+  maxWindDirection?: number;   // 0-360 degrees (offshore)
+  maxWindSpeed?: number;
   optimalTideStates?: ('low' | 'mid' | 'high')[];
-  optimalTideDirection?: 'rising' | 'falling' | 'slack';
+  optimalTideDirection?: 'rising' | 'falling' | 'any';
 }
 
 interface SpotLocalsKnowledge {
-  epic?: SpotConditionTier;
-  good?: SpotConditionTier;
-  epicSummary?: string;  // Auto-generated or manual
-  goodSummary?: string;
-  notes?: string;        // Additional local tips
-  verified: boolean;
+  conditions?: SpotConditionTier;
+  summary?: string;   // Natural language description for AI context
+  notes?: string;     // Additional local tips
 }
-```
-
-### Example Output
-
-```
-"Best on W-NW swell 4-8ft @ 12s+, light offshore (E-NE winds), mid-tide rising"
 ```
 
 ### Admin UI
 
-- Two sections: Epic Conditions / Good Conditions
-- Wave height sliders (min/max)
-- Period slider
-- Direction multi-select toggles
-- Tide checkboxes
-- Live summary preview
+- **Wave Height**: Dual slider (0-15 ft)
+- **Wave Period**: Dual slider (0-20 s)
+- **Swell Direction**: Circular compass selector (degree range)
+- **Wind**: Collapsible section with max speed slider and direction selector
+- **Tide**: Collapsible section with multi-select (low/mid/high) and direction
+- **Summary**: Text area for natural language description
+- **Notes**: Text area for additional context
+
+### AI Integration
+
+The Magic Fill feature (`/api/parse-trigger`) fetches locals_knowledge server-side when a spotId is provided:
+
+1. **Privacy**: Locals knowledge is never exposed to the client - fetched server-side only
+2. **Partial Override**: User-specified values override locals_knowledge defaults
+3. **Qualitative Requests**: "Alert me when it's good" → uses locals_knowledge values
+4. **Mixed Requests**: "Good conditions but 2ft waves" → uses locals_knowledge except for height
+
+### Example
+
+Admin sets for Malibu:
+- Height: 3-6 ft
+- Period: 10-16 s
+- Swell Direction: 225° - 315° (SW to NW)
+- Max Wind: 10 mph
+- Tide: mid, high
+
+User types: "Alert me when it's firing"
+→ AI uses Malibu's locals_knowledge to fill in all parameters
 
 ---
 
@@ -354,6 +372,9 @@ interface SpotLocalsKnowledge {
 | `TriggerForm.tsx` | Configure trigger parameters |
 | `AddSpotModal.tsx` | Add spots from database |
 | `DirectionSelector.tsx` | Multi-select compass directions |
+| `WaveConditionsForm.tsx` | Reusable wave/wind/tide form |
+| `LocalsKnowledgeForm.tsx` | Admin locals knowledge editor |
+| `TideStateSelector.tsx` | Multi-select tide states |
 | `UserDetailModal.tsx` | Admin user detail view |
 | `UpgradeModal.tsx` | Subscription upgrade prompt |
 | `AdminHeader.tsx` | Admin panel navigation |
@@ -368,5 +389,6 @@ interface SpotLocalsKnowledge {
 | `AlertsPage.tsx` | `/alerts` |
 | `AccountPage.tsx` | `/account` |
 | `AdminSpotsPage.tsx` | `/admin/spots` |
+| `AdminSpotDetailPage.tsx` | `/admin/spots/:id` |
 | `UserManagementPage.tsx` | `/admin/users` |
 | `InvestmentPage.tsx` | `/admin/investment` |
