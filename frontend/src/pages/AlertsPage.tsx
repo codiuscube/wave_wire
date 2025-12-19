@@ -1,4 +1,4 @@
-import { Sun, Moon, Bolt, InfoCircle, ClockCircle, Radar, History3, Lock } from '@solar-icons/react';
+import { Sun, Moon, Bolt, InfoCircle, ClockCircle, History3, Lock } from '@solar-icons/react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlertSettings } from '../hooks';
 import {
