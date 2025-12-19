@@ -8,11 +8,13 @@ export interface ParseResult {
 
 /**
  * Primary parser: Call Claude Haiku API to parse natural language trigger description
+ * @param spotId - Optional spot ID used to fetch locals_knowledge server-side
  */
 export async function parseTriggerCommand(
   text: string,
   spotName: string,
-  spotRegion?: string
+  spotRegion?: string,
+  spotId?: string
 ): Promise<ParseResult> {
   try {
     const response = await fetch('/api/parse-trigger', {
@@ -22,6 +24,7 @@ export async function parseTriggerCommand(
         description: text.trim(),
         spotName,
         spotRegion,
+        spotId,
       }),
     });
 

@@ -3,7 +3,8 @@
  * Used by hooks to provide a consistent interface to UI components.
  */
 
-import type { Tables, TablesInsert, TablesUpdate } from '../types/supabase';
+import type { Tables, TablesInsert, TablesUpdate, Json } from '../types/supabase';
+import type { SpotLocalsKnowledge } from '../types';
 
 // =============================================================================
 // Frontend Types (camelCase)
@@ -41,6 +42,7 @@ export interface SurfSpot {
   buoyName: string | null;
   verified: boolean;
   source: 'official' | 'community' | 'user';
+  localsKnowledge: SpotLocalsKnowledge | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -132,6 +134,7 @@ export interface AlertSettings {
   activeDays: string[];
   forecastAlertsEnabled: boolean;
   twoDayForecastEnabled: boolean;
+  fiveDayForecastEnabled: boolean;
   liveAlertsEnabled: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -236,6 +239,7 @@ export function mapSurfSpot(row: DbSurfSpot): SurfSpot {
     buoyName: row.buoy_name,
     verified: row.verified ?? false,
     source: (row.source as SurfSpot['source']) ?? 'official',
+    localsKnowledge: row.locals_knowledge as SpotLocalsKnowledge | null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -339,6 +343,7 @@ export function mapAlertSettings(row: DbAlertSettings): AlertSettings {
     activeDays: row.active_days ?? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     forecastAlertsEnabled: row.forecast_alerts_enabled ?? false,
     twoDayForecastEnabled: row.two_day_forecast_enabled ?? false,
+    fiveDayForecastEnabled: row.five_day_forecast_enabled ?? false,
     liveAlertsEnabled: row.live_alerts_enabled ?? true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -527,6 +532,7 @@ export function toDbSurfSpotUpdate(
   if (spot.buoyName !== undefined) update.buoy_name = spot.buoyName;
   if (spot.verified !== undefined) update.verified = spot.verified;
   if (spot.source !== undefined) update.source = spot.source;
+  if (spot.localsKnowledge !== undefined) update.locals_knowledge = spot.localsKnowledge as Json;
   return update;
 }
 
@@ -541,6 +547,7 @@ export function toDbAlertSettingsInsert(
     active_days: settings.activeDays,
     forecast_alerts_enabled: settings.forecastAlertsEnabled,
     two_day_forecast_enabled: settings.twoDayForecastEnabled,
+    five_day_forecast_enabled: settings.fiveDayForecastEnabled,
     live_alerts_enabled: settings.liveAlertsEnabled,
   };
 }
@@ -555,6 +562,7 @@ export function toDbAlertSettingsUpdate(
   if (settings.activeDays !== undefined) update.active_days = settings.activeDays;
   if (settings.forecastAlertsEnabled !== undefined) update.forecast_alerts_enabled = settings.forecastAlertsEnabled;
   if (settings.twoDayForecastEnabled !== undefined) update.two_day_forecast_enabled = settings.twoDayForecastEnabled;
+  if (settings.fiveDayForecastEnabled !== undefined) update.five_day_forecast_enabled = settings.fiveDayForecastEnabled;
   if (settings.liveAlertsEnabled !== undefined) update.live_alerts_enabled = settings.liveAlertsEnabled;
   return update;
 }

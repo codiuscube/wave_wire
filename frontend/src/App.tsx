@@ -16,6 +16,7 @@ import {
   SignupPage,
   ResetPasswordPage,
   AdminSpotsPage,
+  AdminSpotDetailPage,
   UserManagementPage,
   InvestmentPage,
 } from './pages';
@@ -57,6 +58,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AdminSpotsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/spots/:id"
+                  element={
+                    <ProtectedRoute>
+                      <AdminSpotDetailPage />
                     </ProtectedRoute>
                   }
                 />

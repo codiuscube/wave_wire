@@ -7,6 +7,27 @@ export interface SurfSpot {
   timezone: string;
   region?: string;
   country?: string;
+  localsKnowledge?: SpotLocalsKnowledge;
+}
+
+export interface SpotConditionTier {
+  minHeight?: number;
+  maxHeight?: number;
+  minPeriod?: number;
+  maxPeriod?: number;
+  minSwellDirection?: number; // 0-360 degrees
+  maxSwellDirection?: number; // 0-360 degrees
+  minWindDirection?: number; // 0-360 degrees (offshore)
+  maxWindDirection?: number; // 0-360 degrees (offshore)
+  maxWindSpeed?: number;
+  optimalTideStates?: ('low' | 'mid' | 'high')[];
+  optimalTideDirection?: 'rising' | 'falling' | 'any';
+}
+
+export interface SpotLocalsKnowledge {
+  conditions?: SpotConditionTier;
+  summary?: string;
+  notes?: string;
 }
 
 export interface TriggerTier {
@@ -24,6 +45,14 @@ export interface TriggerTier {
   maxWindDirection: number; // 0-360
   minSwellDirection: number; // 0-360
   maxSwellDirection: number; // 0-360
+  // Optional secondary swell
+  secondarySwellEnabled?: boolean;
+  minSecondarySwellDirection?: number; // 0-360
+  maxSecondarySwellDirection?: number; // 0-360
+  minSecondarySwellHeight?: number;
+  maxSecondarySwellHeight?: number;
+  minSecondarySwellPeriod?: number;
+  maxSecondarySwellPeriod?: number;
   tideType: 'rising' | 'falling' | 'any';
   minTideHeight: number;
   maxTideHeight: number;
