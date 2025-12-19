@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone } from 'lucide-react';
+import { Phone } from '@solar-icons/react';
 
 interface PhoneInputProps {
   value: string;
@@ -43,7 +43,7 @@ export function PhoneInput({ value, onChange, disabled }: PhoneInputProps) {
   return (
     <div className="relative">
       <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400">
-        <Phone className="w-5 h-5" />
+        <Phone weight="Bold" size={20} />
         <span className="text-sm font-medium">+1</span>
       </div>
       <input

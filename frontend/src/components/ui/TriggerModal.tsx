@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { X, Zap } from "lucide-react";
+import { CloseCircle, Bolt } from '@solar-icons/react';
 import type { TriggerTier, SurfSpot } from "../../types";
 import { TriggerForm } from "./TriggerForm";
 
@@ -10,6 +10,8 @@ interface TriggerModalProps {
     spotId: string;
     spot?: SurfSpot;
     triggerToEdit?: TriggerTier; // Optional: if provided, we are editing
+    lockedCondition?: 'epic' | 'good' | 'fair';
+    autofillData?: Partial<TriggerTier>;
 }
 
 export function TriggerModal({
@@ -19,6 +21,8 @@ export function TriggerModal({
     spotId,
     spot,
     triggerToEdit,
+    lockedCondition,
+    autofillData,
 }: TriggerModalProps) {
     if (!isOpen) return null;
 
@@ -41,7 +45,7 @@ export function TriggerModal({
                 <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Zap className="w-6 h-6 text-primary" />
+                            <Bolt weight="BoldDuotone" size={24} className="text-primary" />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold">
@@ -56,7 +60,7 @@ export function TriggerModal({
                         onClick={onClose}
                         className="p-2 hover:bg-secondary/50 rounded-md transition-colors text-muted-foreground hover:text-foreground"
                     >
-                        <X className="w-5 h-5" />
+                        <CloseCircle weight="Bold" size={20} />
                     </button>
                 </div>
 
@@ -66,6 +70,8 @@ export function TriggerModal({
                     spotId={spotId}
                     spot={spot}
                     initialData={triggerToEdit}
+                    lockedCondition={lockedCondition}
+                    autofillData={autofillData}
                     onSubmit={handleSubmit}
                     className="flex-1 overflow-hidden"
                 />

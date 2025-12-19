@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { CloseCircle } from '@solar-icons/react';
 import type { Spot } from "../SpotCard";
 import { AddSpotContent } from "./AddSpotContent";
 
@@ -52,7 +52,7 @@ export function AddSpotModal({
             onClick={onClose}
             className="p-2 hover:bg-secondary/50 rounded-md transition-colors text-muted-foreground hover:text-foreground"
           >
-            <X className="w-6 h-6" />
+            <CloseCircle weight="BoldDuotone" size={24} />
           </button>
         </div>
 

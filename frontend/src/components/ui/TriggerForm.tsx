@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Zap, HelpCircle, Plus, X, GripVertical } from "lucide-react";
+import { Bolt, QuestionCircle, AddCircle, CloseCircle, HamburgerMenu } from '@solar-icons/react';
 import { Reorder, useDragControls, AnimatePresence } from "framer-motion";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -249,7 +249,7 @@ function DraggableField({ field, fieldConfig, onRemove }: DraggableFieldProps) {
                 className="p-2 -m-1 cursor-grab active:cursor-grabbing touch-none"
                 onPointerDown={(e) => controls.start(e)}
             >
-                <GripVertical className="w-4 h-4 text-muted-foreground" />
+                <HamburgerMenu weight="Bold" size={16} className="text-muted-foreground" />
             </div>
 
             <span className="flex-1 text-sm font-medium">{fieldConfig.label}</span>
@@ -261,7 +261,7 @@ function DraggableField({ field, fieldConfig, onRemove }: DraggableFieldProps) {
                     className="p-2 -m-1 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors"
                     type="button"
                 >
-                    <X className="w-4 h-4" />
+                    <CloseCircle weight="Bold" size={16} />
                 </button>
             )}
         </Reorder.Item>
@@ -272,6 +272,8 @@ interface TriggerFormProps {
     initialData?: TriggerTier;
     spotId: string;
     spot?: SurfSpot; // Optional spot object for defaulting logic
+    lockedCondition?: 'epic' | 'good' | 'fair';
+    autofillData?: Partial<TriggerTier>;
     onSubmit: (trigger: TriggerTier) => void;
     className?: string;
 }
@@ -281,6 +283,8 @@ export function TriggerForm({
     spotId,
     spot,
     onSubmit,
+    lockedCondition,
+    autofillData,
     className = "",
 }: TriggerFormProps) {
     // Calculate defaults (only used on first render if no initialData)
@@ -296,7 +300,7 @@ export function TriggerForm({
     const [trigger, setTrigger] = useState<Partial<TriggerTier>>({
         name: "",
         emoji: "🌊",
-        condition: "good",
+        condition: lockedCondition || "good", // Use locked condition if provided
         minHeight: 2,
         maxHeight: 5,
         minPeriod: 6,
@@ -312,8 +316,17 @@ export function TriggerForm({
         maxTideHeight: 6,
         messageTemplate: "Surf's up at [Spot Name]! [Height]ft @ [Period]s ([Direction]). Wind is [Wind Speed]mph [Wind Direction].",
         spotId,
-        ...initialData
+        ...initialData,
+        ...autofillData, // Apply autofill data (e.g. from existing sibling trigger)
     });
+
+    // Ensure condition is locked if prop is provided, even if initialData says otherwise (though usually they aligned)
+    // AND Ensure we respect specific overrides
+    useEffect(() => {
+        if (lockedCondition) {
+            setTrigger(prev => ({ ...prev, condition: lockedCondition }));
+        }
+    }, [lockedCondition]);
 
     const [notificationStyle, setNotificationStyle] = useState<"local" | "hype" | "custom">(
         initialData?.notificationStyle || "local"
@@ -361,18 +374,23 @@ export function TriggerForm({
                 messageTemplate: initialData.messageTemplate || "Surf's up at [Spot Name]! [Height]ft @ [Period]s ([Direction]). Wind is [Wind Speed]mph [Wind Direction]."
             });
         } else {
-            // If switching to "Add" mode (no initialData), resetting to defaults might be desired
-            // But usually this component mounts fresh. 
-            // If we want to support dynamic spot switching while in "Add" mode:
+            // New Trigger Mode
+            // Logic: 
+            // 1. Start with defaults
+            // 2. Apply autofillData if present
+            // 3. Enforce lockedCondition
+
             setTrigger(prev => ({
                 ...prev,
                 minWindDirection: defaultMinWind,
                 maxWindDirection: defaultMaxWind,
                 minSwellDirection: defaultMinSwell,
-                maxSwellDirection: defaultMaxSwell
+                maxSwellDirection: defaultMaxSwell,
+                ...autofillData, // Apply autofill overrides (directions, heights etc)
+                condition: lockedCondition || prev.condition || "good" // Enforce lock
             }));
         }
-    }, [initialData, spot, defaultMinWind, defaultMaxWind, defaultMinSwell, defaultMaxSwell]);
+    }, [initialData, spot, defaultMinWind, defaultMaxWind, defaultMinSwell, defaultMaxSwell, autofillData, lockedCondition]);
 
     const handleSubmit = () => {
         if (!trigger.name?.trim()) return;
@@ -524,6 +542,7 @@ export function TriggerForm({
                                 options={conditionOptions}
                                 value={trigger.condition}
                                 onChange={(v) => setTrigger({ ...trigger, condition: v as "fair" | "good" | "epic" })}
+                                disabled={!!lockedCondition}
                             />
                         </div>
                     </div>
@@ -686,7 +705,7 @@ export function TriggerForm({
                             Notification Message
                         </h3>
                         <div className="group relative">
-                            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                            <QuestionCircle weight="Bold" size={16} className="text-muted-foreground cursor-help" />
                             <div className="absolute right-0 bottom-full mb-2 w-64 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg hidden group-hover:block z-50 border">
                                 Customize the text message you'll receive when this trigger fires.
                             </div>
@@ -798,7 +817,7 @@ export function TriggerForm({
                                                                 type="button"
                                                                 className="h-10 px-3 rounded-lg border border-dashed border-muted-foreground/30 text-sm hover:bg-muted/50 active:scale-95 transition-all flex items-center gap-2 text-muted-foreground hover:text-foreground hover:border-primary/50"
                                                             >
-                                                                <Plus className="w-4 h-4" />
+                                                                <AddCircle weight="Bold" size={16} />
                                                                 {fieldConfig.label}
                                                             </button>
                                                         );
@@ -824,7 +843,7 @@ export function TriggerForm({
             <div className="p-6 border-t border-border mt-auto bg-card space-y-4">
                 {/* Summary */}
                 <div className="bg-muted/30 p-3 rounded-md text-sm text-muted-foreground leading-relaxed">
-                    <Zap className="w-3.5 h-3.5 inline-block mr-1.5 text-primary mb-0.5" />
+                    <Bolt weight="Bold" size={14} className="inline-block mr-1.5 text-primary mb-0.5" />
                     <span dangerouslySetInnerHTML={{ __html: generateTriggerSummary(trigger) }} />
                 </div>
 
@@ -834,7 +853,7 @@ export function TriggerForm({
                     disabled={!trigger.name?.trim()}
                     size="lg"
                 >
-                    <Zap className="w-4 h-4 mr-2" />
+                    <Bolt weight="Bold" size={16} className="mr-2" />
                     {initialData ? "Save Changes" : "Create Trigger"}
                 </Button>
             </div>

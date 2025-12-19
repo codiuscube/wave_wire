@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSpotName } from '../../contexts/LocationContext';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowRightUp } from '@solar-icons/react';
 
 function getSlides(spotName: string) {
   return [
@@ -163,7 +163,7 @@ export function HowItWorks() {
                     <span className="text-brand-rogue">//</span> {s.description}
                   </p>
                   <div className="mt-4 flex items-center gap-2 text-brand-acid font-mono text-xs cursor-pointer hover:underline">
-                    CONFIGURE_TRIGGER <ArrowUpRight className="w-4 h-4" />
+                    CONFIGURE_TRIGGER <ArrowRightUp weight="Bold" size={16} />
                   </div>
                 </div>
               </div>

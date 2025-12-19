@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { X, Waves } from 'lucide-react';
+import { CloseCircle, Water } from '@solar-icons/react';
 import { Button } from './Button';
 
 interface ComingSoonModalProps {
@@ -24,12 +24,12 @@ export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
           onClick={onClose}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
         >
-          <X className="w-5 h-5" />
+          <CloseCircle weight="Bold" size={20} />
         </button>
 
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-            <Waves className="w-8 h-8 text-primary" />
+            <Water weight="BoldDuotone" size={32} className="text-primary" />
           </div>
 
           <h2 className="text-2xl font-bold mb-3">Coming Soon</h2>

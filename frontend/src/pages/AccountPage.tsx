@@ -2,18 +2,17 @@ import { useState, useEffect } from "react";
 import {
   User,
   Phone,
-  Mail,
+  Letter,
   Shield,
-  CreditCard,
-  X,
-  Check,
-  MapPin,
-  MessageSquare,
+  Card as CardIcon,
+  CloseCircle,
+  VerifiedCheck,
+  MapPoint,
+  ChatSquare,
   Infinity,
-  Navigation,
+  Routing,
   Home,
-  Loader2,
-} from "lucide-react";
+} from '@solar-icons/react';
 import {
   Card,
   CardHeader,
@@ -85,7 +84,7 @@ export function AccountPage() {
   if (authLoading || isLoading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -116,7 +115,7 @@ export function AccountPage() {
       <Card className="mb-6 lg:mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <User className="w-5 h-5" />
+            <User weight="Bold" size={20} />
             Contact Information
           </CardTitle>
           <CardDescription className="text-sm">Where we send your surf alerts</CardDescription>
@@ -126,7 +125,7 @@ export function AccountPage() {
           <div>
             <label className="text-sm font-medium mb-2 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
+                <Phone weight="Bold" size={16} />
                 Phone Number (SMS)
               </span>
               {phoneVerified ? (
@@ -154,7 +153,7 @@ export function AccountPage() {
           <div>
             <label className="text-sm font-medium mb-2 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
+                <Letter weight="Bold" size={16} />
                 Email Address
               </span>
               {emailVerified ? (
@@ -185,7 +184,7 @@ export function AccountPage() {
       <Card className="mb-6 lg:mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Home className="w-5 h-5" />
+            <Home weight="Bold" size={20} />
             Home Address
           </CardTitle>
           <CardDescription className="text-sm">
@@ -201,7 +200,7 @@ export function AccountPage() {
               className="flex-1"
             />
             <Button variant="outline" className="w-full sm:w-auto">
-              <Navigation className="w-4 h-4 mr-2" />
+              <Routing weight="Bold" size={16} className="mr-2" />
               Verify
             </Button>
           </div>
@@ -222,7 +221,7 @@ export function AccountPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 gap-3 border border-border bg-secondary/20 rounded-lg">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center">
-                <Phone className="w-5 h-5 text-foreground" />
+                <Phone weight="Bold" size={20} className="text-foreground" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -241,7 +240,7 @@ export function AccountPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 gap-3 border border-border rounded-lg">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <Mail className="w-5 h-5 text-muted-foreground" />
+                <Letter weight="Bold" size={20} className="text-muted-foreground" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -273,9 +272,7 @@ export function AccountPage() {
       >
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard
-              className="w-5 h-5 text-foreground"
-            />
+            <CardIcon weight="Bold" size={20} className="text-foreground" />
             Subscription
           </CardTitle>
           <CardDescription>
@@ -318,7 +315,7 @@ export function AccountPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
+            <Shield weight="Bold" size={20} />
             Security & Privacy
           </CardTitle>
         </CardHeader>
@@ -353,7 +350,7 @@ export function AccountPage() {
         >
           {isSaving ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <div className="w-4 h-4 mr-2 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
               Saving...
             </>
           ) : (
@@ -385,7 +382,7 @@ export function AccountPage() {
                 onClick={() => setShowPricingModal(false)}
                 className="p-2 hover:bg-secondary rounded-md transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseCircle weight="Bold" size={20} />
               </button>
             </div>
 
@@ -414,19 +411,19 @@ export function AccountPage() {
 
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <MapPoint weight="Bold" size={16} className="text-muted-foreground" />
                     <span>1 spot</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-muted-foreground" />
+                    <VerifiedCheck weight="Bold" size={16} className="text-muted-foreground" />
                     <span>1 trigger</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    <ChatSquare weight="Bold" size={16} className="text-muted-foreground" />
                     <span>5 SMS alerts per month</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <Letter weight="Bold" size={16} className="text-muted-foreground" />
                     <span>Email fallback after SMS limit</span>
                   </li>
                 </ul>
@@ -456,19 +453,19 @@ export function AccountPage() {
 
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2 text-sm">
-                    <Infinity className="w-4 h-4 text-primary" />
+                    <Infinity weight="Bold" size={16} className="text-primary" />
                     <span className="font-medium">Unlimited spots</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Infinity className="w-4 h-4 text-primary" />
+                    <Infinity weight="Bold" size={16} className="text-primary" />
                     <span className="font-medium">Unlimited triggers</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Infinity className="w-4 h-4 text-primary" />
+                    <Infinity weight="Bold" size={16} className="text-primary" />
                     <span className="font-medium">Unlimited SMS alerts</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-primary" />
+                    <VerifiedCheck weight="Bold" size={16} className="text-primary" />
                     <span>All alert types</span>
                   </li>
                 </ul>

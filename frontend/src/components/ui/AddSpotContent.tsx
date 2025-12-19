@@ -1,14 +1,13 @@
 import { useState, useMemo } from "react";
 import {
-    MapPin,
-    Navigation,
-    Search,
-    Plus,
-    Check,
+    MapPoint,
+    Routing,
+    Magnifer,
+    AddCircle,
+    VerifiedCheck,
     CheckCircle,
-    ChevronDown,
-    Loader2,
-} from "lucide-react";
+    AltArrowDown,
+} from '@solar-icons/react';
 import { Button } from "./Button";
 import { Input } from "./Input";
 import type { Spot } from "../SpotCard";
@@ -115,7 +114,7 @@ export function AddSpotContent({
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
                         }`}
                 >
-                    <MapPin className="w-4 h-4" />
+                    <MapPoint weight="Bold" size={16} />
                     Popular Spots
                 </button>
                 <button
@@ -125,7 +124,7 @@ export function AddSpotContent({
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
                         }`}
                 >
-                    <Navigation className="w-4 h-4" />
+                    <Routing weight="Bold" size={16} />
                     Custom Location
                 </button>
             </div>
@@ -144,7 +143,7 @@ export function AddSpotContent({
                                 >
                                     <span>{currentRegionLabel.flag}</span>
                                     <span className="uppercase tracking-wider">{currentRegionLabel.label}</span>
-                                    <ChevronDown className={`w-4 h-4 transition-transform ${regionDropdownOpen ? 'rotate-180' : ''}`} />
+                                    <AltArrowDown weight="Bold" size={16} className={`transition-transform ${regionDropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 {regionDropdownOpen && (
@@ -177,7 +176,7 @@ export function AddSpotContent({
 
                             {/* Search Input */}
                             <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Magnifer weight="Bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder={`SEARCH ${currentRegionLabel.count} SPOTS...`}
                                     value={searchQuery}
@@ -192,7 +191,7 @@ export function AddSpotContent({
                             {searchQuery.length < MIN_SEARCH_LENGTH ? (
                                 // Show search prompt before user types
                                 <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
-                                    <Search className="w-8 h-8 mx-auto mb-4 text-muted-foreground/30" />
+                                    <Magnifer weight="BoldDuotone" size={32} className="mx-auto mb-4 text-muted-foreground/30" />
                                     <p className="font-mono text-sm text-muted-foreground/70">
                                         Start typing to search {currentRegionLabel.count} spots...
                                     </p>
@@ -203,7 +202,7 @@ export function AddSpotContent({
                             ) : isLoading ? (
                                 // Show loading state
                                 <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
-                                    <Loader2 className="w-8 h-8 mx-auto mb-4 text-muted-foreground/30 animate-spin" />
+                                    <div className="w-8 h-8 mx-auto mb-4 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
                                     <p className="font-mono text-sm text-muted-foreground/70">
                                         Searching spots...
                                     </p>
@@ -230,9 +229,9 @@ export function AddSpotContent({
                                                             }`}
                                                     >
                                                         {spot.verified ? (
-                                                            <CheckCircle className="w-4 h-4 text-primary" />
+                                                            <CheckCircle weight="Bold" size={16} className="text-primary" />
                                                         ) : (
-                                                            <MapPin className="w-4 h-4 text-foreground" />
+                                                            <MapPoint weight="Bold" size={16} className="text-foreground" />
                                                         )}
                                                     </div>
                                                     <div className="min-w-0">
@@ -248,7 +247,7 @@ export function AddSpotContent({
                                                 </div>
                                                 {saved ? (
                                                     <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/50">
-                                                        <Check className="w-4 h-4 text-primary" />
+                                                        <VerifiedCheck weight="Bold" size={16} className="text-primary" />
                                                     </div>
                                                 ) : (
                                                     <Button
@@ -257,7 +256,7 @@ export function AddSpotContent({
                                                         onClick={() => handleAddSpot(spot)}
                                                         className="shrink-0 font-mono text-xs uppercase"
                                                     >
-                                                        <Plus className="w-4 h-4 mr-2" />
+                                                        <AddCircle weight="Bold" size={16} className="mr-2" />
                                                         Add
                                                     </Button>
                                                 )}
@@ -363,7 +362,7 @@ export function AddSpotContent({
                             onClick={handleAddCustomSpot}
                             disabled={!customSpot.name || !customSpot.lat || !customSpot.lon}
                         >
-                            <Plus className="w-4 h-4 mr-2" />
+                            <AddCircle weight="Bold" size={16} className="mr-2" />
                             INITIALIZE SPOT
                         </Button>
                     </div>

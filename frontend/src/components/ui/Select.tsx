@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { AltArrowDown } from '@solar-icons/react';
 
 interface Option {
   value: string;
@@ -14,6 +14,7 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   variant?: 'default' | 'ghost' | 'model';
+  disabled?: boolean;
 }
 
 export function Select({
@@ -22,7 +23,8 @@ export function Select({
   onChange,
   placeholder = 'Select...',
   className = '',
-  variant = 'default'
+  variant = 'default',
+  disabled = false
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -50,13 +52,14 @@ export function Select({
     <div ref={ref} className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`${baseButtonClasses} ${variantClasses}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`${baseButtonClasses} ${variantClasses} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <span className={selectedOption ? '' : 'text-muted-foreground'}>
           {selectedOption?.shortLabel || selectedOption?.label || placeholder}
         </span>
-        <ChevronDown className={`h-3 w-3 opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <AltArrowDown weight="Bold" size={12} className={`opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (

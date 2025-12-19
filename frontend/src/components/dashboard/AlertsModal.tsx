@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { CloseCircle } from '@solar-icons/react';
 import { AlertCard, type Alert } from './AlertCard';
 
 interface AlertsModalProps {
@@ -69,7 +69,7 @@ export function AlertsModal({ isOpen, onClose, initialAlerts }: AlertsModalProps
                         onClick={onClose}
                         className="p-2 hover:bg-secondary/50 rounded-md transition-colors text-muted-foreground hover:text-foreground"
                     >
-                        <X className="w-6 h-6" />
+                        <CloseCircle weight="BoldDuotone" size={24} />
                     </button>
                 </div>
 
@@ -88,7 +88,7 @@ export function AlertsModal({ isOpen, onClose, initialAlerts }: AlertsModalProps
                             >
                                 {loading ? (
                                     <span className="flex items-center gap-2">
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                                         DECODING...
                                     </span>
                                 ) : (

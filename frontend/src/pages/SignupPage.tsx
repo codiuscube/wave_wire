@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { CheckCircle } from '@solar-icons/react';
 import { Logo } from '../components/ui/Logo';
 
 export function SignupPage() {
@@ -45,7 +45,7 @@ export function SignupPage() {
         <div className="w-full max-w-md text-center">
           <div className="bg-card border border-border rounded-2xl p-8">
             <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-foreground" />
+              <CheckCircle weight="BoldDuotone" size={32} className="text-foreground" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Check your email</h2>
             <p className="text-muted-foreground mb-6">
@@ -137,7 +137,7 @@ export function SignupPage() {
           >
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                 Creating account...
               </>
             ) : (
