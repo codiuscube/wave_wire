@@ -16,6 +16,8 @@ export interface Profile {
   phone: string | null;
   phoneVerified: boolean;
   homeAddress: string | null;
+  homeLat: number | null;
+  homeLon: number | null;
   subscriptionTier: 'free' | 'pro' | 'premium';
   isAdmin: boolean;
   onboardingCompleted: boolean;
@@ -173,6 +175,8 @@ export function mapProfile(row: DbProfile): Profile {
     phone: row.phone,
     phoneVerified: row.phone_verified ?? false,
     homeAddress: row.home_address,
+    homeLat: (row as Record<string, unknown>).home_lat as number | null ?? null,
+    homeLon: (row as Record<string, unknown>).home_lon as number | null ?? null,
     subscriptionTier: tier,
     isAdmin: row.is_admin ?? false,
     onboardingCompleted: row.onboarding_completed ?? false,
@@ -214,6 +218,8 @@ export function mapAdminUserStats(row: DbAdminUserStats): AdminUserStats {
     phone: row.phone,
     phoneVerified: row.phone_verified ?? false,
     homeAddress: row.home_address,
+    homeLat: (row as unknown as Record<string, unknown>).home_lat as number | null ?? null,
+    homeLon: (row as unknown as Record<string, unknown>).home_lon as number | null ?? null,
     subscriptionTier: tier,
     isAdmin: row.is_admin ?? false,
     onboardingCompleted: row.onboarding_completed ?? false,
@@ -356,12 +362,14 @@ export function mapAlertSettings(row: DbAlertSettings): AlertSettings {
 
 export function toDbProfileUpdate(
   profile: Partial<Omit<Profile, 'id' | 'isAdmin' | 'subscriptionTier' | 'createdAt' | 'updatedAt'>>
-): TablesUpdate<'profiles'> {
-  const update: TablesUpdate<'profiles'> = {};
+): TablesUpdate<'profiles'> & { home_lat?: number | null; home_lon?: number | null } {
+  const update: TablesUpdate<'profiles'> & { home_lat?: number | null; home_lon?: number | null } = {};
   if (profile.email !== undefined) update.email = profile.email;
   if (profile.phone !== undefined) update.phone = profile.phone;
   if (profile.phoneVerified !== undefined) update.phone_verified = profile.phoneVerified;
   if (profile.homeAddress !== undefined) update.home_address = profile.homeAddress;
+  if (profile.homeLat !== undefined) update.home_lat = profile.homeLat;
+  if (profile.homeLon !== undefined) update.home_lon = profile.homeLon;
   if (profile.onboardingCompleted !== undefined) update.onboarding_completed = profile.onboardingCompleted;
   return update;
 }

@@ -11,7 +11,6 @@ import {
   MapPoint,
   ChatSquare,
   Infinity,
-  Routing,
   Home,
   Logout,
 } from '@solar-icons/react';
@@ -25,6 +24,7 @@ import {
   Input,
   Badge,
   DnaLogo,
+  AddressAutocomplete,
 } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useProfile } from "../hooks";
@@ -38,6 +38,8 @@ export function AccountPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [homeAddress, setHomeAddress] = useState("");
+  const [homeLat, setHomeLat] = useState<number | null>(null);
+  const [homeLon, setHomeLon] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -49,6 +51,8 @@ export function AccountPage() {
       setPhone(profile.phone || "");
       setEmail(profile.email || "");
       setHomeAddress(profile.homeAddress || "");
+      setHomeLat(profile.homeLat);
+      setHomeLon(profile.homeLon);
     }
   }, [profile]);
 
@@ -62,7 +66,9 @@ export function AccountPage() {
   const hasChanges =
     phone !== (profile?.phone || "") ||
     email !== (profile?.email || "") ||
-    homeAddress !== (profile?.homeAddress || "");
+    homeAddress !== (profile?.homeAddress || "") ||
+    homeLat !== (profile?.homeLat ?? null) ||
+    homeLon !== (profile?.homeLon ?? null);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -73,6 +79,8 @@ export function AccountPage() {
       phone: phone || null,
       email: email || null,
       homeAddress: homeAddress || null,
+      homeLat,
+      homeLon,
     });
 
     setIsSaving(false);
@@ -220,25 +228,22 @@ export function AccountPage() {
                 Home Address
               </CardTitle>
               <CardDescription className="text-sm">
-                Used for traffic estimates in all alerts. We never share this data.
+                Used to show nearby surf spots. We never share this data.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Input
-                  placeholder="123 Main St, Houston, TX"
-                  value={homeAddress}
-                  onChange={(e) => setHomeAddress(e.target.value)}
-                  className="flex-1"
-                />
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <Routing weight="Bold" size={16} className="mr-2" />
-                  Verify
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
+              <AddressAutocomplete
+                value={homeAddress}
+                onChange={setHomeAddress}
+                onAddressSelect={(suggestion) => {
+                  setHomeLat(suggestion.lat);
+                  setHomeLon(suggestion.lon);
+                }}
+                placeholder="Start typing your address..."
+              />
+              {/* <p className="text-xs text-muted-foreground mt-2">
                 Optional. Leave blank if you don't want traffic info in alerts.
-              </p>
+              </p> */}
             </CardContent>
           </Card>
         </div>
