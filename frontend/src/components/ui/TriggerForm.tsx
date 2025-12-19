@@ -7,6 +7,7 @@ import { Select } from "./Select";
 import { DualSlider } from "./DualSlider";
 import { SegmentedControl } from "./SegmentedControl";
 import { DirectionSelector } from "./DirectionSelector";
+import { NaturalLanguageTriggerInput } from "./NaturalLanguageTriggerInput";
 import type { TriggerTier, SurfSpot } from "../../types";
 import { getOffshoreWindow, getSwellWindow } from "../../data/noaaBuoys";
 import { generateTriggerSummary, getTideLabel } from "../../lib/triggerUtils";
@@ -627,9 +628,36 @@ export function TriggerForm({
         });
     }, []);
 
+    // Handler for AI-parsed trigger data
+    const handleAIParsed = useCallback((parsed: Partial<TriggerTier>) => {
+        setTrigger(prev => ({ ...prev, ...parsed }));
+
+        // Auto-expand wind section if wind values were parsed
+        if (parsed.minWindSpeed !== undefined || parsed.maxWindSpeed !== undefined ||
+            parsed.minWindDirection !== undefined || parsed.maxWindDirection !== undefined) {
+            setWindExpanded(true);
+        }
+
+        // Auto-expand tide section if tide values were parsed
+        if (parsed.tideType !== undefined || parsed.minTideHeight !== undefined ||
+            parsed.maxTideHeight !== undefined) {
+            setTideExpanded(true);
+        }
+    }, []);
+
     return (
         <div className={`flex flex-col h-full bg-card ${className}`}>
             <div className="flex-1 overflow-y-auto p-6 space-y-8 min-h-0">
+                {/* AI Assistant - Only for new triggers */}
+                {!initialData && (
+                    <NaturalLanguageTriggerInput
+                        spotName={spotName}
+                        spotRegion={spot?.region}
+                        onParsed={handleAIParsed}
+                        autoFocus
+                    />
+                )}
+
                 {/* Basic Info */}
                 <section className="space-y-4">
                     <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -643,7 +671,7 @@ export function TriggerForm({
                                 value={trigger.name}
                                 onChange={(e) => setTrigger({ ...trigger, name: e.target.value })}
                                 placeholder="e.g. Dawn Patrol"
-                                autoFocus
+                                autoFocus={!!initialData}
                             />
                         </div>
                         <div>

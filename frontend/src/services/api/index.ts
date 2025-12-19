@@ -30,3 +30,10 @@ export {
   type HourlyTide,
   type TideFetchResult,
 } from './noaaTide';
+
+// AI trigger parsing service
+export {
+  parseTriggerCommand,
+  parseTriggerKeywords,
+  type ParseResult,
+} from './aiService';
