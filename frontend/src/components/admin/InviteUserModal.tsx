@@ -30,7 +30,8 @@ export function InviteUserModal({ onClose, onSuccess }: InviteUserModalProps) {
                 options: {
                     shouldCreateUser: true,
                     // Redirect them to dashboard/account to set up their profile
-                    emailRedirectTo: `${window.location.origin}/dashboard/account`,
+                    // Use VITE_SITE_URL in production to avoid localhost redirects
+                    emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/dashboard/account`,
                     data: {
                         subscription_tier: tier,
                     },
