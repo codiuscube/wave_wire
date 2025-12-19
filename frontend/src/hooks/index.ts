@@ -7,3 +7,4 @@ export { useProfile } from './useProfile';
 export { useUserSpots } from './useUserSpots';
 export { useSurfSpots } from './useSurfSpots';
 export { useSentAlerts } from './useSentAlerts';
+export { useTriggers } from './useTriggers';

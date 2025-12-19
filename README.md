@@ -1,164 +1,33 @@
 # Wave-Wire
 
-The invisible surf check. No apps to check. No forecasts to analyze. Just texts from your surf buddy when it's actually worth the drive.
+The invisible surf check. No apps to open, no feeds to scroll - just a buddy that texts you when it's actually good.
 
-## Vision
+## Quick Start
 
-Wave-Wire is a lightweight, "invisible" surf alert system that runs in the background and texts you only when your spot is actually firing. It combines real data (NOAA buoys, Open-Meteo) with a personality engine to deliver alerts that feel like a text from a local buddy.
-
-**The Trust Metric**: Users don't double-check Surfline after receiving a Home Break alert. They just grab their keys.
-
-## 🚀 Getting Started
-
-This project is currently a **Frontend-only MVP**. It uses React, Vite, and Tailwind CSS.
-
-### Prerequisites
-- Node.js (v18+ recommended)
-- npm
-
-### Installation
-
-1.  **Navigate to the frontend directory:**
-    ```bash
-    cd frontend
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Start the development server:**
-    ```bash
-    npm run dev
-    ```
-    The site will be available at `http://localhost:5173`.
-
-## 📂 Project Structure
-
-The project is organized to separate the marketing site from the application logic.
-
-```
-homebreak-project/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── landing/         # Marketing site sections (Hero, Features, Pricing)
-│   │   │   ├── dashboard/       # User dashboard (Sidebar, Settings)
-│   │   │   └── ui/              # Shared reusable components (Buttons, Inputs)
-│   │   ├── pages/               # Main page layouts
-│   │   ├── utils/               # Helper functions
-│   │   └── App.tsx              # Main application entry point
-│   └── vite.config.ts           # Tooling configuration
-└── README.md                    # This file
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-## 🛠 Maintenance & Customization
+## Documentation
 
-### Editing Content
-- **Landing Page Text**: Most text is hardcoded in the components found in `frontend/src/components/landing/`.
-  - `Hero.tsx`: Main headline and "phone" notification text.
-  - `Features.tsx`: "No Bullshit" grid items.
-  - `Pricing.tsx`: Donation/Tier info.
-  - `Footer.tsx`: Footer links and copyright.
+All documentation is in the [`/docs`](./docs/) folder:
 
-### Styling
-- **Theme Colors**: Colors are defined in `frontend/src/index.css` (using CSS variables for Tailwind).
-- **Tailwind**: Utility classes are used throughout. To change a color/spacing, edit the class directly in the React component.
+| Document | Description |
+|----------|-------------|
+| [README](./docs/README.md) | Project overview, tech stack, feature status |
+| [Architecture](./docs/ARCHITECTURE.md) | System design, data flow, edge functions |
+| [Database](./docs/DATABASE.md) | Supabase schema, tables, RLS policies |
+| [API Integration](./docs/API_INTEGRATION.md) | NOAA, Open-Meteo, Tide APIs |
+| [Features](./docs/FEATURES.md) | Spots, triggers, alerts, personality specs |
+| [Development](./docs/DEVELOPMENT.md) | Setup, environment, deployment, scripts |
 
-### Deployment
-The project is optimized for deployment on **Vercel**.
-1. Push your code to GitHub.
-2. Import the repo in Vercel.
-3. Set the "Root Directory" to `frontend`.
-4. The build command (`npm run build`) and output settings should auto-detect.
+## Tech Stack
 
-## 🏗 Tech Stack
-
-### Current Implementation (Frontend MVP)
-- **Framework**: React 19 + Vite
-- **Styling**: Tailwind CSS v4 + Lucide Icons
-- **Language**: TypeScript
-
-### Future Roadmap
-- **Backend**: Serverless Functions (TBD)
-- **Database**: Supabase (Postgres)
-- **AI**: Claude Haiku 4.5 (for generating alert personality)
-- **Weather API**: Open-Meteo Marine API
-- **Buoy Data**: NOAA Raw Text Files
-
-## Data Models
-
-### Alerts Schema
-The `alerts` table tracks all sent notifications.
-
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | `uuid` | Unique identifier. |
-| `spot_id` | `uuid` | Foreign key to `spots` table. |
-| `type` | `string` | Enum: `DAWN_PATROL`, `SWELL_INTEL`, `THE_LOCAL`, etc. |
-| `message` | `text` | The full text content of the alert. |
-| `condition` | `string` | Enum: `epic`, `good`, `fair`, `poor`. |
-| `created_at` | `timestamp` | Time the alert was generated/sent. |
-| `read_status` | `boolean` | Whether the user has viewed this alert. |
-
-### Spots Schema
-The `spots` table defines the surveillance targets.
-
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | `uuid` | Unique identifier. |
-| `name` | `string` | Display name (e.g. "Surfside Beach"). |
-| `buoy_id` | `string` | NOAA Station ID (e.g. "42035"). |
-| `buoy_data` | `jsonb` | Live signal data (Wave Height, Period, Direction, Temp). |
-| `forecast_data` | `jsonb` | Model data (Primary/Secondary Swell, Wind, Tide). |
-
-#### JSON Data Structures
-
-**Buoy Data (`buoy_data`)**
-```json
-{
-  "waveHeight": 4.2,      // feet
-  "wavePeriod": 12,       // seconds
-  "waterTemp": 72,        // fahrenheit
-  "meanWaveDirection": "SE",
-  "meanWaveDegrees": 145
-}
-```
-
-**Forecast Data (`forecast_data`)**
-```json
-{
-  "primary": {
-    "height": 3.5,
-    "period": 11,
-    "direction": "SE",
-    "degrees": 140
-  },
-  "secondary": {
-    "height": 1.2,
-    "period": 8,
-    "direction": "E",
-    "degrees": 90
-  },
-  "windSpeed": 8,         // knots
-  "windDirection": "NW",
-  "tide": 1.2             // feet
-}
-```
-
-## How It Works (Logic)
-
-### Smart Triggers
-| Trigger | Time | Purpose |
-| :--- | :--- | :--- |
-| **Night Before Hype** | 8:00 PM | Checks tomorrow's forecast. Get hyped or sleep in. |
-| **Morning Reality Check** | 6:00 AM | Live buoy validation + traffic check. |
-| **Pop-Up Alert** | Every 2h | Catches sudden wind switches or unexpected pulses. |
-
-### Anti-Spam Logic
-- **Cooldown**: 6 hours between alerts of the same "tier".
-- **Upgrade**: Alerts *can* fire if conditions upgrade (e.g. "Good" → "Epic").
+- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS v4
+- **Backend**: Supabase (Auth + Postgres + Edge Functions)
+- **Data Sources**: NOAA NDBC, Open-Meteo, NOAA CO-OPS
 
 ## License
 
