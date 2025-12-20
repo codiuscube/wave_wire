@@ -11,8 +11,9 @@ import {
   Book,
   CheckCircle,
   DangerCircle,
+  Pen,
 } from "@solar-icons/react";
-import { DnaLogo, LocalsKnowledgeForm } from "../components/ui";
+import { DnaLogo, LocalsKnowledgeForm, Input, Button } from "../components/ui";
 import { AdminHeader } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
 import { useSurfSpots } from "../hooks";
@@ -42,12 +43,41 @@ export function AdminSpotDetailPage() {
     text: string;
   } | null>(null);
 
+  // Region editing state
+  const [isEditingRegion, setIsEditingRegion] = useState(false);
+  const [editedRegion, setEditedRegion] = useState("");
+  const [isSavingRegion, setIsSavingRegion] = useState(false);
+
   // Sync state when spot data loads
   useEffect(() => {
     if (spot?.localsKnowledge) {
       setLocalsKnowledge(spot.localsKnowledge);
     }
-  }, [spot?.localsKnowledge]);
+    if (spot?.region) {
+      setEditedRegion(spot.region);
+    }
+  }, [spot?.localsKnowledge, spot?.region]);
+
+  // Handle region save
+  const handleSaveRegion = async () => {
+    if (!id || !editedRegion.trim()) return;
+
+    setIsSavingRegion(true);
+    try {
+      const result = await updateSpot(id, { region: editedRegion.trim() });
+      if (result.error) {
+        setSaveMessage({ type: "error", text: result.error });
+      } else {
+        setIsEditingRegion(false);
+        setSaveMessage({ type: "success", text: "Region updated!" });
+        setTimeout(() => setSaveMessage(null), 3000);
+      }
+    } catch {
+      setSaveMessage({ type: "error", text: "Failed to update region." });
+    } finally {
+      setIsSavingRegion(false);
+    }
+  };
 
   // Handle save
   const handleSave = async () => {
@@ -157,9 +187,41 @@ export function AdminSpotDetailPage() {
               </div>
               <div>
                 <h1 className="text-xl font-semibold">{spot.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  {spot.region}, {spot.countryGroup}
-                </p>
+                {isEditingRegion ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      value={editedRegion}
+                      onChange={(e) => setEditedRegion(e.target.value)}
+                      className="h-8 text-sm w-48"
+                      placeholder="Region name"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSaveRegion}
+                      disabled={isSavingRegion || !editedRegion.trim()}
+                    >
+                      {isSavingRegion ? "..." : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setIsEditingRegion(false);
+                        setEditedRegion(spot.region);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsEditingRegion(true)}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 group"
+                  >
+                    {spot.region}, {spot.countryGroup}
+                    <Pen size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                )}
               </div>
             </div>
 

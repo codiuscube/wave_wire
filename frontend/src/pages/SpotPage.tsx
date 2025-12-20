@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint, Pen, Widget6 } from '@solar-icons/react';
+import { useState, useRef, useCallback } from "react";
+import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint, Pen, MenuDots } from '@solar-icons/react';
 import {
   Button,
   AddSpotModal,
@@ -29,6 +29,7 @@ function userSpotToSpotOption(userSpot: UserSpot): SpotOption {
     lon: userSpot.longitude || undefined,
     buoyId: userSpot.buoyId || undefined,
     icon: userSpot.icon || undefined,
+    masterSpotId: userSpot.masterSpotId || undefined,
   };
 }
 
@@ -55,158 +56,188 @@ function DraggableSpotCard({
   onAssignBuoy,
 }: DraggableSpotCardProps) {
   const controls = useDragControls();
+  const longPressTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointerRef = useRef<React.PointerEvent | null>(null);
+
+  const handleLongPressStart = useCallback((e: React.PointerEvent) => {
+    // Only handle touch events for long press (mouse uses drag handle directly)
+    if (e.pointerType !== 'touch') return;
+
+    pointerRef.current = e;
+    longPressTimeout.current = setTimeout(() => {
+      if (pointerRef.current) {
+        controls.start(pointerRef.current);
+      }
+    }, 400);
+  }, [controls]);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimeout.current) {
+      clearTimeout(longPressTimeout.current);
+      longPressTimeout.current = null;
+    }
+    pointerRef.current = null;
+  }, []);
 
   return (
     <Reorder.Item
       value={userSpot}
       dragListener={false}
       dragControls={controls}
-      layout
+      layout="position"
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
       dragElastic={0}
       dragMomentum={false}
-      className="group relative overflow-hidden border border-border/30 bg-card/60 backdrop-blur-sm hover:border-primary/30 transition-colors"
+      className="group relative flex"
       whileDrag={{
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         zIndex: 50,
         cursor: "grabbing"
       }}
     >
-      {/* Side Accent Line */}
-      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary" />
-
-      {/* Spot Header */}
-      <div className="flex items-center justify-between p-4 sm:p-5 gap-4 border-b border-border/10">
-        <div className="flex items-center gap-4 min-w-0">
-          {/* Drag Handle */}
-          <div
-            className="p-2 -m-2 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            onPointerDown={(e) => controls.start(e)}
-          >
-            <Widget6 weight="Bold" size={16} />
-          </div>
-
-          <button
-            onClick={onIconClick}
-            className="h-12 w-12 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20 group/icon hover:bg-cyan-950/40 transition-all cursor-pointer"
-            title="Change Icon"
-          >
-            {(() => {
-              const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
-                ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
-                : Target;
-              return <IconComponent weight="BoldDuotone" size={24} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)] transition-all duration-300 group-hover/icon:scale-110 group-hover/icon:text-cyan-300" />;
-            })()}
-          </button>
-          <div className="min-w-0">
-            <h4 className="font-mono font-bold text-lg uppercase tracking-tight text-foreground truncate">{spot.name}</h4>
-            <div className="flex items-center gap-2 text-muted-foreground/70">
-              <MapPoint weight="Bold" size={12} />
-              <p className="font-mono text-xs uppercase tracking-wide">
-                {spot.region}
-              </p>
-            </div>
-          </div>
+      {/* Drag Handle - Outside on the left */}
+      <div
+        className="flex items-center justify-center px-2 py-4 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/30 hover:text-muted-foreground/60 active:text-muted-foreground transition-colors select-none"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          controls.start(e);
+        }}
+        style={{ touchAction: 'none' }}
+      >
+        <div className="flex -space-x-3">
+          <MenuDots weight="Bold" size={16} className="rotate-90" />
+          <MenuDots weight="Bold" size={16} className="rotate-90" />
         </div>
-
-        <button
-          onClick={onDelete}
-          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-          title="Remove target"
-        >
-          <TrashBinMinimalistic weight="Bold" size={20} />
-        </button>
       </div>
 
-      {/* Buoy Section */}
-      <div className="p-4 sm:p-5 bg-secondary/5">
-        {spot.buoyId ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider shrink-0 px-1.5 py-0.5 border border-border/30 bg-background/50">
-                LINKED BUOY
+      {/* Card Container */}
+      <div
+        className="flex-1 overflow-hidden border border-border/30 bg-card/60 backdrop-blur-sm hover:border-primary/30 transition-colors relative"
+        onPointerDown={handleLongPressStart}
+        onPointerUp={handleLongPressEnd}
+        onPointerCancel={handleLongPressEnd}
+        onPointerLeave={handleLongPressEnd}
+      >
+        {/* Side Accent Line */}
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary" />
+
+        {/* Spot Header */}
+        <div className="flex items-center justify-between p-4 sm:p-5 gap-4 border-b border-border/10">
+          <div className="flex items-center gap-4 min-w-0">
+            <button
+              onClick={onIconClick}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="h-12 w-12 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20 group/icon hover:bg-cyan-950/40 transition-all cursor-pointer"
+              title="Change Icon"
+            >
+              {(() => {
+                const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                  ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                  : Target;
+                return <IconComponent weight="BoldDuotone" size={24} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)] transition-all duration-300 group-hover/icon:scale-110 group-hover/icon:text-cyan-300" />;
+              })()}
+            </button>
+            <div className="min-w-0">
+              <h4 className="font-mono font-bold text-lg uppercase tracking-tight text-foreground truncate">{spot.name}</h4>
+              <div className="flex items-center gap-2 text-muted-foreground/70">
+                <MapPoint weight="Bold" size={12} />
+                <p className="font-mono text-xs uppercase tracking-wide">
+                  {spot.region}
+                </p>
               </div>
-
-              {/* Stale Data Indicator */}
-              <div
-                className={`w-1.5 h-1.5 rounded-full ${!(spot as any).buoy?.timestamp || (new Date().getTime() - new Date((spot as any).buoy.timestamp).getTime() > 24 * 60 * 60 * 1000)
-                  ? "bg-red-500"
-                  : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                  }`}
-                title={(spot as any).buoy?.timestamp ? `Data from: ${new Date((spot as any).buoy.timestamp).toLocaleString()}` : "No data timestamp"}
-              />
-
-              <a
-                href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoyId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-sm font-bold text-foreground/80 hover:text-primary transition-colors truncate"
-              >
-                {(spot as any).buoyName || `Station ${spot.buoyId}`}
-              </a>
             </div>
+          </div>
+
+          <button
+            onClick={onDelete}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            title="Remove target"
+          >
+            <TrashBinMinimalistic weight="Bold" size={20} />
+          </button>
+        </div>
+
+        {/* Buoy Section */}
+        <div className="p-4 sm:p-5 bg-secondary/5">
+          {spot.buoyId ? (
             <button
               onClick={onBuoyToggle}
-              className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary/20 transition-colors rounded-md"
-              title="Change buoy"
+              onPointerDown={(e) => e.stopPropagation()}
+              className="w-full flex items-center justify-between px-4 py-3 border border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn bg-background/50"
             >
-              <Pen weight="Bold" size={16} />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={onBuoyToggle}
-            className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn bg-background/50"
-          >
-            <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">ASSIGN BUOY SOURCE</span>
-            <AltArrowDown weight="Bold" size={16} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-          </button>
-        )}
-
-        {/* Buoy Selector Dropdown */}
-        {isExpanded && (
-          <div className="mt-4 border border-border/50 bg-background z-10 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="px-4 py-2 border-b border-border/30 bg-secondary/10">
-              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
-                Nearest Signal Sources
-              </span>
-            </div>
-            <div className="max-h-60 overflow-y-auto">
-              {getBuoys().map((buoy, index) => (
-                <button
-                  key={buoy.id}
-                  onClick={() => onAssignBuoy(buoy)}
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors border-l-2 ${spot.buoyId === buoy.id
-                    ? "bg-primary/5 text-primary border-primary"
-                    : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground border-transparent hover:border-primary/50"
+              <div className="flex items-center gap-3 overflow-hidden">
+                {/* Stale Data Indicator */}
+                <div
+                  className={`w-2 h-2 rounded-full shrink-0 ${!(spot as any).buoy?.timestamp || (new Date().getTime() - new Date((spot as any).buoy.timestamp).getTime() > 24 * 60 * 60 * 1000)
+                    ? "bg-red-500"
+                    : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                     }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-muted-foreground/50 w-4">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <span className="font-mono font-bold mr-2 text-xs">{buoy.id}</span>
-                        <span className="font-mono text-xs uppercase opacity-80">
-                          {buoy.name}
+                  title={(spot as any).buoy?.timestamp ? `Data from: ${new Date((spot as any).buoy.timestamp).toLocaleString()}` : "No data timestamp"}
+                />
+                <span className="font-mono text-sm uppercase tracking-wide truncate">
+                  {(spot as any).buoyName || `Station ${spot.buoyId}`}
+                </span>
+              </div>
+              <Pen weight="Bold" size={16} className="shrink-0 ml-2" />
+            </button>
+          ) : (
+            <button
+              onClick={onBuoyToggle}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="w-full flex items-center justify-between px-4 py-3 border border-dashed border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all group/btn bg-background/50"
+            >
+              <span className="font-mono text-sm uppercase tracking-wide group-hover/btn:tracking-wider transition-all">ASSIGN BUOY SOURCE</span>
+              <AltArrowDown weight="Bold" size={16} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+
+          {/* Buoy Selector Dropdown */}
+          {isExpanded && (
+            <div className="mt-4 border border-border/50 bg-background z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 border-b border-border/30 bg-secondary/10">
+                <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+                  Nearest Signal Sources
+                </span>
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                {getBuoys().map((buoy, index) => (
+                  <button
+                    key={buoy.id}
+                    onClick={() => onAssignBuoy(buoy)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={`w-full text-left px-4 py-3 text-sm transition-colors border-l-2 ${spot.buoyId === buoy.id
+                      ? "bg-primary/5 text-primary border-primary"
+                      : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground border-transparent hover:border-primary/50"
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs text-muted-foreground/50 w-4">
+                          {index + 1}
                         </span>
+                        <div>
+                          <span className="font-mono font-bold mr-2 text-xs">{buoy.id}</span>
+                          <span className="font-mono text-xs uppercase opacity-80">
+                            {buoy.name}
+                          </span>
+                        </div>
                       </div>
+                      <span className="font-mono text-xs text-muted-foreground/60 shrink-0 ml-2 bg-secondary/20 px-1 py-0.5 rounded">
+                        {formatDistance(buoy.distance)}
+                      </span>
                     </div>
-                    <span className="font-mono text-xs text-muted-foreground/60 shrink-0 ml-2 bg-secondary/20 px-1 py-0.5 rounded">
-                      {formatDistance(buoy.distance)}
-                    </span>
+                  </button>
+                ))}
+                {getBuoys().length === 0 && (
+                  <div className="px-4 py-6 text-center text-muted-foreground/50 font-mono text-xs">
+                    No signal sources found within range
                   </div>
-                </button>
-              ))}
-              {getBuoys().length === 0 && (
-                <div className="px-4 py-6 text-center text-muted-foreground/50 font-mono text-xs">
-                  No signal sources found within range
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Reorder.Item>
   );
