@@ -247,8 +247,8 @@ export function AddSpotContent({
                                             <div
                                                 key={spot.id}
                                                 className={`flex items-center justify-between p-4 rounded-sm border transition-all ${saved
-                                                        ? "border-primary/50 bg-primary/5"
-                                                        : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
+                                                    ? "border-primary/50 bg-primary/5"
+                                                    : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-4 min-w-0">
@@ -267,7 +267,7 @@ export function AddSpotContent({
                                                             <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
                                                                 {spot.name}
                                                             </h4>
-                                                            <span className="font-mono text-[10px] text-muted-foreground/50">
+                                                            <span className="font-mono text-xs text-muted-foreground/50">
                                                                 {distanceMiles} mi
                                                             </span>
                                                         </div>
@@ -326,8 +326,8 @@ export function AddSpotContent({
                                             <div
                                                 key={spot.id}
                                                 className={`flex items-center justify-between p-4 rounded-sm border transition-all ${saved
-                                                        ? "border-primary/50 bg-primary/5"
-                                                        : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
+                                                    ? "border-primary/50 bg-primary/5"
+                                                    : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-4 min-w-0">
@@ -447,8 +447,8 @@ export function AddSpotContent({
                                         type="button"
                                         onClick={() => setCustomSpot({ ...customSpot, exposure: option.value })}
                                         className={`px-3 py-2 text-left font-mono text-xs uppercase tracking-wider border transition-colors ${customSpot.exposure === option.value
-                                                ? "border-primary bg-primary/10 text-primary"
-                                                : "border-border/50 bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:border-border"
+                                            ? "border-primary bg-primary/10 text-primary"
+                                            : "border-border/50 bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:border-border"
                                             }`}
                                     >
                                         {option.label}

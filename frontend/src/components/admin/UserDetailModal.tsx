@@ -164,7 +164,7 @@ export function UserDetailModal({ user, onClose, onEdit, isOpen = true }: UserDe
                 )}
               </div>
               {user.phone && (
-                <div className={`font-mono text-[10px] mt-1 ${user.phoneVerified ? 'text-green-500' : 'text-amber-500'}`}>
+                <div className={`font-mono text-xs mt-1 ${user.phoneVerified ? 'text-green-500' : 'text-amber-500'}`}>
                   {user.phoneVerified ? 'Verified' : 'Not verified'}
                 </div>
               )}

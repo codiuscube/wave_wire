@@ -229,7 +229,7 @@ export function DashboardOverview() {
                 onClick={() => setShowAlertsModal(true)}
                 variant="ghost"
                 size="sm"
-                className="h-auto py-1 px-2 text-[10px] uppercase font-mono text-muted-foreground hover:text-primary tracking-wider"
+                className="h-auto py-1 px-2 text-xs uppercase font-mono text-muted-foreground hover:text-primary tracking-wider"
               >
                 VIEW ALL LOGS
               </Button>
@@ -303,7 +303,7 @@ export function DashboardOverview() {
                 </p>
                 <Button variant="rogue-secondary" className="px-4 py-2" onClick={() => window.location.href = '/spots'}>
                   <AddCircle weight="Bold" size={16} className="mr-2" />
-                  ADD TARGET SPOTS
+                  ADD SPOTS
                 </Button>
               </div>
             )}

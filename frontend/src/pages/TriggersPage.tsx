@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { AddCircle, TrashBinMinimalistic, MapPoint, Pen, AltArrowDown, Lock, InfoCircle } from '@solar-icons/react';
+import { AddCircle, TrashBinMinimalistic, MapPoint, Pen, AltArrowDown, Lock, Target, Bolt } from '@solar-icons/react';
+import { AVAILABLE_ICONS } from "../components/ui/IconPickerModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import { useProfile, useUserSpots, useTriggers, useMinimumLoading } from "../hooks";
@@ -289,7 +290,12 @@ export function TriggersPage() {
                   `}
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <MapPoint weight="Bold" size={16} className={`shrink-0 ${selectedSpot ? 'text-primary' : 'text-muted-foreground'}`} />
+                    {(() => {
+                      const IconComponent = selectedSpot?.icon && AVAILABLE_ICONS[selectedSpot.icon as keyof typeof AVAILABLE_ICONS]
+                        ? AVAILABLE_ICONS[selectedSpot.icon as keyof typeof AVAILABLE_ICONS]
+                        : selectedSpot ? Target : MapPoint;
+                      return <IconComponent weight="Bold" size={16} className={`shrink-0 ${selectedSpot ? 'text-primary' : 'text-muted-foreground'}`} />;
+                    })()}
                     <span className="font-mono text-sm uppercase truncate font-bold tracking-wide">
                       {selectedSpot ? selectedSpot.name : "Select Target Spot"}
                     </span>
@@ -307,26 +313,34 @@ export function TriggersPage() {
                       transition={{ duration: 0.15 }}
                       className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/50 z-50 max-h-60 overflow-y-auto shadow-2xl rounded-none"
                     >
-                      {userSpots.map((spot) => (
-                        <button
-                          key={spot.id}
-                          onClick={() => {
-                            setSelectedSpotId(spot.id);
-                            setIsSpotDropdownOpen(false);
-                          }}
-                          className={`
-                            w-full text-left px-4 py-3 font-mono text-sm uppercase transition-colors
-                            flex items-center justify-between
-                            ${selectedSpotId === spot.id
-                              ? 'bg-primary/5 text-primary border-l-2 border-primary'
-                              : 'text-muted-foreground border-l-2 border-transparent hover:bg-secondary/20 hover:text-foreground'
-                            }
-                          `}
-                        >
-                          <span>{spot.name}</span>
-                          {selectedSpotId === spot.id && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
-                        </button>
-                      ))}
+                      {userSpots.map((spot) => {
+                        const SpotIcon = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                          ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                          : Target;
+                        return (
+                          <button
+                            key={spot.id}
+                            onClick={() => {
+                              setSelectedSpotId(spot.id);
+                              setIsSpotDropdownOpen(false);
+                            }}
+                            className={`
+                              w-full text-left px-4 py-3 font-mono text-sm uppercase transition-colors
+                              flex items-center justify-between
+                              ${selectedSpotId === spot.id
+                                ? 'bg-primary/5 text-primary border-l-2 border-primary'
+                                : 'text-muted-foreground border-l-2 border-transparent hover:bg-secondary/20 hover:text-foreground'
+                              }
+                            `}
+                          >
+                            <div className="flex items-center gap-3">
+                              <SpotIcon weight="Bold" size={14} className="shrink-0" />
+                              <span>{spot.name}</span>
+                            </div>
+                            {selectedSpotId === spot.id && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                          </button>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -354,7 +368,7 @@ export function TriggersPage() {
               <Link to="/spots">
                 <Button variant="rogue-secondary" className="px-4 py-2">
                   <AddCircle weight="Bold" size={16} className="mr-2" />
-                  ADD TARGET SPOTS
+                  ADD SPOTS
                 </Button>
               </Link>
             </div>
@@ -381,7 +395,7 @@ export function TriggersPage() {
                   className="mb-8 p-8 border border-dashed border-border/50 bg-secondary/5 flex flex-col items-center justify-center text-center rounded-lg"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 text-primary">
-                    <InfoCircle weight="BoldDuotone" size={24} />
+                    <Bolt weight="BoldDuotone" size={24} />
                   </div>
                   <h3 className="font-mono text-lg font-bold uppercase mb-2 text-foreground">No Triggers Configured</h3>
                   <p className="font-mono text-sm text-muted-foreground max-w-sm mb-6">
@@ -433,7 +447,7 @@ export function TriggersPage() {
                             </span>
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className={`font-mono text-[10px] uppercase border px-1.5 py-0 rounded-none ${config.color}`}>
+                                <Badge variant="outline" className={`font-mono text-xs uppercase border px-1.5 py-0 rounded-none ${config.color}`}>
                                   {config.label}
                                 </Badge>
                                 <h3 className="font-mono font-bold text-base uppercase tracking-tight text-foreground/90 group-hover:text-primary transition-colors">
@@ -474,11 +488,11 @@ export function TriggersPage() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="font-mono text-[10px] uppercase border px-1.5 py-0 rounded-none border-border/40 text-muted-foreground/50">
+                                <Badge variant="outline" className="font-mono text-xs uppercase border px-1.5 py-0 rounded-none border-border/40 text-muted-foreground/50">
                                   {config.label} -- EMPTY
                                 </Badge>
                                 {showUpgradePrompt && (
-                                  <span className="flex items-center text-[10px] text-amber-500 font-mono">
+                                  <span className="flex items-center text-xs text-amber-500 font-mono">
                                     <Lock weight="Bold" size={12} className="mr-1" />
                                     PREMIUM
                                   </span>
@@ -490,19 +504,15 @@ export function TriggersPage() {
                             </div>
                           </div>
 
-                          <Button
-                            variant="rogue-secondary"
-                            size="sm"
-                            disabled={showUpgradePrompt}
-                            onClick={() => handleCreateTrigger(condition)}
-                            className={`
-                              font-mono uppercase text-[10px] h-8
-                              ${showUpgradePrompt ? 'hidden' : ''}
-                            `}
-                          >
-                            <AddCircle weight="Bold" size={12} className="mr-2" />
-                            CONFIGURE
-                          </Button>
+                          {!showUpgradePrompt && (
+                            <button
+                              onClick={() => handleCreateTrigger(condition)}
+                              className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary/20 transition-colors rounded-md"
+                              title="Configure trigger"
+                            >
+                              <Pen weight="Bold" size={16} />
+                            </button>
+                          )}
                         </div>
                       )}
 

@@ -127,7 +127,7 @@ export function Hero() {
                       ? 'bg-brand-acid text-brand-abyss border-brand-acid shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]'
                       : 'bg-transparent text-brand-foam border-white/20'
                       }`}>
-                      <span className="block font-bold mb-2 text-[10px] tracking-widest opacity-80 uppercase border-b border-black/10 pb-1">
+                      <span className="block font-bold mb-2 text-xs tracking-widest opacity-80 uppercase border-b border-black/10 pb-1">
                         {note.label}
                       </span>
                       {note.message}

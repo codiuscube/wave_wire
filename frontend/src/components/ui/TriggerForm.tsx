@@ -1089,25 +1089,25 @@ export function TriggerForm({
                         </div>
                     </div>
                 </section>
-            </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-border mt-auto bg-card space-y-4">
-                {/* Summary */}
-                <div className="bg-muted/30 p-3 rounded-md text-sm text-muted-foreground leading-relaxed">
-                    <Bolt weight="Bold" size={14} className="inline-block mr-1.5 text-primary mb-0.5" />
-                    <span dangerouslySetInnerHTML={{ __html: generateTriggerSummary(trigger) }} />
+                {/* Footer - Inside scroll area for mobile keyboard compatibility */}
+                <div className="pt-6 border-t border-border space-y-4 pb-6">
+                    {/* Summary */}
+                    <div className="bg-muted/30 p-3 rounded-md text-sm text-muted-foreground leading-relaxed">
+                        <Bolt weight="Bold" size={14} className="inline-block mr-1.5 text-primary mb-0.5" />
+                        <span dangerouslySetInnerHTML={{ __html: generateTriggerSummary(trigger) }} />
+                    </div>
+
+                    <Button
+                        className="w-full"
+                        onClick={handleSubmit}
+                        disabled={!trigger.name?.trim()}
+                        size="lg"
+                    >
+                        <Bolt weight="Bold" size={16} className="mr-2" />
+                        {initialData ? "Save Changes" : "Create Trigger"}
+                    </Button>
                 </div>
-
-                <Button
-                    className="w-full"
-                    onClick={handleSubmit}
-                    disabled={!trigger.name?.trim()}
-                    size="lg"
-                >
-                    <Bolt weight="Bold" size={16} className="mr-2" />
-                    {initialData ? "Save Changes" : "Create Trigger"}
-                </Button>
             </div>
         </div >
     );

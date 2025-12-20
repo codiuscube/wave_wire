@@ -21,3 +21,4 @@ export { TideStateSelector } from './TideStateSelector';
 export { WaveConditionsForm } from './WaveConditionsForm';
 export { LocalsKnowledgeForm } from './LocalsKnowledgeForm';
 export { AddressAutocomplete } from './AddressAutocomplete';
+export { ConfirmDeleteModal } from './ConfirmDeleteModal';
