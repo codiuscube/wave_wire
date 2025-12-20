@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint, Pen, MenuDots } from '@solar-icons/react';
+import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint, Pen } from '@solar-icons/react';
 import {
   Button,
   AddSpotModal,
