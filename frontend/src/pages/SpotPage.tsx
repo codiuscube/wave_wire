@@ -96,7 +96,7 @@ function DraggableSpotCard({
       }}
     >
       {/* Drag Handle - Outside on the left */}
-      <div
+      {/* <div
         className="flex items-center justify-center px-2 py-4 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/30 hover:text-muted-foreground/60 active:text-muted-foreground transition-colors select-none"
         onPointerDown={(e) => {
           e.preventDefault();
@@ -108,7 +108,7 @@ function DraggableSpotCard({
           <MenuDots weight="Bold" size={16} className="rotate-90" />
           <MenuDots weight="Bold" size={16} className="rotate-90" />
         </div>
-      </div>
+      </div> */}
 
       {/* Card Container */}
       <div
