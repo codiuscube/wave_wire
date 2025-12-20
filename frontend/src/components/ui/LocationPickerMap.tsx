@@ -1,8 +1,5 @@
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
-import { useEffect, useRef, useMemo } from 'react';
-import L from 'leaflet';
-
-// Removed default icon imports as we are using custom DivIcon
+import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { useEffect, useRef } from 'react';
 
 interface LocationPickerMapProps {
     lat: number;
@@ -12,62 +9,33 @@ interface LocationPickerMapProps {
     className?: string;
 }
 
-// Custom Marker Icon - simple dot with ring
-const customMarkerIcon = new L.DivIcon({
-    className: 'custom-map-marker',
-    html: `
-    <div class="marker-reticle">
-      <div class="marker-center"></div>
-      <div class="marker-ring"></div>
-    </div>
-  `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-});
-
-// Component to handle map center updates when props change
+// Component to handle map center updates when props change externally
 function MapController({ lat, lon }: { lat: number; lon: number }) {
     const map = useMap();
+    const lastPropsRef = useRef({ lat, lon });
+
     useEffect(() => {
-        map.flyTo([lat, lon], map.getZoom(), {
-            duration: 1.5
-        });
+        // Only fly to new position if props changed (not from map drag)
+        if (lastPropsRef.current.lat !== lat || lastPropsRef.current.lon !== lon) {
+            lastPropsRef.current = { lat, lon };
+            map.flyTo([lat, lon], map.getZoom(), {
+                duration: 1
+            });
+        }
     }, [lat, lon, map]);
+
     return null;
 }
 
-// Draggable marker component
-function DraggableMarker({
-    position,
-    onDragEnd
-}: {
-    position: [number, number];
-    onDragEnd: (lat: number, lon: number) => void;
-}) {
-    const markerRef = useRef<L.Marker>(null);
-
-    const eventHandlers = useMemo(
-        () => ({
-            dragend() {
-                const marker = markerRef.current;
-                if (marker != null) {
-                    const { lat, lng } = marker.getLatLng();
-                    onDragEnd(lat, lng);
-                }
-            },
-        }),
-        [onDragEnd],
-    );
-
-    return (
-        <Marker
-            draggable={true}
-            eventHandlers={eventHandlers}
-            position={position}
-            ref={markerRef}
-            icon={customMarkerIcon}
-        />
-    );
+// Component to handle map drag and update coordinates from center
+function MapCenterTracker({ onLocationChange }: { onLocationChange: (lat: number, lon: number) => void }) {
+    useMapEvents({
+        moveend: (e) => {
+            const center = e.target.getCenter();
+            onLocationChange(center.lat, center.lng);
+        },
+    });
+    return null;
 }
 
 export function LocationPickerMap({
@@ -79,22 +47,35 @@ export function LocationPickerMap({
 }: LocationPickerMapProps) {
     return (
         <div className={`relative ${className}`}>
+            {/* Fixed centered pin overlay */}
+            <div className="absolute inset-0 pointer-events-none z-[500] flex items-center justify-center">
+                <div className="marker-reticle">
+                    <div className="marker-center"></div>
+                    <div className="marker-ring"></div>
+                </div>
+            </div>
+
+            {/* Map */}
             <MapContainer
                 center={[lat, lon]}
                 zoom={initialZoom}
                 scrollWheelZoom={true}
                 className="h-full w-full z-0"
+                attributionControl={false}
             >
-                {/* CartoDB Dark Matter Tiles */}
+                {/* Esri World Imagery (Satellite) */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                 />
+
+                {/* Labels Overlay */}
+                <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                />
+
                 <MapController lat={lat} lon={lon} />
-                <DraggableMarker
-                    position={[lat, lon]}
-                    onDragEnd={onLocationChange}
-                />
+                <MapCenterTracker onLocationChange={onLocationChange} />
             </MapContainer>
         </div>
     );
