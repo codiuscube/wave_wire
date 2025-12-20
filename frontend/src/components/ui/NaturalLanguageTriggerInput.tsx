@@ -67,33 +67,28 @@ export function NaturalLanguageTriggerInput({
   return (
     <Drawer.NestedRoot open={isOpen} onOpenChange={setIsOpen}>
       {/* Trigger Card */}
-      <Drawer.Trigger asChild disabled={disabled}>
-        <button
-          type="button"
-          className="w-full border rounded-xl overflow-hidden transition-all duration-200 bg-gradient-to-br from-primary/5 via-card to-card border-primary/30 hover:border-primary/50"
-        >
-          <div className="w-full flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                <Bolt size={18} className="text-primary" />
-              </span>
-              <div className="text-left">
-                <span className="text-sm font-semibold">AI Assistant</span>
-                <p className="text-xs text-muted-foreground">
-                  Describe your ideal conditions in plain English
-                </p>
-              </div>
-            </div>
-            <span className="text-xs px-2 py-1 rounded-md font-medium bg-primary/10 text-primary">
-              Tap to use
+      <Drawer.Trigger className="w-full border rounded-xl overflow-hidden transition-all duration-200 bg-gradient-to-br from-primary/5 via-card to-card border-primary/30 hover:border-primary/50 text-left">
+        <div className="w-full flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+              <Bolt size={18} className="text-primary" />
             </span>
+            <div className="text-left">
+              <span className="text-sm font-semibold">AI Assistant</span>
+              <p className="text-xs text-muted-foreground">
+                Describe your ideal conditions in plain English
+              </p>
+            </div>
           </div>
-        </button>
+          <span className="text-xs px-2 py-1 rounded-md font-medium bg-primary/10 text-primary">
+            Tap to use
+          </span>
+        </div>
       </Drawer.Trigger>
 
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-card rounded-t-2xl">
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[60]" />
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-[61] flex flex-col bg-card rounded-t-2xl">
           {/* Drag handle */}
           <div className="flex justify-center py-3">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
