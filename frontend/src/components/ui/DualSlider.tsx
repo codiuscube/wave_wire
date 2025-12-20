@@ -130,6 +130,7 @@ export function DualSlider({
         <div
             ref={trackRef}
             className={`relative h-5 w-full flex items-center select-none touch-none ${className}`}
+            data-vaul-no-drag
         >
             {/* Track Background */}
             <div className="absolute h-1.5 w-full rounded-full bg-muted/50 overflow-hidden">

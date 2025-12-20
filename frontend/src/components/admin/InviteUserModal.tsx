@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Button, Input } from '../ui';
-import { Letter, CloseCircle, CheckCircle, Crown } from '@solar-icons/react';
+import { Button, Input, Sheet } from '../ui';
+import { Letter, CheckCircle, Crown } from '@solar-icons/react';
 
 interface InviteUserModalProps {
+    isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
 }
 
-export function InviteUserModal({ onClose, onSuccess }: InviteUserModalProps) {
+export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalProps) {
     const [email, setEmail] = useState('');
     const [tier, setTier] = useState('free');
     const [loading, setLoading] = useState(false);
@@ -57,15 +58,19 @@ export function InviteUserModal({ onClose, onSuccess }: InviteUserModalProps) {
         }
     };
 
+    const handleClose = () => {
+        setEmail('');
+        setTier('free');
+        setError(null);
+        setSuccess(false);
+        onClose();
+    };
+
     if (success) {
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div
-                    className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-                    onClick={onClose}
-                />
-                <div className="relative z-10 bg-card tech-card rounded-lg w-full max-w-sm p-8 text-center">
-                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sheet isOpen={isOpen} onClose={handleClose} title="Invite Sent">
+                <div className="p-6 flex-1 flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
                         <CheckCircle weight="BoldDuotone" size={32} className="text-green-500" />
                     </div>
                     <h3 className="font-mono text-xl font-bold uppercase tracking-wider mb-2">Invite Sent!</h3>
@@ -73,94 +78,78 @@ export function InviteUserModal({ onClose, onSuccess }: InviteUserModalProps) {
                         A {tier} invitation has been sent to <span className="text-foreground">{email}</span>
                     </p>
                 </div>
-            </div>
+            </Sheet>
         );
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-                className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-                onClick={onClose}
-            />
-            <div className="relative z-10 bg-card tech-card rounded-lg w-full max-w-md p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-mono text-lg font-bold uppercase tracking-wider">Invite New User</h3>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-secondary/30 rounded transition-colors"
-                    >
-                        <CloseCircle weight="Bold" size={20} />
-                    </button>
+        <Sheet isOpen={isOpen} onClose={handleClose} title="Invite New User">
+            <form onSubmit={handleInvite} className="p-6 space-y-4 overflow-y-auto flex-1">
+                <div>
+                    <label htmlFor="invite-email" className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
+                        Email Address
+                    </label>
+                    <Input
+                        id="invite-email"
+                        type="email"
+                        placeholder="friend@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="font-mono text-sm"
+                        autoFocus
+                        required
+                    />
                 </div>
 
-                <form onSubmit={handleInvite} className="space-y-4">
-                    <div>
-                        <label htmlFor="invite-email" className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                            Email Address
-                        </label>
-                        <Input
-                            id="invite-email"
-                            type="email"
-                            placeholder="friend@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="font-mono text-sm"
-                            autoFocus
-                            required
-                        />
+                <div>
+                    <label htmlFor="invite-tier" className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
+                        Subscription Tier
+                    </label>
+                    <div className="relative">
+                        <Crown weight="Bold" size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${tier === 'premium' ? 'text-amber-500' : 'text-muted-foreground'
+                            }`} />
+                        <select
+                            id="invite-tier"
+                            value={tier}
+                            onChange={(e) => setTier(e.target.value)}
+                            className="w-full bg-secondary/20 border border-border/50 rounded px-3 py-2 pl-9 font-mono text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                            <option value="free">Free (Limited)</option>
+                            <option value="pro">Pro (Beta)</option>
+                            <option value="premium">Premium</option>
+                        </select>
                     </div>
+                </div>
 
-                    <div>
-                        <label htmlFor="invite-tier" className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                            Subscription Tier
-                        </label>
-                        <div className="relative">
-                            <Crown weight="Bold" size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${tier === 'premium' ? 'text-amber-500' : 'text-muted-foreground'
-                                }`} />
-                            <select
-                                id="invite-tier"
-                                value={tier}
-                                onChange={(e) => setTier(e.target.value)}
-                                className="w-full bg-secondary/20 border border-border/50 rounded px-3 py-2 pl-9 font-mono text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary"
-                            >
-                                <option value="free">Free (Limited)</option>
-                                <option value="pro">Pro (Beta)</option>
-                                <option value="premium">Premium</option>
-                            </select>
-                        </div>
+                <p className="font-mono text-xs text-muted-foreground">
+                    The user will receive a magic link to sign in. If they don't have an account, one will be created automatically with the selected tier.
+                </p>
+
+                {error && (
+                    <div className="px-3 py-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-mono">
+                        {error}
                     </div>
+                )}
 
-                    <p className="font-mono text-xs text-muted-foreground">
-                        The user will receive a magic link to sign in. If they don't have an account, one will be created automatically with the selected tier.
-                    </p>
-
-                    {error && (
-                        <div className="px-3 py-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-mono">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="flex gap-3 mt-6">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                            Cancel
-                        </Button>
-                        <Button type="submit" className="flex-1" disabled={loading || !email}>
-                            {loading ? (
-                                <>
-                                    <div className="w-4 h-4 mr-2 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                                    Sending...
-                                </>
-                            ) : (
-                                <>
-                                    <Letter weight="Bold" size={16} className="mr-2" />
-                                    Send Invite
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="flex gap-3 pt-2">
+                    <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+                        Cancel
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={loading || !email}>
+                        {loading ? (
+                            <>
+                                <div className="w-4 h-4 mr-2 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                                Sending...
+                            </>
+                        ) : (
+                            <>
+                                <Letter weight="Bold" size={16} className="mr-2" />
+                                Send Invite
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </form>
+        </Sheet>
     );
 }

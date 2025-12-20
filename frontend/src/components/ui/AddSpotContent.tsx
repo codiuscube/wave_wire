@@ -211,32 +211,34 @@ export function AddSpotContent({
 
     return (
         <div className={`flex flex-col h-full bg-card ${className}`}>
-            {/* Tabs */}
-            <div className="flex border-b border-border/50 shrink-0">
-                <button
-                    onClick={() => setActiveTab("popular")}
-                    className={`flex-1 px-4 py-3 text-sm font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${activeTab === "popular"
-                        ? "text-primary border-b-2 border-primary bg-primary/5"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
-                        }`}
-                >
-                    <MapPoint weight="Bold" size={16} />
-                    Popular Spots
-                </button>
-                <button
-                    onClick={() => setActiveTab("custom")}
-                    className={`flex-1 px-4 py-3 text-sm font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${activeTab === "custom"
-                        ? "text-primary border-b-2 border-primary bg-primary/5"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
-                        }`}
-                >
-                    <Routing weight="Bold" size={16} />
-                    Custom Spot
-                </button>
-            </div>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+                {/* Tabs - now inside scroll */}
+                <div className="flex border-b border-border/50 sticky top-0 bg-card z-10">
+                    <button
+                        onClick={() => setActiveTab("popular")}
+                        className={`flex-1 px-4 py-3 text-sm font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${activeTab === "popular"
+                            ? "text-primary border-b-2 border-primary bg-primary/5"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
+                            }`}
+                    >
+                        <MapPoint weight="Bold" size={16} />
+                        Popular Spots
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("custom")}
+                        className={`flex-1 px-4 py-3 text-sm font-mono uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${activeTab === "custom"
+                            ? "text-primary border-b-2 border-primary bg-primary/5"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/20"
+                            }`}
+                    >
+                        <Routing weight="Bold" size={16} />
+                        Custom Spot
+                    </button>
+                </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 min-h-0">
+                {/* Content */}
+                <div className="p-6">
                 {activeTab === "popular" ? (
                     <>
                         {/* Region Filter + Search */}
@@ -574,6 +576,7 @@ export function AddSpotContent({
                         </Button>
                     </div>
                 )}
+                </div>
             </div>
 
             {/* Map Sheet/Drawer */}
@@ -591,19 +594,19 @@ export function AddSpotContent({
                         onLocationChange={handleLocationChange}
                     />
                 </div>
-                <div className="p-4 border-t border-border/50 flex items-center justify-between gap-4">
+                <div className="p-4 border-t border-border/50 space-y-3">
                     {/* Coordinates Display */}
-                    <div className="flex items-center gap-6 font-mono text-sm">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground uppercase">Lat</span>
-                            <span className="text-primary">{parseFloat(customSpot.lat).toFixed(6) || "—"}</span>
+                    <div className="flex items-center gap-4 font-mono text-xs">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-muted-foreground uppercase">Lat</span>
+                            <span className="text-primary">{parseFloat(customSpot.lat).toFixed(4) || "—"}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground uppercase">Lon</span>
-                            <span className="text-primary">{parseFloat(customSpot.lon).toFixed(6) || "—"}</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-muted-foreground uppercase">Lon</span>
+                            <span className="text-primary">{parseFloat(customSpot.lon).toFixed(4) || "—"}</span>
                         </div>
                     </div>
-                    <Button onClick={() => setIsMapOpen(false)} className="shrink-0">
+                    <Button onClick={() => setIsMapOpen(false)} className="w-full">
                         LOOKS GOOD
                     </Button>
                 </div>

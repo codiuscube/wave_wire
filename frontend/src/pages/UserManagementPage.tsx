@@ -504,16 +504,15 @@ export function UserManagementPage() {
         </div>
       )}
       {/* Invite Modal */}
-      {showInviteModal && (
-        <InviteUserModal
-          onClose={() => setShowInviteModal(false)}
-          onSuccess={() => {
-            // Optional: refresh user list if the user is created immediately (often it requires them to click the link first)
-            // But if we want to be safe we can just fetch.
-            fetchUsers();
-          }}
-        />
-      )}
+      <InviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onSuccess={() => {
+          // Optional: refresh user list if the user is created immediately (often it requires them to click the link first)
+          // But if we want to be safe we can just fetch.
+          fetchUsers();
+        }}
+      />
     </div>
   );
 }

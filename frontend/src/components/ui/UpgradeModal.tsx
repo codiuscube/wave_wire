@@ -1,6 +1,6 @@
-import { createPortal } from 'react-dom';
-import { CloseCircle, Gift, CheckCircle } from '@solar-icons/react';
+import { Gift, CheckCircle } from '@solar-icons/react';
 import { Button } from './Button';
+import { Sheet } from './Sheet';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -30,33 +30,19 @@ export function UpgradeModal({
   feature = 'general',
   currentTier = 'free'
 }: UpgradeModalProps) {
-  if (!isOpen) return null;
-
   const message = FEATURE_MESSAGES[feature];
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative z-10 bg-background border border-border rounded-xl p-8 max-w-md mx-4 shadow-2xl">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <CloseCircle weight="Bold" size={20} />
-        </button>
-
-        <div className="text-center mb-8">
+  return (
+    <Sheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title={message.title}
+    >
+      <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
             <Gift weight="BoldDuotone" size={32} className="text-primary" />
           </div>
-
-          <h2 className="text-2xl font-bold mb-3">{message.title}</h2>
 
           <p className="text-muted-foreground">
             {message.description}
@@ -64,7 +50,7 @@ export function UpgradeModal({
         </div>
 
         {/* Free Beta Plan */}
-        <div className="tech-card p-6 border-primary/50 bg-primary/5 mb-6">
+        <div className="tech-card p-6 border-primary/50 bg-primary/5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Gift weight="Bold" size={20} className="text-primary" />
@@ -99,7 +85,7 @@ export function UpgradeModal({
 
         {/* Current Plan Notice */}
         {currentTier === 'free' && (
-          <p className="text-center text-xs text-muted-foreground mb-4">
+          <p className="text-center text-xs text-muted-foreground">
             Current plan: <span className="font-medium">Free (Limited)</span>
           </p>
         )}
@@ -121,7 +107,6 @@ export function UpgradeModal({
           </Button>
         </div>
       </div>
-    </div>,
-    document.body
+    </Sheet>
   );
 }
