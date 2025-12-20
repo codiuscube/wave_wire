@@ -5,7 +5,7 @@ import {
     MapPoint,
     Bolt,
     ChatRoundDots,
-    Scanner,
+    User,
     Database,
     ChartSquare,
     UsersGroupRounded,
@@ -21,7 +21,7 @@ const ICON_SIZE = 24;
 
 const navItems = [
     { to: "/dashboard", icon: Water, label: "Overview", end: true },
-    { to: "/spots", icon: MapPoint, label: "My Spots" },
+    { to: "/spots", icon: MapPoint, label: "Spots" },
     { to: "/triggers", icon: Bolt, label: "Triggers" },
     { to: "/alerts", icon: ChatRoundDots, label: "Alerts" },
 ];
@@ -126,7 +126,7 @@ export function MobileNav() {
                             "p-1.5 rounded-full transition-all duration-300",
                             isActiveAccount && "bg-brand-acid/10 shadow-[0_0_10px_rgba(226,253,92,0.2)]"
                         )}>
-                            <Scanner
+                            <User
                                 size={ICON_SIZE}
                                 weight="BoldDuotone"
                                 className={cn("transition-transform duration-300", isActiveAccount && "scale-110")}

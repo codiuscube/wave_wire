@@ -231,7 +231,7 @@ export function AddSpotContent({
                         }`}
                 >
                     <Routing weight="Bold" size={16} />
-                    Custom Location
+                    Custom Spot
                 </button>
             </div>
 

@@ -106,6 +106,7 @@ export function NaturalLanguageSpotInput({
                   placeholder={`e.g. "Secret reef near Santa Cruz facing southwest"`}
                   className="w-full h-20 p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground/50"
                   disabled={isLoading || disabled}
+                  data-vaul-no-drag
                 />
                 <p className="text-xs text-muted-foreground">
                   Try: beach name, city, country, or "facing west/east"

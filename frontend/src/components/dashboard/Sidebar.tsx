@@ -4,7 +4,7 @@ import {
   MapPoint,
   Bolt,
   ChatRoundDots,
-  Scanner,
+  User,
   Database,
   ChartSquare,
   Logout,
@@ -18,10 +18,10 @@ const ICON_SIZE = 24;
 
 const navItems = [
   { to: "/dashboard", icon: Water, label: "Overview", end: true },
-  { to: "/spots", icon: MapPoint, label: "My Spots" },
+  { to: "/spots", icon: MapPoint, label: "Spots" },
   { to: "/triggers", icon: Bolt, label: "Triggers" },
   { to: "/alerts", icon: ChatRoundDots, label: "Alerts" },
-  { to: "/account", icon: Scanner, label: "Account" },
+  { to: "/account", icon: User, label: "Account" },
 ];
 
 export function Sidebar() {

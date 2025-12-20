@@ -116,6 +116,7 @@ export function NaturalLanguageTriggerInput({
                   className="w-full h-24 p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground/60"
                   disabled={isLoading || disabled}
                   autoFocus={autoFocus}
+                  data-vaul-no-drag
                 />
                 <p className="text-xs text-muted-foreground">
                   Try: overhead waves, NW swell, low tide, offshore wind, epic conditions
