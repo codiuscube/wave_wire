@@ -90,6 +90,7 @@ export interface Spot {
   triggersMatched?: number;
   nextCheck?: string;
   icon?: string;
+  masterSpotId?: string;
 }
 
 interface SpotCardProps {

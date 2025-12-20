@@ -5,7 +5,6 @@ import {
     Magnifer,
     AddCircle,
     VerifiedCheck,
-    CheckCircle,
     AltArrowDown,
 } from '@solar-icons/react';
 import { Button } from "./Button";
@@ -17,6 +16,11 @@ import {
 } from "../../data/surfSpots";
 import { useSurfSpots } from "../../hooks";
 import type { SurfSpot } from "../../lib/mappers";
+import { AVAILABLE_ICONS } from "./IconPickerModal";
+import { AddressAutocomplete } from "./AddressAutocomplete";
+import { Sheet } from "./Sheet";
+import { LocationPickerMap } from "./LocationPickerMap";
+import type { AddressSuggestion } from "../../services/api/addressService";
 
 export interface SpotOption extends Spot { }
 
@@ -54,21 +58,39 @@ export function AddSpotContent({
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedRegion, setSelectedRegion] = useState<CountryGroup>("USA");
     const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
+    const [isMapOpen, setIsMapOpen] = useState(false);
     const [customSpot, setCustomSpot] = useState({
         name: "",
         lat: "",
         lon: "",
-        exposure: "pacific" as string,
+        exposure: "pacific-us" as string,
     });
 
     // Exposure options for custom spots
     const exposureOptions = [
-        { value: "pacific", label: "Pacific / West Coast", region: "Pacific West Coast" },
-        { value: "atlantic", label: "Atlantic / East Coast", region: "Atlantic East Coast" },
-        { value: "gulf", label: "Gulf Coast", region: "Gulf Coast" },
+        // North America
+        { value: "pacific-us", label: "US Pacific / West Coast", region: "Pacific West Coast" },
+        { value: "atlantic-us", label: "US Atlantic / East Coast", region: "Atlantic East Coast" },
+        { value: "gulf", label: "Gulf of Mexico", region: "Gulf Coast" },
         { value: "hawaii-north", label: "Hawaii - North Shore", region: "Hawaii North Shore" },
         { value: "hawaii-south", label: "Hawaii - South Shore", region: "Hawaii South Shore" },
+        // Central America & Caribbean
+        { value: "central-pacific", label: "Central America Pacific", region: "Central America" },
         { value: "caribbean", label: "Caribbean", region: "Caribbean" },
+        // South America
+        { value: "south-pacific", label: "South America Pacific", region: "South America Pacific" },
+        { value: "south-atlantic", label: "South America Atlantic", region: "South America Atlantic" },
+        // Europe & Africa
+        { value: "europe-atlantic", label: "Europe Atlantic", region: "Europe Atlantic" },
+        { value: "europe-med", label: "Mediterranean", region: "Mediterranean" },
+        { value: "africa-atlantic", label: "Africa Atlantic", region: "Africa Atlantic" },
+        { value: "indian-ocean", label: "Indian Ocean", region: "Indian Ocean" },
+        // Asia Pacific
+        { value: "asia-pacific", label: "Asia Pacific", region: "Asia Pacific" },
+        { value: "australia-east", label: "Australia East Coast", region: "Australia East" },
+        { value: "australia-west", label: "Australia West Coast", region: "Australia West" },
+        { value: "indonesia", label: "Indonesia", region: "Indonesia" },
+        // Other
         { value: "unknown", label: "Other / Unknown", region: "Custom Location" },
     ];
 
@@ -126,8 +148,13 @@ export function AddSpotContent({
         lon: surfSpot.lon,
     });
 
+    // Check if a surf spot is already saved (by matching masterSpotId)
     const isSpotSaved = (spotId: string) =>
-        savedSpots.some((s) => s.id === spotId);
+        savedSpots.some((s) => s.masterSpotId === spotId);
+
+    // Get the saved spot data for a surf spot (to access custom icon)
+    const getSavedSpot = (spotId: string) =>
+        savedSpots.find((s) => s.masterSpotId === spotId);
 
     const handleAddSpot = (surfSpot: SurfSpot) => {
         onAddSpot(convertToSpot(surfSpot));
@@ -144,7 +171,24 @@ export function AddSpotContent({
             lon: parseFloat(customSpot.lon),
         };
         onAddSpot(newSpot);
-        setCustomSpot({ name: "", lat: "", lon: "", exposure: "pacific" });
+        setCustomSpot({ name: "", lat: "", lon: "", exposure: "pacific-us" });
+    };
+
+    const handleAddressSelect = (suggestion: AddressSuggestion) => {
+        setCustomSpot(prev => ({
+            ...prev,
+            lat: suggestion.lat.toString(),
+            lon: suggestion.lon.toString(),
+        }));
+        setIsMapOpen(true);
+    };
+
+    const handleLocationChange = (lat: number, lon: number) => {
+        setCustomSpot(prev => ({
+            ...prev,
+            lat: lat.toString(),
+            lon: lon.toString(),
+        }));
     };
 
     const currentRegionLabel = COUNTRY_GROUP_LABELS[selectedRegion];
@@ -246,22 +290,22 @@ export function AddSpotContent({
                                         return (
                                             <div
                                                 key={spot.id}
-                                                className={`flex items-center justify-between p-4 rounded-sm border transition-all ${saved
-                                                    ? "border-primary/50 bg-primary/5"
+                                                className={`flex items-center justify-between p-4 rounded-sm transition-all ${saved
+                                                    ? "bg-muted/20"
                                                     : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-4 min-w-0">
-                                                    <div
-                                                        className={`h-10 w-10 rounded-sm flex items-center justify-center shrink-0 ${saved ? "bg-primary/20" : "bg-card border border-border/50"
-                                                            }`}
-                                                    >
-                                                        {spot.verified ? (
-                                                            <CheckCircle weight="Bold" size={16} className="text-primary" />
-                                                        ) : (
-                                                            <MapPoint weight="Bold" size={16} className="text-foreground" />
-                                                        )}
-                                                    </div>
+                                                    {(() => {
+                                                        const savedSpot = getSavedSpot(spot.id);
+                                                        const iconKey = savedSpot?.icon as keyof typeof AVAILABLE_ICONS | undefined;
+                                                        const IconComponent = iconKey && AVAILABLE_ICONS[iconKey] ? AVAILABLE_ICONS[iconKey] : MapPoint;
+                                                        return (
+                                                            <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
+                                                                <IconComponent weight="BoldDuotone" size={20} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]" />
+                                                            </div>
+                                                        );
+                                                    })()}
                                                     <div className="min-w-0">
                                                         <div className="flex items-center gap-2">
                                                             <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
@@ -277,9 +321,15 @@ export function AddSpotContent({
                                                     </div>
                                                 </div>
                                                 {saved ? (
-                                                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/50">
-                                                        <VerifiedCheck weight="Bold" size={16} className="text-primary" />
-                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled
+                                                        className="shrink-0 font-mono text-xs uppercase opacity-50 cursor-not-allowed"
+                                                    >
+                                                        <VerifiedCheck weight="Bold" size={16} className="mr-2" />
+                                                        Added
+                                                    </Button>
                                                 ) : (
                                                     <Button
                                                         size="sm"
@@ -325,22 +375,22 @@ export function AddSpotContent({
                                         return (
                                             <div
                                                 key={spot.id}
-                                                className={`flex items-center justify-between p-4 rounded-sm border transition-all ${saved
-                                                    ? "border-primary/50 bg-primary/5"
+                                                className={`flex items-center justify-between p-4 rounded-sm transition-all ${saved
+                                                    ? "border-primary/50 bg-muted/20"
                                                     : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-4 min-w-0">
-                                                    <div
-                                                        className={`h-10 w-10 rounded-sm flex items-center justify-center shrink-0 ${saved ? "bg-primary/20" : "bg-card border border-border/50"
-                                                            }`}
-                                                    >
-                                                        {spot.verified ? (
-                                                            <CheckCircle weight="Bold" size={16} className="text-primary" />
-                                                        ) : (
-                                                            <MapPoint weight="Bold" size={16} className="text-foreground" />
-                                                        )}
-                                                    </div>
+                                                    {(() => {
+                                                        const savedSpot = getSavedSpot(spot.id);
+                                                        const iconKey = savedSpot?.icon as keyof typeof AVAILABLE_ICONS | undefined;
+                                                        const IconComponent = iconKey && AVAILABLE_ICONS[iconKey] ? AVAILABLE_ICONS[iconKey] : MapPoint;
+                                                        return (
+                                                            <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
+                                                                <IconComponent weight="BoldDuotone" size={20} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]" />
+                                                            </div>
+                                                        );
+                                                    })()}
                                                     <div className="min-w-0">
                                                         <div className="flex items-center gap-2">
                                                             <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
@@ -353,9 +403,15 @@ export function AddSpotContent({
                                                     </div>
                                                 </div>
                                                 {saved ? (
-                                                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/50">
-                                                        <VerifiedCheck weight="Bold" size={16} className="text-primary" />
-                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        disabled
+                                                        className="shrink-0 font-mono text-xs uppercase opacity-50 cursor-not-allowed"
+                                                    >
+                                                        <VerifiedCheck weight="Bold" size={16} className="mr-2" />
+                                                        Added
+                                                    </Button>
                                                 ) : (
                                                     <Button
                                                         size="sm"
@@ -404,33 +460,58 @@ export function AddSpotContent({
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-4">
                             <div>
                                 <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                    Latitude
+                                    Search Address
                                 </label>
-                                <Input
-                                    placeholder="29.0469"
-                                    value={customSpot.lat}
-                                    onChange={(e) =>
-                                        setCustomSpot({ ...customSpot, lat: e.target.value })
-                                    }
+                                <AddressAutocomplete
+                                    value=""
+                                    onChange={() => { }} // Managed internally by component for now, or could link to a state if needed
+                                    onAddressSelect={handleAddressSelect}
+                                    placeholder="SEARCH ADDRESS OR COORDINATES..."
                                     className="font-mono"
                                 />
                             </div>
-                            <div>
-                                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                    Longitude
-                                </label>
-                                <Input
-                                    placeholder="-95.2882"
-                                    value={customSpot.lon}
-                                    onChange={(e) =>
-                                        setCustomSpot({ ...customSpot, lon: e.target.value })
-                                    }
-                                    className="font-mono"
-                                />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                                        Latitude
+                                    </label>
+                                    <Input
+                                        placeholder="29.0469"
+                                        value={customSpot.lat}
+                                        onChange={(e) =>
+                                            setCustomSpot({ ...customSpot, lat: e.target.value })
+                                        }
+                                        className="font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                                        Longitude
+                                    </label>
+                                    <Input
+                                        placeholder="-95.2882"
+                                        value={customSpot.lon}
+                                        onChange={(e) =>
+                                            setCustomSpot({ ...customSpot, lon: e.target.value })
+                                        }
+                                        className="font-mono"
+                                    />
+                                </div>
                             </div>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full font-mono text-xs uppercase"
+                                onClick={() => setIsMapOpen(true)}
+                            >
+                                <MapPoint weight="BoldDuotone" size={16} className="mr-2" />
+                                Adjust on Map
+                            </Button>
                         </div>
 
                         <div>
@@ -475,6 +556,73 @@ export function AddSpotContent({
                     </div>
                 )}
             </div>
+
+            {/* Map Sheet/Drawer */}
+            <Sheet
+                isOpen={isMapOpen}
+                onClose={() => setIsMapOpen(false)}
+                title="Adjust Location"
+                description="Drag the marker or search for an address."
+                className="w-full max-w-2xl"
+            >
+                <div className="w-full h-[300px] sm:h-[350px] relative rounded-md overflow-hidden bg-muted/20">
+                    <LocationPickerMap
+                        lat={parseFloat(customSpot.lat) || 0}
+                        lon={parseFloat(customSpot.lon) || 0}
+                        onLocationChange={handleLocationChange}
+                    />
+                </div>
+                <div className="p-4 border-t border-border/50 space-y-4">
+                    {/* Address Search */}
+                    <div>
+                        <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                            Search Address
+                        </label>
+                        <AddressAutocomplete
+                            value=""
+                            onChange={() => {}}
+                            onAddressSelect={handleAddressSelect}
+                            placeholder="SEARCH ADDRESS..."
+                            className="font-mono"
+                        />
+                    </div>
+
+                    {/* Coordinates + Button Row */}
+                    <div className="flex items-end gap-4">
+                        <div className="flex-1 grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                                    Latitude
+                                </label>
+                                <Input
+                                    placeholder="29.0469"
+                                    value={customSpot.lat}
+                                    onChange={(e) =>
+                                        setCustomSpot({ ...customSpot, lat: e.target.value })
+                                    }
+                                    className="font-mono text-sm h-9"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                                    Longitude
+                                </label>
+                                <Input
+                                    placeholder="-95.2882"
+                                    value={customSpot.lon}
+                                    onChange={(e) =>
+                                        setCustomSpot({ ...customSpot, lon: e.target.value })
+                                    }
+                                    className="font-mono text-sm h-9"
+                                />
+                            </div>
+                        </div>
+                        <Button onClick={() => setIsMapOpen(false)} className="shrink-0">
+                            LOOKS GOOD
+                        </Button>
+                    </div>
+                </div>
+            </Sheet>
         </div>
     );
 }
