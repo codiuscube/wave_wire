@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { VerifiedCheck, AltArrowRight, Home, MapPoint, Bolt, Water } from '@solar-icons/react';
 import { Button } from "./Button";
 import { Input } from "./Input";
+import { Sheet } from "./Sheet";
 import { AddSpotContent } from "./AddSpotContent";
 import { TriggerForm } from "./TriggerForm";
 import { useUserSpots, useProfile } from "../../hooks";
@@ -20,6 +20,48 @@ interface OnboardingModalProps {
     onClose: () => void;
 }
 
+// Progress bar component
+function ProgressBar({ step }: { step: OnboardingStep }) {
+    const progress = step === 'welcome' ? 0 :
+        step === 'address' ? 25 :
+        step === 'spot' ? 50 :
+        step === 'trigger' ? 75 : 100;
+
+    return (
+        <div className="h-1 bg-secondary w-full">
+            <div
+                className="h-full bg-primary transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+            />
+        </div>
+    );
+}
+
+// Custom header for onboarding
+function OnboardingHeader({ step, onClose }: { step: OnboardingStep; onClose: () => void }) {
+    return (
+        <div className="shrink-0">
+            <ProgressBar step={step} />
+            <div className="flex items-center justify-between p-4 border-b border-border/50">
+                <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                    {step === 'welcome' ? 'Welcome' :
+                     step === 'address' ? 'Step 1 of 3' :
+                     step === 'spot' ? 'Step 2 of 3' :
+                     step === 'trigger' ? 'Step 3 of 3' : 'Complete'}
+                </span>
+                {step !== 'complete' && (
+                    <button
+                        onClick={onClose}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Skip for now
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     const { user } = useAuth();
     const { profile, update: updateProfile } = useProfile(user?.id);
@@ -31,16 +73,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Skip if already completed (though parent should handle visibility)
-    if (!isOpen) return null;
-
     const handleAddressSubmit = async () => {
         if (!address.trim() || !user?.id) return;
         setLoading(true);
         setError(null);
 
         try {
-            // Update profile with address
             const { error: updateError } = await updateProfile({
                 homeAddress: address,
             });
@@ -88,7 +126,6 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         setError(null);
 
         try {
-            // Create trigger directly using supabase client (as we don't have a hook for it yet)
             const dbTrigger = toDbTriggerInsert({
                 userId: user.id,
                 spotId: createdSpotId,
@@ -150,17 +187,17 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         switch (step) {
             case "welcome":
                 return (
-                    <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-6">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                             <Water weight="BoldDuotone" size={40} className="text-primary" />
                         </div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter">Welcome to Home Break</h2>
-                        <p className="text-muted-foreground text-lg max-w-md mx-auto">
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">Welcome to Home Break</h2>
+                        <p className="text-muted-foreground">
                             Let's get you set up to score the best waves. We'll configure your home base, add your favorite spot, and set up your first alert.
                         </p>
                         <Button
                             onClick={() => setStep("address")}
-                            className="w-full max-w-sm mx-auto h-12 text-lg"
+                            className="w-full h-12"
                             variant="rogue"
                         >
                             Get Started <AltArrowRight weight="Bold" size={20} className="ml-2" />
@@ -170,8 +207,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
             case "address":
                 return (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
-                        <div className="text-center mb-8">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300 p-6">
+                        <div className="text-center">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Home weight="BoldDuotone" size={24} className="text-primary" />
                             </div>
@@ -203,8 +240,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
             case "spot":
                 return (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300 flex flex-col h-[600px]">
-                        <div className="shrink-0 text-center mb-2">
+                    <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-300">
+                        <div className="shrink-0 text-center p-4 pb-2">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                                 <MapPoint weight="BoldDuotone" size={24} className="text-primary" />
                             </div>
@@ -213,9 +250,9 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                                 Choose a spot to track.
                             </p>
                         </div>
-                        <div className="flex-1 overflow-hidden border border-border rounded-lg">
+                        <div className="flex-1 overflow-hidden border-t border-border">
                             <AddSpotContent
-                                savedSpots={[]} // No spots yet
+                                savedSpots={[]}
                                 onAddSpot={handleSpotAdd}
                                 className="h-full"
                             />
@@ -225,8 +262,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
             case "trigger":
                 return (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-300 flex flex-col h-[600px]">
-                        <div className="shrink-0 text-center mb-2">
+                    <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-300">
+                        <div className="shrink-0 text-center p-4 pb-2">
                             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                                 <Bolt weight="BoldDuotone" size={24} className="text-primary" />
                             </div>
@@ -235,7 +272,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                                 Define the conditions that make this spot fire.
                             </p>
                         </div>
-                        <div className="flex-1 overflow-hidden border border-border rounded-lg bg-card">
+                        <div className="flex-1 overflow-hidden border-t border-border bg-card">
                             <TriggerForm
                                 spotId={createdSpotId!}
                                 onSubmit={handleTriggerAdd}
@@ -247,17 +284,17 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
             case "complete":
                 return (
-                    <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 py-12">
-                        <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+                    <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-6 py-12">
+                        <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
                             <VerifiedCheck weight="BoldDuotone" size={48} className="text-green-500" />
                         </div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter"> all set!</h2>
-                        <p className="text-muted-foreground text-lg max-w-md mx-auto">
-                            Your home break is configured. You'll strictly receive alerts when conditions are all-time.
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">All set!</h2>
+                        <p className="text-muted-foreground">
+                            Your home break is configured. You'll receive alerts when conditions are all-time.
                         </p>
                         <Button
                             onClick={handleComplete}
-                            className="w-full max-w-sm mx-auto h-12 text-lg"
+                            className="w-full h-12"
                             variant="rogue"
                             disabled={loading}
                         >
@@ -268,32 +305,21 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         }
     };
 
-    return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-xl">
-            <div className="relative z-10 bg-card border border-border rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                {/* Progress Bar */}
-                <div className="h-1 bg-secondary w-full">
-                    <div
-                        className="h-full bg-primary transition-all duration-500 ease-out"
-                        style={{
-                            width: step === 'welcome' ? '0%' :
-                                step === 'address' ? '25%' :
-                                    step === 'spot' ? '50%' :
-                                        step === 'trigger' ? '75%' : '100%'
-                        }}
-                    />
-                </div>
-
-                <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
-                    {error && (
-                        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm font-medium">
-                            {error}
-                        </div>
-                    )}
-                    {renderStep()}
-                </div>
+    return (
+        <Sheet
+            isOpen={isOpen}
+            onClose={onClose}
+            header={<OnboardingHeader step={step} onClose={onClose} />}
+            zIndex={100}
+        >
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+                {error && (
+                    <div className="mx-6 mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm font-medium">
+                        {error}
+                    </div>
+                )}
+                {renderStep()}
             </div>
-        </div>,
-        document.body
+        </Sheet>
     );
 }

@@ -694,7 +694,6 @@ export function TriggerForm({
                         spotRegion={spot?.region}
                         spotId={spot?.id}
                         onParsed={handleAIParsed}
-                        autoFocus
                     />
                 )}
 
