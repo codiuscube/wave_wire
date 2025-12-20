@@ -6,11 +6,6 @@ import {
   Letter,
   Shield,
   Card as CardIcon,
-  CloseCircle,
-  VerifiedCheck,
-  MapPoint,
-  ChatSquare,
-  Infinity,
   Home,
   Logout,
 } from '@solar-icons/react';
@@ -30,7 +25,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useProfile } from "../hooks";
 
 export function AccountPage() {
-  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { profile, isLoading, error, update } = useProfile(user?.id);
   const navigate = useNavigate();
 
@@ -43,7 +38,6 @@ export function AccountPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Sync local state when profile loads
   useEffect(() => {
@@ -57,10 +51,7 @@ export function AccountPage() {
   }, [profile]);
 
   // Derived values from profile
-  const phoneVerified = profile?.phoneVerified ?? false;
   const emailVerified = !!profile?.email; // Consider verified if email exists (from Supabase auth)
-  // Admins automatically get unlimited tier display
-  const currentTier = isAdmin ? "unlimited" : (profile?.subscriptionTier === "premium" ? "unlimited" : profile?.subscriptionTier === "pro" ? "unlimited" : "free");
 
   // Check if there are unsaved changes
   const hasChanges =
@@ -155,31 +146,26 @@ export function AccountPage() {
               <CardDescription className="text-sm">Where we send your surf alerts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6">
-              {/* Phone */}
-              <div>
+              {/* Phone - Coming Soon */}
+              <div className="opacity-50 pointer-events-none">
                 <label className="text-sm font-medium mb-2 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Phone weight="Bold" size={16} />
                     Phone Number (SMS)
                   </span>
-                  {phoneVerified ? (
-                    <Badge variant="outline">Verified</Badge>
-                  ) : (
-                    <Badge variant="secondary">Unverified</Badge>
-                  )}
+                  <Badge variant="secondary">Coming Soon</Badge>
                 </label>
                 <div className="flex gap-2">
                   <Input
                     type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    value=""
                     placeholder="+1 (555) 123-4567"
                     className="flex-1"
+                    disabled
                   />
-                  {!phoneVerified && <Button variant="outline">Verify</Button>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  We use SMS for instant alerts. Standard messaging rates may apply.
+                  SMS alerts coming soon. Standard messaging rates may apply.
                 </p>
               </div>
 
@@ -248,13 +234,14 @@ export function AccountPage() {
           </Card>
         </div>
 
-        {/* Notification Channels */}
-        <div className="w-full mb-8">
+        {/* Notification Channels - Coming Soon */}
+        <div className="w-full mb-8 opacity-50 pointer-events-none">
           <div className="flex items-center gap-3 mb-4 px-1">
-            <div className={`w-2 h-2 rounded-full bg-amber-500 animate-pulse`} />
+            <div className={`w-2 h-2 rounded-full bg-amber-500/50`} />
             <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Channels</h2>
+            <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
           </div>
-          <Card className="mb-6 lg:mb-8 bg-card/60 backdrop-blur-sm border-amber-500/20">
+          <Card className="mb-6 lg:mb-8 bg-card/60 backdrop-blur-sm border-muted">
             <CardHeader>
               <CardTitle className="text-lg sm:text-xl">Notification Channels</CardTitle>
               <CardDescription className="text-sm">How you receive surf alerts</CardDescription>
@@ -264,19 +251,17 @@ export function AccountPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 gap-3 border border-border bg-secondary/20 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center">
-                    <Phone weight="Bold" size={20} className="text-foreground" />
+                    <Phone weight="Bold" size={20} className="text-muted-foreground" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">SMS</p>
-                      <Badge variant="default" className="text-[10px]">Primary</Badge>
+                      <p className="font-medium text-muted-foreground">SMS</p>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Instant texts when conditions match triggers
                     </p>
                   </div>
                 </div>
-                <Badge variant="outline">Active</Badge>
               </div>
 
               {/* Email - Fallback */}
@@ -288,74 +273,47 @@ export function AccountPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-muted-foreground">Email</p>
-                      <Badge variant="secondary" className="text-[10px]">Fallback</Badge>
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      {currentTier === "free"
-                        ? "Used when SMS limit reached (Night Before alerts only)"
-                        : "Backup if SMS delivery fails"
-                      }
+                      Email notifications for surf alerts
                     </p>
                   </div>
                 </div>
-                <span className="text-xs text-muted-foreground">Auto-enabled</span>
               </div>
-
-              {/* Explanation */}
-              <p className="text-xs text-muted-foreground pt-2">
-                SMS is always primary. Email automatically kicks in as a fallback
-                {currentTier === "free" && " after your 5 monthly SMS alerts are used"}.
-              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Supporter Status */}
-        <div className="w-full mb-8">
+        {/* Supporter Status - Coming Soon */}
+        <div className="w-full mb-8 opacity-50 pointer-events-none">
           <div className="flex items-center gap-3 mb-4 px-1">
-            <div className={`w-2 h-2 rounded-full bg-emerald-500 animate-pulse`} />
+            <div className={`w-2 h-2 rounded-full bg-emerald-500/50`} />
             <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Plan</h2>
+            <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
           </div>
           <Card
-            className={`mb-6 lg:mb-8 bg-card/60 backdrop-blur-sm border-emerald-500/20`}
+            className={`mb-6 lg:mb-8 bg-card/60 backdrop-blur-sm border-muted`}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CardIcon weight="Bold" size={20} className="text-foreground" />
+                <CardIcon weight="Bold" size={20} className="text-muted-foreground" />
                 Subscription
               </CardTitle>
               <CardDescription>
-                {currentTier === "free"
-                  ? "Upgrade for unlimited alerts"
-                  : "Thanks for supporting WAVE_WIRE!"}
+                Subscription tiers coming soon
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">
-                      {currentTier === "free" ? "Free Tier" : "Unlimited Tier"}
-                    </p>
-                    <Badge variant={currentTier === "free" ? "secondary" : "default"}>
-                      {currentTier === "free" ? "Current" : "Active"}
-                    </Badge>
+                    <p className="font-medium text-muted-foreground">Free Tier</p>
+                    <Badge variant="secondary">Current</Badge>
                   </div>
-                  {currentTier === "free" ? (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      1 spot • 1 trigger • 3 of 5 SMS remaining
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Unlimited spots • Unlimited triggers • Unlimited SMS
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    All features currently available for free during beta
+                  </p>
                 </div>
-                {currentTier === "free" ? (
-                  <Button onClick={() => setShowPricingModal(true)}>Upgrade</Button>
-                ) : (
-                  <Button variant="outline">Manage</Button>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -364,23 +322,29 @@ export function AccountPage() {
         {/* Security */}
         <div className="w-full mb-8">
           <div className="flex items-center gap-3 mb-4 px-1">
-            <div className={`w-2 h-2 rounded-full bg-destructive animate-pulse`} />
+            <div className={`w-2 h-2 rounded-full bg-destructive/50`} />
             <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Security</h2>
+            <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
           </div>
-          <Card className="bg-card/60 backdrop-blur-sm border-destructive/20">
+          <Card className="bg-card/60 backdrop-blur-sm border-muted">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield weight="Bold" size={20} />
+                <Shield weight="Bold" size={20} className="text-muted-foreground" />
                 Security & Privacy
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start">
-                Change Password
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Download My Data
-              </Button>
+              <div className="opacity-50 pointer-events-none space-y-4">
+                <Button variant="outline" className="w-full justify-start" disabled>
+                  Change Password
+                </Button>
+                <Button variant="outline" className="w-full justify-start" disabled>
+                  Download My Data
+                </Button>
+                <Button variant="outline" className="w-full justify-start" disabled>
+                  Delete Account
+                </Button>
+              </div>
               <Button
                 variant="outline"
                 className="w-full justify-start text-red-400 hover:text-red-500 hover:bg-red-500/10"
@@ -388,12 +352,6 @@ export function AccountPage() {
               >
                 <Logout size={20} className="mr-2" />
                 Log Out
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-destructive hover:text-destructive"
-              >
-                Delete Account
               </Button>
             </CardContent>
           </Card>
@@ -423,137 +381,6 @@ export function AccountPage() {
           </Button>
         </div>
 
-        {/* Pricing Modal */}
-        {showPricingModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setShowPricingModal(false)}
-            />
-
-            {/* Modal */}
-            <div className="relative bg-background border border-border rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <div>
-                  <h2 className="text-xl font-bold">Choose Your Plan</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Simple pricing. Cancel anytime.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowPricingModal(false)}
-                  className="p-2 hover:bg-secondary rounded-md transition-colors"
-                >
-                  <CloseCircle weight="Bold" size={20} />
-                </button>
-              </div>
-
-              {/* Pricing Cards */}
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Free Tier */}
-                <div
-                  className={`border rounded-xl p-6 ${currentTier === "free"
-                    ? "border-primary bg-secondary/20"
-                    : "border-border"
-                    }`}
-                >
-                  {currentTier === "free" && (
-                    <Badge variant="secondary" className="mb-4">
-                      Current Plan
-                    </Badge>
-                  )}
-                  <h3 className="text-lg font-bold">Free</h3>
-                  <div className="mt-2 mb-4">
-                    <span className="text-3xl font-bold">$0</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Perfect for trying out WAVE_WIRE
-                  </p>
-
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2 text-sm">
-                      <MapPoint weight="Bold" size={16} className="text-muted-foreground" />
-                      <span>1 spot</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <VerifiedCheck weight="Bold" size={16} className="text-muted-foreground" />
-                      <span>1 trigger</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <ChatSquare weight="Bold" size={16} className="text-muted-foreground" />
-                      <span>5 SMS alerts per month</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <Letter weight="Bold" size={16} className="text-muted-foreground" />
-                      <span>Email fallback after SMS limit</span>
-                    </li>
-                  </ul>
-
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    disabled={currentTier === "free"}
-                  >
-                    {currentTier === "free" ? "Current Plan" : "Downgrade"}
-                  </Button>
-                </div>
-
-                {/* Unlimited Tier */}
-                <div className="border border-input rounded-xl p-6 relative bg-background shadow-sm">
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    Recommended
-                  </Badge>
-                  <h3 className="text-lg font-bold mt-2">Unlimited</h3>
-                  <div className="mt-2 mb-4">
-                    <span className="text-3xl font-bold">$5</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Never miss a session
-                  </p>
-
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center gap-2 text-sm">
-                      <Infinity weight="Bold" size={16} className="text-primary" />
-                      <span className="font-medium">Unlimited spots</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <Infinity weight="Bold" size={16} className="text-primary" />
-                      <span className="font-medium">Unlimited triggers</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <Infinity weight="Bold" size={16} className="text-primary" />
-                      <span className="font-medium">Unlimited SMS alerts</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <VerifiedCheck weight="Bold" size={16} className="text-primary" />
-                      <span>All alert types</span>
-                    </li>
-                  </ul>
-
-                  <Button className="w-full">
-                    {currentTier === "unlimited"
-                      ? "Current Plan"
-                      : "Upgrade to Unlimited"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-border bg-secondary/30">
-                <p className="text-xs text-muted-foreground text-center">
-                  All plans include real-time buoy data, forecast checks, and
-                  popup alerts.
-                  <br />
-                  Cancel anytime. No questions asked.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="mb-20" /> {/* Spacer */}
