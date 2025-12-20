@@ -184,6 +184,22 @@ npx tsx scripts/reset-onboarding.ts
 - Build Command: `npm run build`
 - Output Directory: `dist`
 
+### Vercel CLI
+
+**Important:** Always run the Vercel CLI from the **project root** directory, not from within `frontend/`.
+
+```bash
+# Correct - run from project root
+cd ~/homebreak-project
+vercel --yes
+
+# Wrong - will cause path duplication error
+cd ~/homebreak-project/frontend
+vercel --yes  # Error: path "frontend/frontend" does not exist
+```
+
+The Vercel project has Root Directory set to `frontend` in the dashboard settings. Running `vercel` from within `frontend/` causes the path to double (`frontend/frontend`).
+
 ### Vercel Configuration
 
 **File:** `frontend/vercel.json`
@@ -291,6 +307,7 @@ console.log({ data, error });
 | Auth not persisting | Check `supabase.auth.getSession()` |
 | RLS blocking queries | Check policies in Supabase Dashboard |
 | Types out of sync | Run `supabase gen types typescript --linked` |
+| Vercel "path does not exist" | Run `vercel` from project root, not `frontend/` |
 
 ---
 

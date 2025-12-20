@@ -23,8 +23,9 @@ export function AddSpotModal({
 }: AddSpotModalProps) {
   console.log('[AddSpotModal] Rendering', { isOpen });
 
-  const handleAddSpot = (spot: Spot) => {
-    onAddSpot(spot);
+  const handleAddSpot = async (spot: Spot) => {
+    // Ensure the async save operation completes before closing
+    await Promise.resolve(onAddSpot(spot));
     onClose();
   };
 
