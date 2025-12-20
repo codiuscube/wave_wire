@@ -32,7 +32,7 @@ export function Sheet({
   footer,
 }: SheetProps) {
   const defaultHeader = (
-    <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
       <div>
         {title && (
           <Drawer.Title className="flex items-center gap-3 mb-1">

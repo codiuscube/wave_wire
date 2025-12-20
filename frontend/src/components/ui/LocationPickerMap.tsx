@@ -46,7 +46,7 @@ export function LocationPickerMap({
     className = "h-full w-full"
 }: LocationPickerMapProps) {
     return (
-        <div className={`relative ${className}`}>
+        <div className={`relative ${className}`} data-vaul-no-drag>
             {/* Fixed centered pin overlay */}
             <div className="absolute inset-0 pointer-events-none z-[500] flex items-center justify-center">
                 <div className="marker-reticle">
