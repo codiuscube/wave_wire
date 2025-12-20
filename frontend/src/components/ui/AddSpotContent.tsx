@@ -20,7 +20,9 @@ import { AVAILABLE_ICONS } from "./IconPickerModal";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { Sheet } from "./Sheet";
 import { LocationPickerMap } from "./LocationPickerMap";
+import { NaturalLanguageSpotInput } from "./NaturalLanguageSpotInput";
 import type { AddressSuggestion } from "../../services/api/addressService";
+import type { ParsedSpot } from "../../services/api/spotAiService";
 
 export interface SpotOption extends Spot { }
 
@@ -189,6 +191,20 @@ export function AddSpotContent({
             lat: lat.toString(),
             lon: lon.toString(),
         }));
+    };
+
+    const handleAIParsed = (parsedSpot: ParsedSpot) => {
+        setCustomSpot(prev => ({
+            ...prev,
+            name: parsedSpot.name || prev.name,
+            lat: parsedSpot.lat?.toString() || prev.lat,
+            lon: parsedSpot.lon?.toString() || prev.lon,
+            exposure: parsedSpot.exposure || prev.exposure,
+        }));
+        // Open map if we got coordinates
+        if (parsedSpot.lat && parsedSpot.lon) {
+            setIsMapOpen(true);
+        }
     };
 
     const currentRegionLabel = COUNTRY_GROUP_LABELS[selectedRegion];
@@ -446,6 +462,9 @@ export function AddSpotContent({
                 ) : (
                     /* Custom Location Form */
                     <div className="space-y-6">
+                        {/* AI Assistant */}
+                        <NaturalLanguageSpotInput onParsed={handleAIParsed} />
+
                         <div>
                             <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
                                 Spot Name
@@ -562,65 +581,31 @@ export function AddSpotContent({
                 isOpen={isMapOpen}
                 onClose={() => setIsMapOpen(false)}
                 title="Adjust Location"
-                description="Drag the marker or search for an address."
+                description="Drag the map to fine-tune the position."
                 className="w-full max-w-2xl"
             >
                 <div className="w-full h-[300px] sm:h-[350px] relative rounded-md overflow-hidden bg-muted/20">
                     <LocationPickerMap
-                        lat={parseFloat(customSpot.lat) || 0}
-                        lon={parseFloat(customSpot.lon) || 0}
+                        lat={parseFloat(customSpot.lat) || userLocation?.lat || 33.3822}
+                        lon={parseFloat(customSpot.lon) || userLocation?.lon || -117.5889}
                         onLocationChange={handleLocationChange}
                     />
                 </div>
-                <div className="p-4 border-t border-border/50 space-y-4">
-                    {/* Address Search */}
-                    <div>
-                        <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                            Search Address
-                        </label>
-                        <AddressAutocomplete
-                            value=""
-                            onChange={() => {}}
-                            onAddressSelect={handleAddressSelect}
-                            placeholder="SEARCH ADDRESS..."
-                            className="font-mono"
-                        />
-                    </div>
-
-                    {/* Coordinates + Button Row */}
-                    <div className="flex items-end gap-4">
-                        <div className="flex-1 grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                                    Latitude
-                                </label>
-                                <Input
-                                    placeholder="29.0469"
-                                    value={customSpot.lat}
-                                    onChange={(e) =>
-                                        setCustomSpot({ ...customSpot, lat: e.target.value })
-                                    }
-                                    className="font-mono text-sm h-9"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                                    Longitude
-                                </label>
-                                <Input
-                                    placeholder="-95.2882"
-                                    value={customSpot.lon}
-                                    onChange={(e) =>
-                                        setCustomSpot({ ...customSpot, lon: e.target.value })
-                                    }
-                                    className="font-mono text-sm h-9"
-                                />
-                            </div>
+                <div className="p-4 border-t border-border/50 flex items-center justify-between gap-4">
+                    {/* Coordinates Display */}
+                    <div className="flex items-center gap-6 font-mono text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground uppercase">Lat</span>
+                            <span className="text-primary">{parseFloat(customSpot.lat).toFixed(6) || "—"}</span>
                         </div>
-                        <Button onClick={() => setIsMapOpen(false)} className="shrink-0">
-                            LOOKS GOOD
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground uppercase">Lon</span>
+                            <span className="text-primary">{parseFloat(customSpot.lon).toFixed(6) || "—"}</span>
+                        </div>
                     </div>
+                    <Button onClick={() => setIsMapOpen(false)} className="shrink-0">
+                        LOOKS GOOD
+                    </Button>
                 </div>
             </Sheet>
         </div>
