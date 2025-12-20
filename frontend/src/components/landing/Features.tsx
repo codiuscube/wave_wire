@@ -80,7 +80,7 @@ export function Features() {
               </p>
 
               {/* Decorative elements */}
-              <div className="absolute bottom-4 right-4 text-[10px] font-mono text-white/20 rotate-90 origin-bottom-right">
+              <div className="absolute bottom-4 right-4 text-xs font-mono text-white/20 rotate-90 origin-bottom-right">
                 SYS_ID_{idx + 42}X
               </div>
             </div>

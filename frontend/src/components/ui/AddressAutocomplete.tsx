@@ -155,9 +155,8 @@ export function AddressAutocomplete({
               key={`${suggestion.lat}-${suggestion.lon}-${index}`}
               type="button"
               onClick={() => handleSuggestionClick(suggestion)}
-              className={`w-full text-left px-3 py-2 flex items-start gap-2 hover:bg-secondary/50 transition-colors ${
-                index === highlightedIndex ? 'bg-secondary' : ''
-              }`}
+              className={`w-full text-left px-3 py-2 flex items-start gap-2 hover:bg-secondary/50 transition-colors ${index === highlightedIndex ? 'bg-secondary' : ''
+                }`}
             >
               <MapPoint weight="Bold" size={16} className="text-muted-foreground mt-0.5 shrink-0" />
               <span className="text-sm">{suggestion.displayName}</span>
@@ -166,7 +165,7 @@ export function AddressAutocomplete({
 
           {/* Attribution */}
           <div className="px-3 py-1.5 border-t border-input">
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Powered by OpenStreetMap
             </span>
           </div>

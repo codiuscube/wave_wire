@@ -49,7 +49,7 @@ export function AlertCard({ alert, className = '' }: AlertCardProps) {
 
             {/* Xerox Stamp Timestamp */}
             <div className="absolute bottom-3 right-4 transform -rotate-1 opacity-70">
-                <span className="font-mono text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em] border border-muted-foreground/20 px-2 py-1 rounded-[2px]">
+                <span className="font-mono text-xs text-muted-foreground/60 uppercase tracking-[0.2em] border border-muted-foreground/20 px-2 py-1 rounded-[2px]">
                     {formatTimestamp(alert.time)}
                 </span>
             </div>

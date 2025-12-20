@@ -1,6 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { mapUserSpot, toDbUserSpotInsert, toDbUserSpotUpdate, type UserSpot } from '../lib/mappers';
+
+// Debounce helper
+function debounce<T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
 
 type SubscriptionTier = 'free' | 'pro' | 'premium';
 
@@ -26,11 +38,13 @@ interface UseUserSpotsReturn {
   /** Maximum spots allowed for tier */
   spotLimit: number;
   /** Add a new spot */
-  addSpot: (spot: Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<{ data: UserSpot | null; error: string | null }>;
+  addSpot: (spot: Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'sortOrder'>) => Promise<{ data: UserSpot | null; error: string | null }>;
   /** Update an existing spot */
   updateSpot: (spotId: string, updates: Partial<Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>) => Promise<{ error: string | null }>;
   /** Delete a spot */
   deleteSpot: (spotId: string) => Promise<{ error: string | null }>;
+  /** Reorder spots */
+  reorderSpots: (reorderedSpots: UserSpot[]) => Promise<{ error: string | null }>;
 }
 
 /**
@@ -77,7 +91,7 @@ export function useUserSpots(
         .from('user_spots')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('sort_order', { ascending: true });
 
       if (fetchError) {
         setError(fetchError.message);
@@ -98,7 +112,7 @@ export function useUserSpots(
 
   const addSpot = useCallback(
     async (
-      spot: Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+      spot: Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'sortOrder'>
     ): Promise<{ data: UserSpot | null; error: string | null }> => {
       if (!userId) {
         return { data: null, error: 'No user ID provided' };
@@ -112,7 +126,9 @@ export function useUserSpots(
         };
       }
 
-      const dbSpot = toDbUserSpotInsert({ ...spot, userId });
+      // New spots go at the end (highest sort_order)
+      const maxSortOrder = spots.length > 0 ? Math.max(...spots.map(s => s.sortOrder)) + 1 : 0;
+      const dbSpot = toDbUserSpotInsert({ ...spot, userId, sortOrder: maxSortOrder });
 
       const { data, error: insertError } = await supabase
         .from('user_spots')
@@ -130,13 +146,13 @@ export function useUserSpots(
 
       if (data) {
         const mappedSpot = mapUserSpot(data);
-        setSpots((prev) => [mappedSpot, ...prev]);
+        setSpots((prev) => [...prev, mappedSpot]);
         return { data: mappedSpot, error: null };
       }
 
       return { data: null, error: 'No data returned' };
     },
-    [userId, canAddSpot, tier, spotLimit]
+    [userId, canAddSpot, tier, spotLimit, spots]
   );
 
   const updateSpot = useCallback(
@@ -196,6 +212,51 @@ export function useUserSpots(
     [userId]
   );
 
+  // Debounced save function - persists order to DB after drag stops
+  const saveOrderToDb = useCallback(
+    async (reorderedSpots: UserSpot[]) => {
+      if (!userId) return;
+
+      // Update all spots in parallel for speed
+      const updates = reorderedSpots.map((spot, index) =>
+        supabase
+          .from('user_spots')
+          .update({ sort_order: index })
+          .eq('id', spot.id)
+          .eq('user_id', userId)
+      );
+
+      const results = await Promise.all(updates);
+      const hasError = results.some(r => r.error);
+
+      if (hasError) {
+        // Revert on error
+        console.error('Error saving spot order');
+        await fetchSpots();
+      }
+    },
+    [userId, fetchSpots]
+  );
+
+  // Create stable debounced version
+  const debouncedSaveRef = useRef<((spots: UserSpot[]) => void) | null>(null);
+  if (!debouncedSaveRef.current) {
+    debouncedSaveRef.current = debounce(saveOrderToDb, 500);
+  }
+
+  const reorderSpots = useCallback(
+    (reorderedSpots: UserSpot[]): Promise<{ error: string | null }> => {
+      // Immediate local state update for smooth UI
+      setSpots(reorderedSpots);
+
+      // Debounced DB save - only fires 500ms after last reorder
+      debouncedSaveRef.current?.(reorderedSpots);
+
+      return Promise.resolve({ error: null });
+    },
+    []
+  );
+
   return {
     spots,
     isLoading,
@@ -207,6 +268,7 @@ export function useUserSpots(
     addSpot,
     updateSpot,
     deleteSpot,
+    reorderSpots,
   };
 }
 

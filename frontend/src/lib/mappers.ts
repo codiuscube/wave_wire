@@ -59,6 +59,7 @@ export interface UserSpot {
   buoyId: string | null;
   icon: string | null;
   masterSpotId: string | null;
+  sortOrder: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -262,6 +263,7 @@ export function mapUserSpot(row: DbUserSpot): UserSpot {
     buoyId: row.buoy_id,
     icon: row.icon,
     masterSpotId: row.master_spot_id,
+    sortOrder: (row as unknown as Record<string, unknown>).sort_order as number ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -376,7 +378,7 @@ export function toDbProfileUpdate(
 
 export function toDbUserSpotInsert(
   spot: Omit<UserSpot, 'id' | 'createdAt' | 'updatedAt'>
-): TablesInsert<'user_spots'> {
+): TablesInsert<'user_spots'> & { sort_order?: number } {
   return {
     user_id: spot.userId,
     name: spot.name,
@@ -386,13 +388,14 @@ export function toDbUserSpotInsert(
     buoy_id: spot.buoyId,
     icon: spot.icon,
     master_spot_id: spot.masterSpotId,
+    sort_order: spot.sortOrder,
   };
 }
 
 export function toDbUserSpotUpdate(
   spot: Partial<Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
-): TablesUpdate<'user_spots'> {
-  const update: TablesUpdate<'user_spots'> = {};
+): TablesUpdate<'user_spots'> & { sort_order?: number } {
+  const update: TablesUpdate<'user_spots'> & { sort_order?: number } = {};
   if (spot.name !== undefined) update.name = spot.name;
   if (spot.latitude !== undefined) update.latitude = spot.latitude;
   if (spot.longitude !== undefined) update.longitude = spot.longitude;
@@ -400,6 +403,7 @@ export function toDbUserSpotUpdate(
   if (spot.buoyId !== undefined) update.buoy_id = spot.buoyId;
   if (spot.icon !== undefined) update.icon = spot.icon;
   if (spot.masterSpotId !== undefined) update.master_spot_id = spot.masterSpotId;
+  if (spot.sortOrder !== undefined) update.sort_order = spot.sortOrder;
   return update;
 }
 

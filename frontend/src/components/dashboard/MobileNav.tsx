@@ -100,7 +100,7 @@ export function MobileNav() {
                                             className={cn("transition-transform duration-300", isActive && "scale-110")}
                                         />
                                     </div>
-                                    <span className="text-[10px] font-medium tracking-wide">
+                                    <span className="text-xs font-medium tracking-wide">
                                         {item.label}
                                     </span>
                                 </>
@@ -132,7 +132,7 @@ export function MobileNav() {
                                 className={cn("transition-transform duration-300", isActiveAccount && "scale-110")}
                             />
                         </div>
-                        <span className="text-[10px] font-medium tracking-wide">
+                        <span className="text-xs font-medium tracking-wide">
                             Account
                         </span>
                     </NavLink>

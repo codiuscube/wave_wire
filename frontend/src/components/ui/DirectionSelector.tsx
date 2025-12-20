@@ -255,7 +255,7 @@ export function DirectionSelector({
                     onTouchStart={handleTouchStart('min')}
                 >
                     <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                    <div className="absolute -top-8 bg-popover text-popover-foreground text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border">
+                    <div className="absolute -top-8 bg-popover text-popover-foreground text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border">
                         Start: {internalMin}°
                     </div>
                 </div>
@@ -278,7 +278,7 @@ export function DirectionSelector({
                     onTouchStart={handleTouchStart('max')}
                 >
                     <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                    <div className="absolute -top-8 bg-popover text-popover-foreground text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border">
+                    <div className="absolute -top-8 bg-popover text-popover-foreground text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border">
                         End: {internalMax}°
                     </div>
                 </div>
@@ -287,19 +287,19 @@ export function DirectionSelector({
             {/* Legend */}
             <div className="mt-4 flex items-center gap-4 text-sm font-mono text-muted-foreground">
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] uppercase tracking-wider">Start</span>
+                    <span className="text-xs uppercase tracking-wider">Start</span>
                     <span className="text-foreground font-bold">{internalMin}°</span>
                 </div>
                 <div className="h-px w-8 bg-border" />
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] uppercase tracking-wider">Range</span>
+                    <span className="text-xs uppercase tracking-wider">Range</span>
                     <span className="text-primary font-bold">
                         {(internalMax - internalMin + 360) % 360 === 0 ? 360 : (internalMax - internalMin + 360) % 360}°
                     </span>
                 </div>
                 <div className="h-px w-8 bg-border" />
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] uppercase tracking-wider">End</span>
+                    <span className="text-xs uppercase tracking-wider">End</span>
                     <span className="text-foreground font-bold">{internalMax}°</span>
                 </div>
             </div>
