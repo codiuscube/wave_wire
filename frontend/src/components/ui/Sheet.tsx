@@ -147,14 +147,14 @@ function MobileDrawer({
   );
 
   return (
-    <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Drawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()} handleOnly>
       <Drawer.Portal>
         <Drawer.Overlay
           className="fixed inset-0 bg-background/80 backdrop-blur-sm"
           style={{ zIndex }}
         />
         <Drawer.Content
-          className="fixed bottom-0 left-0 right-0 w-full bg-card/95 backdrop-blur-md rounded-t-2xl flex flex-col max-h-[96vh] outline-none"
+          className="fixed bottom-0 left-0 right-0 w-full bg-card/95 backdrop-blur-md rounded-t-2xl flex flex-col h-[95dvh] max-h-[96vh] outline-none"
           style={{ zIndex: zIndex + 1 }}
           onOpenAutoFocus={(e) => console.log('[Drawer.Content] onOpenAutoFocus', e)}
         >
