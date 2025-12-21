@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { SpotCard } from '../components/SpotCard';
 import type { Spot } from '../components/SpotCard';
 import { AlertsModal } from '../components/dashboard/AlertsModal';
@@ -10,7 +10,8 @@ import { useMultipleBuoyData } from '../hooks/useBuoyData';
 import { useMultipleForecastData } from '../hooks/useForecastData';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserSpots, useSentAlerts, useMinimumLoading } from '../hooks';
-import { AddCircle } from '@solar-icons/react';
+import { AddCircle, MenuDots, CheckCircle, MinusCircle, Target } from '@solar-icons/react';
+import { AVAILABLE_ICONS } from '../components/ui/IconPickerModal';
 import type { UserSpot, SentAlert } from '../lib/mappers';
 import { DnaLogo } from '../components/ui/DnaLogo';
 
@@ -77,7 +78,130 @@ function sentAlertToAlertCard(alert: SentAlert): AlertCardData {
   };
 }
 
+// Draggable Dashboard Card Component
+interface DraggableDashboardCardProps {
+  spot: Spot;
+  userSpot: UserSpot;
+  buoyLoading: boolean;
+  forecastLoading: boolean;
+  isReordering: boolean;
+  onToggleVisibility: () => void;
+}
 
+function DraggableDashboardCard({
+  spot,
+  userSpot,
+  buoyLoading,
+  forecastLoading,
+  isReordering,
+  onToggleVisibility,
+}: DraggableDashboardCardProps) {
+  const controls = useDragControls();
+  const longPressTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pointerRef = useRef<React.PointerEvent | null>(null);
+
+  const handleLongPressStart = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'touch') return;
+    pointerRef.current = e;
+    longPressTimeout.current = setTimeout(() => {
+      if (pointerRef.current) {
+        controls.start(pointerRef.current);
+      }
+    }, 400);
+  }, [controls]);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimeout.current) {
+      clearTimeout(longPressTimeout.current);
+      longPressTimeout.current = null;
+    }
+    pointerRef.current = null;
+  }, []);
+
+  const isHidden = userSpot.hiddenOnDashboard;
+
+  return (
+    <Reorder.Item
+      value={userSpot}
+      dragListener={false}
+      dragControls={controls}
+      layout="position"
+      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      dragElastic={0}
+      dragMomentum={false}
+      className="group relative flex"
+      whileDrag={{
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        zIndex: 50,
+        cursor: "grabbing"
+      }}
+    >
+      {/* Drag Handle - visible in reorder mode */}
+      {isReordering && (
+        <div
+          className="flex items-center justify-center px-2 py-4 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/50 hover:text-muted-foreground active:text-primary transition-colors select-none"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            controls.start(e);
+          }}
+          style={{ touchAction: 'none' }}
+        >
+          <div className="flex -space-x-3">
+            <MenuDots weight="Bold" size={16} className="rotate-90" />
+            <MenuDots weight="Bold" size={16} className="rotate-90" />
+          </div>
+        </div>
+      )}
+
+      {/* Card Container */}
+      <div
+        className="flex-1 relative"
+        onPointerDown={handleLongPressStart}
+        onPointerUp={handleLongPressEnd}
+        onPointerCancel={handleLongPressEnd}
+        onPointerLeave={handleLongPressEnd}
+      >
+        {/* Side Accent Line */}
+        <div className={`absolute left-0 top-0 bottom-0 w-0.5 transition-colors z-10 rounded-l ${isHidden ? 'bg-muted-foreground/20' : 'bg-primary/50 group-hover:bg-primary'}`} />
+
+        {isReordering ? (
+          /* Reorder mode - always collapsed view */
+          <div className={`border backdrop-blur-sm p-4 flex items-center justify-between ${isHidden ? 'border-border/10 bg-card/10 opacity-40' : 'border-border/30 bg-card/60'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`h-10 w-10 shrink-0 flex items-center justify-center rounded-md border ${isHidden ? 'border-muted-foreground/10 bg-muted/10 text-muted-foreground/30' : 'border-cyan-500/50 bg-cyan-950/30 text-cyan-400'}`}>
+                {(() => {
+                  const IconComponent = spot.icon && AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                    ? AVAILABLE_ICONS[spot.icon as keyof typeof AVAILABLE_ICONS]
+                    : Target;
+                  return <IconComponent weight="BoldDuotone" size={24} />;
+                })()}
+              </div>
+              <p className={`font-mono font-bold text-lg tracking-tight truncate uppercase ${isHidden ? 'text-muted-foreground/40' : 'text-foreground'}`}>{spot.name}</p>
+            </div>
+            <button
+              onClick={onToggleVisibility}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={`p-2 rounded transition-colors ${isHidden
+                  ? 'bg-muted/50 text-primary hover:bg-primary hover:text-primary-foreground hover:opacity-100'
+                  : 'bg-muted text-muted-foreground hover:bg-destructive/20 hover:text-destructive'
+                }`}
+              title={isHidden ? "Show on dashboard" : "Hide from dashboard"}
+            >
+              {isHidden ? (
+                <AddCircle weight="Outline" size={20} />
+              ) : (
+                <MinusCircle weight="Bold" size={20} />
+              )}
+            </button>
+          </div>
+        ) : (
+          /* Normal mode - full SpotCard (only visible items shown) */
+          <SpotCard spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
+        )}
+      </div>
+    </Reorder.Item>
+  );
+}
 
 export function DashboardOverview() {
   const { user, profile, loading: authLoading, isAdmin } = useAuth();
@@ -92,6 +216,9 @@ export function DashboardOverview() {
     isLoading: spotsLoading,
     error: spotsError,
     refresh: refreshSpots,
+    reorderSpots,
+    saveSpotOrder,
+    toggleSpotVisibility,
   } = useUserSpots(user?.id, tier);
 
   // Fetch recent alerts from DB
@@ -101,20 +228,31 @@ export function DashboardOverview() {
   } = useSentAlerts(user?.id, { limit: 5 });
 
   const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
 
-  // Convert DB spots to base spots format
+  // Filter spots for display based on reorder mode
+  const visibleDbSpots = useMemo(() => {
+    if (isReordering) {
+      // Show all spots in reorder mode (including hidden ones)
+      return dbSpots;
+    }
+    // In normal mode, filter out hidden spots
+    return dbSpots.filter(spot => !spot.hiddenOnDashboard);
+  }, [dbSpots, isReordering]);
+
+  // Convert visible DB spots to base spots format
   const baseSpots: BaseSpot[] = useMemo(() => {
-    return dbSpots
+    return visibleDbSpots
       .map(userSpotToBaseSpot)
       .filter((spot): spot is BaseSpot => spot !== null);
-  }, [dbSpots]);
+  }, [visibleDbSpots]);
 
   // Convert DB alerts to alert card format
   const recentAlerts: AlertCardData[] = useMemo(() => {
     return dbAlerts.map(sentAlertToAlertCard);
   }, [dbAlerts]);
 
-  // Extract unique buoy IDs from spots
+  // Extract unique buoy IDs from visible spots
   const buoyIds = useMemo(() => {
     const ids = baseSpots
       .map((spot) => spot.buoyId)
@@ -122,7 +260,7 @@ export function DashboardOverview() {
     return [...new Set(ids)];
   }, [baseSpots]);
 
-  // Extract locations for forecast data
+  // Extract locations for forecast data from visible spots
   const forecastLocations = useMemo(() => {
     return baseSpots.map((spot) => ({
       lat: spot.lat,
@@ -195,6 +333,15 @@ export function DashboardOverview() {
     refreshSpots();
   };
 
+  // Handle reorder mode toggle - save order when exiting
+  const handleReorderToggle = async () => {
+    if (isReordering) {
+      // Exiting reorder mode - save the current order
+      await saveSpotOrder(dbSpots);
+    }
+    setIsReordering(!isReordering);
+  };
+
   return (
     <div className="relative p-4 min-h-[calc(100vh-4rem)] flex flex-col items-center">
       {/* Background Tech Elements */}
@@ -260,7 +407,7 @@ export function DashboardOverview() {
               </div>
             ) : (
               <div className="border border-dashed border-border/50 bg-secondary/5 rounded-lg p-6 text-center">
-                <p className="font-mono text-xs text-muted-foreground">No recent intercepts.</p>
+                <p className="font-mono text-xs text-muted-foreground">No recent wires.</p>
               </div>
             )}
           </div>
@@ -273,25 +420,86 @@ export function DashboardOverview() {
               <div className="w-2 h-2 bg-primary animate-pulse rounded-full" />
               <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Live Feeds</h2>
             </div>
-            {/* Optional: Add simplified action buttons here or rely on Spot Cards */}
+
+            {/* Reorder Button */}
+            {dbSpots.length > 1 && (
+              <button
+                onClick={handleReorderToggle}
+                className={`font-mono text-xs px-2 py-1 rounded flex items-center gap-1.5 transition-colors ${isReordering
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary/10 text-muted-foreground hover:text-foreground hover:bg-secondary/20'
+                  }`}
+              >
+                {isReordering ? (
+                  <>
+                    <CheckCircle weight="Bold" size={12} />
+                    Done
+                  </>
+                ) : (
+                  <>
+                    <MenuDots weight="Bold" size={12} className="rotate-90" />
+                    Reorder
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           <div className="space-y-4 pb-20">
             {userSpots.length > 0 ? (
-              <AnimatePresence>
-                {userSpots.map((spot, index) => (
-                  <motion.div
-                    key={spot.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 + 0.2 }}
-                    className="relative group"
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
-                    <SpotCard spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              isReordering ? (
+                // Reorder mode - use Reorder.Group with all spots (including hidden)
+                <Reorder.Group
+                  axis="y"
+                  values={visibleDbSpots}
+                  onReorder={reorderSpots}
+                  className="space-y-4"
+                >
+                  {visibleDbSpots.map((dbSpot) => {
+                    const baseSpot = userSpotToBaseSpot(dbSpot);
+                    if (!baseSpot) return null;
+
+                    const buoyData = baseSpot.buoyId
+                      ? buoyDataMap.get(baseSpot.buoyId.toUpperCase())
+                      : null;
+                    const forecastData = forecastDataMap.get(baseSpot.id);
+
+                    const spot: Spot = {
+                      ...baseSpot,
+                      buoy: buoyData ?? undefined,
+                      forecast: forecastData ?? undefined,
+                    };
+
+                    return (
+                      <DraggableDashboardCard
+                        key={dbSpot.id}
+                        spot={spot}
+                        userSpot={dbSpot}
+                        buoyLoading={buoyLoading}
+                        forecastLoading={forecastLoading}
+                        isReordering={isReordering}
+                        onToggleVisibility={() => toggleSpotVisibility(dbSpot.id)}
+                      />
+                    );
+                  })}
+                </Reorder.Group>
+              ) : (
+                // Normal mode - use AnimatePresence with visible spots only
+                <AnimatePresence>
+                  {userSpots.map((spot, index) => (
+                    <motion.div
+                      key={spot.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 + 0.2 }}
+                      className="relative group"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+                      <SpotCard spot={spot} buoyLoading={buoyLoading} forecastLoading={forecastLoading} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )
             ) : (
               <div className="w-full border border-dashed border-border/50 bg-secondary/5 rounded-lg p-12 flex flex-col items-center justify-center text-center">
                 <div className="mb-6">

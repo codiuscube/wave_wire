@@ -96,6 +96,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
             buoyId: spot.buoyId || null,
             icon: spot.icon || null,
             masterSpotId: spot.id,
+            hiddenOnDashboard: false,
         });
 
         setLoading(false);

@@ -23,7 +23,7 @@ export function Navbar() {
             to="/login"
             className="text-xs font-mono text-brand-foam/60 hover:text-brand-acid transition-colors"
           >
-            Login
+            LOGIN TO BETA
           </Link>
 
           <button

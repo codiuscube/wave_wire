@@ -153,14 +153,16 @@ function DraggableSpotCard({
             </div>
           </div>
 
-          <button
-            onClick={onDelete}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-            title="Remove target"
-          >
-            <TrashBinMinimalistic weight="Bold" size={20} />
-          </button>
+          {isReordering && (
+            <button
+              onClick={onDelete}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="p-2 rounded bg-muted text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+              title="Remove target"
+            >
+              <TrashBinMinimalistic weight="Bold" size={20} />
+            </button>
+          )}
         </div>
 
         {/* Buoy Section */}
@@ -348,6 +350,7 @@ export function SpotPage() {
       buoyId: spot.buoyId || null,
       icon: spot.icon || null,
       masterSpotId: masterSpotId, // Link to master surf_spots table
+      hiddenOnDashboard: false,
     });
 
     if (error) {

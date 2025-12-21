@@ -519,6 +519,7 @@ export type Database = {
         Row: {
           buoy_id: string | null
           created_at: string | null
+          hidden_on_dashboard: boolean | null
           icon: string | null
           id: string
           latitude: number | null
@@ -532,6 +533,7 @@ export type Database = {
         Insert: {
           buoy_id?: string | null
           created_at?: string | null
+          hidden_on_dashboard?: boolean | null
           icon?: string | null
           id?: string
           latitude?: number | null
@@ -545,6 +547,7 @@ export type Database = {
         Update: {
           buoy_id?: string | null
           created_at?: string | null
+          hidden_on_dashboard?: boolean | null
           icon?: string | null
           id?: string
           latitude?: number | null

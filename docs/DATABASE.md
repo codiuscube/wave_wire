@@ -513,7 +513,13 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251219000002_simplify_alert_window.sql` | Window mode, start/end times |
 | `20251219000003_add_active_days.sql` | Active days for scheduling |
 | `20251219000004_add_two_day_forecast.sql` | Two-day forecast alert type |
+| `20251219150000_add_locals_knowledge.sql` | Locals knowledge feature |
+| `20251219172500_update_handle_new_user.sql` | Update handle_new_user function |
 | `20251219180000_add_five_day_forecast.sql` | Five-day forecast alert type |
+| `20251219200000_add_home_coordinates.sql` | Home coordinates for profiles |
+| `20251219210000_add_spot_sort_order.sql` | Spot sort order for user_spots |
+| `20251221000001_allow_user_spot_submissions.sql` | User spot submissions |
+| `20251221100000_add_waitlist_table.sql` | Waitlist table |
 
 ---
 

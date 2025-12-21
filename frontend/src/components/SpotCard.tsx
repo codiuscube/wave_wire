@@ -97,9 +97,10 @@ interface SpotCardProps {
   spot: Spot;
   buoyLoading?: boolean;
   forecastLoading?: boolean;
+  hideLocationLink?: boolean;
 }
 
-export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }: SpotCardProps) {
+export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, hideLocationLink = false }: SpotCardProps) {
   const [forecastSource, setForecastSource] = useState<"primary" | "secondary">("primary");
   const [forecastTime, setForecastTime] = useState<ForecastTime>("now");
   const [activeForecast, setActiveForecast] = useState<ForecastData | null | undefined>(spot.forecast);
@@ -273,7 +274,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false }:
           <p className="font-mono font-bold text-lg tracking-tight truncate uppercase">{spot.name}</p>
         </div>
 
-        {spot.lat !== undefined && spot.lon !== undefined && (
+        {!hideLocationLink && spot.lat !== undefined && spot.lon !== undefined && (
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lon}`}
             target="_blank"

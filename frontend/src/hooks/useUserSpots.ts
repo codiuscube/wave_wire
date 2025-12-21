@@ -35,6 +35,8 @@ interface UseUserSpotsReturn {
   reorderSpots: (reorderedSpots: UserSpot[]) => Promise<{ error: string | null }>;
   /** Save spot order to database */
   saveSpotOrder: (orderedSpots: UserSpot[]) => Promise<{ error: string | null }>;
+  /** Toggle spot visibility on dashboard */
+  toggleSpotVisibility: (spotId: string) => Promise<{ error: string | null }>;
 }
 
 /**
@@ -202,6 +204,44 @@ export function useUserSpots(
     [userId]
   );
 
+  const toggleSpotVisibility = useCallback(
+    async (spotId: string): Promise<{ error: string | null }> => {
+      if (!userId) {
+        return { error: 'No user ID provided' };
+      }
+
+      // Find current spot to get current visibility state
+      const spot = spots.find(s => s.id === spotId);
+      if (!spot) {
+        return { error: 'Spot not found' };
+      }
+
+      const newVisibility = !spot.hiddenOnDashboard;
+
+      const { data, error: updateError } = await supabase
+        .from('user_spots')
+        .update({ hidden_on_dashboard: newVisibility })
+        .eq('id', spotId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        return { error: updateError.message };
+      }
+
+      if (data) {
+        const mappedSpot = mapUserSpot(data);
+        setSpots((prev) =>
+          prev.map((s) => (s.id === spotId ? mappedSpot : s))
+        );
+      }
+
+      return { error: null };
+    },
+    [userId, spots]
+  );
+
   // Save function - persists order to DB
   const saveSpotOrder = useCallback(
     async (orderedSpots: UserSpot[]) => {
@@ -253,6 +293,7 @@ export function useUserSpots(
     deleteSpot,
     reorderSpots,
     saveSpotOrder,
+    toggleSpotVisibility,
   };
 }
 

@@ -61,6 +61,7 @@ export interface UserSpot {
   icon: string | null;
   masterSpotId: string | null;
   sortOrder: number;
+  hiddenOnDashboard: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -266,6 +267,7 @@ export function mapUserSpot(row: DbUserSpot): UserSpot {
     icon: row.icon,
     masterSpotId: row.master_spot_id,
     sortOrder: (row as unknown as Record<string, unknown>).sort_order as number ?? 0,
+    hiddenOnDashboard: (row as unknown as Record<string, unknown>).hidden_on_dashboard as boolean ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -380,7 +382,7 @@ export function toDbProfileUpdate(
 
 export function toDbUserSpotInsert(
   spot: Omit<UserSpot, 'id' | 'createdAt' | 'updatedAt'>
-): TablesInsert<'user_spots'> & { sort_order?: number } {
+): TablesInsert<'user_spots'> & { sort_order?: number; hidden_on_dashboard?: boolean } {
   return {
     user_id: spot.userId,
     name: spot.name,
@@ -391,13 +393,14 @@ export function toDbUserSpotInsert(
     icon: spot.icon,
     master_spot_id: spot.masterSpotId,
     sort_order: spot.sortOrder,
+    hidden_on_dashboard: spot.hiddenOnDashboard,
   };
 }
 
 export function toDbUserSpotUpdate(
   spot: Partial<Omit<UserSpot, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
-): TablesUpdate<'user_spots'> & { sort_order?: number } {
-  const update: TablesUpdate<'user_spots'> & { sort_order?: number } = {};
+): TablesUpdate<'user_spots'> & { sort_order?: number; hidden_on_dashboard?: boolean } {
+  const update: TablesUpdate<'user_spots'> & { sort_order?: number; hidden_on_dashboard?: boolean } = {};
   if (spot.name !== undefined) update.name = spot.name;
   if (spot.latitude !== undefined) update.latitude = spot.latitude;
   if (spot.longitude !== undefined) update.longitude = spot.longitude;
@@ -406,6 +409,7 @@ export function toDbUserSpotUpdate(
   if (spot.icon !== undefined) update.icon = spot.icon;
   if (spot.masterSpotId !== undefined) update.master_spot_id = spot.masterSpotId;
   if (spot.sortOrder !== undefined) update.sort_order = spot.sortOrder;
+  if (spot.hiddenOnDashboard !== undefined) update.hidden_on_dashboard = spot.hiddenOnDashboard;
   return update;
 }
 

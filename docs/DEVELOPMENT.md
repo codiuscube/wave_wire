@@ -116,17 +116,21 @@ supabase gen types typescript --linked > src/types/supabase.ts
 Migrations are applied automatically when pushed to Supabase, or manually:
 
 ```bash
+cd frontend
 supabase db push
 ```
 
+**Important:** Supabase CLI commands must be run from the `frontend/` directory where `supabase/` config lives, not from the project root.
+
 ### Migration Files
 
-| File | Description |
-|------|-------------|
-| `schema.sql` | Base schema (profiles, user_spots, triggers, etc.) |
-| `20251216050123_add_admin_and_surf_spots.sql` | Admin flag, surf_spots table |
-| `20251218041315_add_notification_style_to_triggers.sql` | Notification style column |
-| `20251218085033_add_trigger_columns.sql` | Additional trigger columns |
+Migrations are located in `frontend/supabase/migrations/`. See [DATABASE.md](./DATABASE.md#migration-history) for the complete list.
+
+Key migrations:
+- `schema.sql` - Base schema (profiles, user_spots, triggers, etc.)
+- `20251216050123_add_admin_and_surf_spots.sql` - Admin flag, surf_spots table
+- `20251221000001_allow_user_spot_submissions.sql` - User spot submissions
+- `20251221100000_add_waitlist_table.sql` - Waitlist functionality
 
 ---
 
