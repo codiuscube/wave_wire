@@ -6,6 +6,7 @@ export interface Alert {
     message: string;
     time: string;
     condition: 'epic' | 'good' | 'fair' | 'poor' | 'unknown';
+    deliveryStatus?: 'pending' | 'sent' | 'delivered' | 'failed' | null;
 }
 
 interface AlertCardProps {
@@ -14,8 +15,6 @@ interface AlertCardProps {
 }
 
 export function AlertCard({ alert, className = '' }: AlertCardProps) {
-    const emoji = alert.condition === 'epic' ? '🔥' : '🌊';
-
     const formatTimestamp = (isoString: string) => {
         try {
             const date = new Date(isoString);
@@ -41,9 +40,14 @@ export function AlertCard({ alert, className = '' }: AlertCardProps) {
             <div className="flex-1 min-w-0 z-10">
                 <div className="flex items-center gap-3 mb-2">
                     <span className="font-mono font-bold text-lg tracking-tight uppercase text-primary">{alert.spotName}</span>
+                    {alert.deliveryStatus === 'failed' && (
+                        <span className="text-xs font-mono px-2 py-0.5 bg-destructive/20 text-destructive border border-destructive/30 rounded">
+                            Email failed
+                        </span>
+                    )}
                 </div>
                 <p className="font-mono text-base text-foreground/90 leading-relaxed max-w-[90%]">
-                    {emoji} {alert.message}
+                    {alert.message}
                 </p>
             </div>
 
