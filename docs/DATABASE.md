@@ -236,6 +236,46 @@ CREATE INDEX idx_sent_alerts_user_created ON public.sent_alerts(user_id, created
 
 ---
 
+### `waitlist`
+
+Pre-launch email waitlist with referral system.
+
+```sql
+CREATE TABLE public.waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'invited')),
+  referral_code TEXT NOT NULL UNIQUE,        -- 6-char code for sharing
+  referred_by UUID REFERENCES public.waitlist(id) ON DELETE SET NULL,
+  referral_count INTEGER DEFAULT 0,          -- Number of referrals (denormalized)
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_waitlist_referral_code ON public.waitlist(referral_code);
+CREATE INDEX idx_waitlist_priority ON public.waitlist(referral_count DESC, created_at ASC);
+```
+
+**Status Types:**
+- `pending` - Joined waitlist, awaiting invite
+- `invited` - Admin sent magic link invite
+
+**Referral System:**
+- `referral_code` - Auto-generated 6-char uppercase alphanumeric (excludes I,O,0,1)
+- `referred_by` - UUID of the waitlist entry that referred this user
+- `referral_count` - Denormalized count of referrals (auto-incremented via trigger)
+- Priority sorting: Higher referral_count = higher in queue
+
+**Functions:**
+- `generate_referral_code()` - Generates unique 6-char code
+- `get_referrer_id(code)` - Looks up referrer UUID by code (public RPC)
+
+**RLS Policies:**
+- Anyone can insert (public signup)
+- Only admins can select/update/delete
+
+---
+
 ## Cache Tables (Planned)
 
 ### `buoy_readings`
@@ -520,6 +560,7 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251219210000_add_spot_sort_order.sql` | Spot sort order for user_spots |
 | `20251221000001_allow_user_spot_submissions.sql` | User spot submissions |
 | `20251221100000_add_waitlist_table.sql` | Waitlist table |
+| `20251222000003_add_waitlist_referrals.sql` | Add referral system to waitlist (referral_code, referred_by, referral_count) |
 
 ---
 
@@ -534,4 +575,5 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | alert_schedules | Own | Own | Own | Own |
 | user_preferences | Own | Own | Own | Own |
 | sent_alerts | Own | System | - | - |
+| waitlist | Admin only | Anyone | Admin only | Admin only |
 | admin_user_stats | Admin only | - | - | - |

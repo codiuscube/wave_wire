@@ -355,6 +355,60 @@ User types: "Alert me when it's firing"
 
 ---
 
+## Waitlist & Referral System
+
+### Waitlist
+
+Pre-launch email capture with admin management.
+
+**Public Flow:**
+1. User enters email on landing page
+2. Spam protection via honeypot field
+3. Check for existing account (redirects to login if found)
+4. Added to waitlist with unique referral code
+
+**Admin Flow:**
+- View all waitlist entries sorted by priority
+- Send magic link invites with tier selection (Free, Pro, Premium)
+- Status updates automatically on invite
+
+### Referral System
+
+Viral growth mechanism for the waitlist.
+
+**How It Works:**
+1. Every waitlist signup gets a unique 6-character referral code (e.g., `HB7K2M`)
+2. User shares their referral link: `yourdomain.com?ref=HB7K2M`
+3. New signups via referral link credit the referrer
+4. More referrals = higher priority in the queue
+
+**Priority Queue:**
+- Waitlist sorted by `referral_count DESC, created_at ASC`
+- Users with more referrals appear first
+- Ties broken by signup date
+
+**Success Screen:**
+After signup, users see:
+- Their unique referral code
+- Copyable referral link
+- Share button (native sharing on mobile)
+- Message: "Share your link. Each signup bumps you up!"
+
+**Admin Panel:**
+- Referrals column showing count per user
+- Referred By column showing who referred each user
+- Sort by referrals or date
+- Stats: total referrers, total referrals
+- Referral count badge in invite modal
+
+**Technical Details:**
+- Codes: 6-char uppercase alphanumeric (excludes confusing chars: I, O, 0, 1)
+- Generation: PostgreSQL trigger on INSERT
+- Tracking: `referred_by` UUID column
+- Count: Denormalized `referral_count` auto-incremented via trigger
+
+---
+
 ## Files Reference
 
 ### Core Data Files
@@ -378,6 +432,9 @@ User types: "Alert me when it's firing"
 | `UserDetailModal.tsx` | Admin user detail view |
 | `UpgradeModal.tsx` | Subscription upgrade prompt |
 | `AdminHeader.tsx` | Admin panel navigation |
+| `WaitlistModal.tsx` | Waitlist signup with referral tracking |
+| `WaitlistTab.tsx` | Admin waitlist management |
+| `BetaAccess.tsx` | Landing page beta access section |
 
 ### Pages
 

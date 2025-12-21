@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ReferralProvider } from './contexts/ReferralContext';
 import { SurfTechLayout } from './components/layout/SurfTechLayout';
 import { DashboardLayout } from './components/dashboard';
 import { ProtectedRoute } from './components/auth';
@@ -25,8 +26,9 @@ import {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
+      <ReferralProvider>
+        <AuthProvider>
+          <ThemeProvider>
           <Toaster position="bottom-center" richColors closeButton />
           <LocationProvider>
             <SurfTechLayout>
@@ -90,8 +92,9 @@ function App() {
               </Routes>
             </SurfTechLayout>
           </LocationProvider>
-        </ThemeProvider>
-      </AuthProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </ReferralProvider>
     </BrowserRouter>
   );
 }
