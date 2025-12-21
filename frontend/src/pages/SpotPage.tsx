@@ -279,22 +279,39 @@ export function SpotPage() {
   // Delete Confirmation State
   const [spotToDelete, setSpotToDelete] = useState<SpotOption | null>(null);
 
-  const isSpotSaved = (spotId: string) => mySpots.some((s) => s.id === spotId);
+  // Check if a spot is already saved by its master spot ID
+  const isSpotSaved = (spotId: string) => mySpots.some((s) => s.masterSpotId === spotId);
 
   const addSpot = async (spot: SpotOption) => {
-    if (!isSpotSaved(spot.id) && canAddSpot) {
-      const { error } = await addUserSpot({
-        name: spot.name,
-        latitude: spot.lat || null,
-        longitude: spot.lon || null,
-        region: spot.region || null,
-        buoyId: spot.buoyId || null,
-        icon: spot.icon || null,
-        masterSpotId: spot.id, // Link to master surf_spots table
-      });
-      if (error) {
-        console.error('Error adding spot:', error);
-      }
+    // For custom spots (no masterSpotId), use a generated ID check
+    const checkId = spot.masterSpotId || spot.id;
+
+    if (isSpotSaved(checkId)) {
+      console.log('Spot already saved:', checkId);
+      return;
+    }
+
+    if (!canAddSpot) {
+      console.log('Cannot add spot - limit reached');
+      setIsUpgradeModalOpen(true);
+      return;
+    }
+
+    const { data, error } = await addUserSpot({
+      name: spot.name,
+      latitude: spot.lat || null,
+      longitude: spot.lon || null,
+      region: spot.region || null,
+      buoyId: spot.buoyId || null,
+      icon: spot.icon || null,
+      masterSpotId: spot.id, // Link to master surf_spots table
+    });
+
+    if (error) {
+      console.error('Error adding spot:', error);
+      alert(`Failed to add spot: ${error}`);
+    } else if (data) {
+      console.log('Spot added successfully:', data);
     }
   };
 
