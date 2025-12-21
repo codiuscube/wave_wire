@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Water, CheckCircle, CloseCircle } from '@solar-icons/react';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -12,20 +13,41 @@ interface WaitlistModalProps {
 
 export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   const [email, setEmail] = useState('');
+  const [honeypot, setHoneypot] = useState(''); // Spam protection - bots fill this
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasExistingAccount, setHasExistingAccount] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
+    // Honeypot check - if filled, it's a bot. Show fake success.
+    if (honeypot) {
+      setSuccess(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if email already has an account
+    const { data: hasAccount } = await supabase.rpc('email_has_account', {
+      check_email: normalizedEmail,
+    });
+
+    if (hasAccount) {
+      setLoading(false);
+      setHasExistingAccount(true);
+      return;
+    }
+
     const { error: insertError } = await supabase
       .from('waitlist')
-      .insert({ email: email.toLowerCase().trim() });
+      .insert({ email: normalizedEmail });
 
     setLoading(false);
 
@@ -43,10 +65,35 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
   const handleClose = () => {
     setEmail('');
+    setHoneypot('');
     setError(null);
     setSuccess(false);
+    setHasExistingAccount(false);
     onClose();
   };
+
+  if (hasExistingAccount) {
+    return (
+      <Sheet isOpen={isOpen} onClose={handleClose} title="Welcome Back">
+        <div className="p-6 flex-1 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle weight="BoldDuotone" size={32} className="text-primary" />
+          </div>
+          <h3 className="font-mono text-xl font-bold uppercase tracking-wider mb-2">You already have an account!</h3>
+          <p className="font-mono text-sm text-muted-foreground mb-6">
+            Looks like you've already signed up. Log in to access your dashboard.
+          </p>
+          <Link
+            to="/login"
+            onClick={handleClose}
+            className="w-full py-3 bg-primary text-primary-foreground font-mono font-bold uppercase tracking-wider text-center block hover:bg-primary/90 transition-colors"
+          >
+            Go to Login
+          </Link>
+        </div>
+      </Sheet>
+    );
+  }
 
   if (success) {
     return (
@@ -93,6 +140,20 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
             className="font-mono text-sm"
             autoFocus
             required
+          />
+        </div>
+
+        {/* Honeypot field - hidden from humans, bots fill it */}
+        <div className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            type="text"
+            id="website"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
           />
         </div>
 

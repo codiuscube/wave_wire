@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Bolt } from '@solar-icons/react';
-import { Link } from 'react-router-dom';
 import { WaitlistModal } from '../ui';
-import { isProduction } from '../../utils/environment';
 
 export function Pricing() {
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -50,15 +48,9 @@ export function Pricing() {
                 </li>
               </ul>
 
-              {isProduction() ? (
-                <button onClick={() => setShowWaitlist(true)} className="w-full py-4 border border-brand-concrete text-brand-concrete hover:bg-brand-concrete hover:text-brand-abyss font-mono font-bold uppercase tracking-widest transition-all">
-                  INITIATE
-                </button>
-              ) : (
-                <Link to="/dashboard" className="block text-center w-full py-4 border border-brand-concrete text-brand-concrete hover:bg-brand-concrete hover:text-brand-abyss font-mono font-bold uppercase tracking-widest transition-all">
-                  INITIATE
-                </Link>
-              )}
+              <button onClick={() => setShowWaitlist(true)} className="w-full py-4 border border-brand-concrete text-brand-concrete hover:bg-brand-concrete hover:text-brand-abyss font-mono font-bold uppercase tracking-widest transition-all">
+                JOIN WAITLIST
+              </button>
 
               {/* Torn edge decoration */}
               <div className="absolute -bottom-2 left-0 right-0 h-4 bg-brand-abyss torn-bottom transform rotate-180"></div>
@@ -99,15 +91,9 @@ export function Pricing() {
               {/* Decorative Barcode */}
               <div className="h-4 w-full bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAABCAYAAAD5PA/NAAAAFklEQVR42mN88f7/fwYoYAQxEAQ4gAgA7Z0K00s78+YAAAAASUVORK5CYII=')] opacity-30 mb-6 bg-repeat-x"></div>
 
-              {isProduction() ? (
-                <button onClick={() => setShowWaitlist(true)} className="w-full py-4 bg-brand-acid text-brand-abyss hover:bg-white font-mono font-bold uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                  GET_FULL_ACCESS
-                </button>
-              ) : (
-                <Link to="/dashboard" className="block text-center w-full py-4 bg-brand-acid text-brand-abyss hover:bg-white font-mono font-bold uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                  GET_FULL_ACCESS
-                </Link>
-              )}
+              <button onClick={() => setShowWaitlist(true)} className="w-full py-4 bg-brand-acid text-brand-abyss hover:bg-white font-mono font-bold uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                JOIN WAITLIST
+              </button>
             </div>
           </div>
         </div>

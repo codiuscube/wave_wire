@@ -20,13 +20,6 @@ export function Navbar() {
 
         <div className="flex items-center gap-6">
           <Link
-            to="/dashboard"
-            className="text-xs font-mono text-brand-foam/60 hover:text-brand-acid hidden md:block transition-colors"
-          >
-            [ VIEW_DEMO_MODE ]
-          </Link>
-
-          <Link
             to="/login"
             className="text-xs font-mono text-brand-foam/60 hover:text-brand-acid transition-colors"
           >
@@ -37,7 +30,7 @@ export function Navbar() {
             onClick={() => setShowWaitlist(true)}
             className="font-mono text-xs border border-brand-acid/50 text-brand-acid px-4 py-1.5 hover:bg-brand-acid hover:text-brand-abyss transition-all uppercase tracking-wider"
           >
-            Join_Beta
+            Join_Waitlist
           </button>
         </div>
       </div>

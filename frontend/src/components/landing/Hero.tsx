@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { WaitlistModal } from "../ui";
 import { useSpotName } from "../../contexts/LocationContext";
 
@@ -78,17 +77,13 @@ export function Hero() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="mt-12 flex flex-col sm:flex-row gap-6">
+            <div className="mt-12">
               <button
                 onClick={() => setShowWaitlist(true)}
                 className="btn-brutal text-lg"
               >
-                JOIN WAVE_WIRE
+                JOIN WAITLIST
               </button>
-
-              <Link to="/dashboard" className="font-mono text-brand-foam text-sm underline decoration-brand-rogue decoration-2 underline-offset-4 hover:text-white transition-colors self-center">
-                [ VIEW_DEMO_MODE ]
-              </Link>
             </div>
           </div>
 
