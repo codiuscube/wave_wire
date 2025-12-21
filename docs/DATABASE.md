@@ -276,6 +276,53 @@ CREATE INDEX idx_waitlist_priority ON public.waitlist(referral_count DESC, creat
 
 ---
 
+### `trigger_matches`
+
+Queue table for matched triggers awaiting alert processing.
+
+```sql
+CREATE TABLE public.trigger_matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trigger_id UUID NOT NULL REFERENCES public.triggers(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  spot_id UUID NOT NULL REFERENCES public.user_spots(id) ON DELETE CASCADE,
+
+  -- Match metadata
+  match_type TEXT NOT NULL CHECK (match_type IN ('live', 'forecast')),
+  condition_matched TEXT CHECK (condition_matched IN ('fair', 'good', 'epic')),
+
+  -- Condition snapshot for message generation
+  condition_data JSONB NOT NULL,
+
+  -- Processing status
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'sent', 'skipped', 'failed')),
+  skip_reason TEXT,
+  processed_at TIMESTAMPTZ,
+  matched_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Dedup: one match per trigger per day
+CREATE UNIQUE INDEX idx_trigger_matches_dedup
+  ON public.trigger_matches(trigger_id, DATE(matched_at AT TIME ZONE 'UTC'));
+
+CREATE INDEX idx_trigger_matches_status ON public.trigger_matches(status);
+CREATE INDEX idx_trigger_matches_user ON public.trigger_matches(user_id);
+```
+
+**Status Types:**
+- `pending` - Match detected, awaiting processing
+- `processing` - Currently being processed
+- `sent` - Alert sent successfully
+- `skipped` - Skipped (outside surveillance window, inactive day, etc.)
+- `failed` - Email delivery failed
+
+**RLS Policies:**
+- Users can view their own matches
+- Service role (GitHub Actions) can insert/update all matches
+
+---
+
 ## Cache Tables (Planned)
 
 ### `buoy_readings`
@@ -560,6 +607,8 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251219210000_add_spot_sort_order.sql` | Spot sort order for user_spots |
 | `20251221000001_allow_user_spot_submissions.sql` | User spot submissions |
 | `20251221100000_add_waitlist_table.sql` | Waitlist table |
+| `20251222000001_create_trigger_matches.sql` | Add trigger_matches table for alert queue |
+| `20251222000002_add_alert_columns.sql` | Add last_fired_at/enabled to triggers, resend_id/match_id to sent_alerts, timezone to profiles |
 | `20251222000003_add_waitlist_referrals.sql` | Add referral system to waitlist (referral_code, referred_by, referral_count) |
 
 ---
@@ -575,5 +624,6 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | alert_schedules | Own | Own | Own | Own |
 | user_preferences | Own | Own | Own | Own |
 | sent_alerts | Own | System | - | - |
+| trigger_matches | Own | Service role | Service role | - |
 | waitlist | Admin only | Anyone | Admin only | Admin only |
 | admin_user_stats | Admin only | - | - | - |

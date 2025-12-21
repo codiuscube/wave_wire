@@ -53,8 +53,14 @@ homebreak-project/
 │   │   ├── migrations/       # Database migrations
 │   │   ├── schema.sql        # Base schema
 │   │   └── config.toml       # Supabase config
-│   ├── scripts/              # Utility scripts
 │   └── package.json
+├── scripts/                  # Alert system scripts (GitHub Actions)
+│   ├── lib/                  # Library modules
+│   ├── run-alerts.ts         # Main alert runner
+│   └── package.json
+├── .github/
+│   └── workflows/
+│       └── run-alerts.yml    # Cron job: every 2 hours
 ├── docs/                     # Documentation
 └── README.md
 ```
@@ -81,6 +87,20 @@ GOOGLE_ROUTES_API_KEY=your-api-key
 
 # Supabase service role (for edge functions)
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Anthropic API (for AI message generation)
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### GitHub Actions Secrets
+
+Add these in GitHub → Repository → Settings → Secrets → Actions:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ANTHROPIC_API_KEY=sk-ant-...
+RESEND_API_KEY=re_...
 ```
 
 ---
@@ -170,6 +190,32 @@ Reset a user's onboarding status (for testing):
 cd frontend
 npx tsx scripts/reset-onboarding.ts
 ```
+
+### Alert System Scripts
+
+The alert system runs via GitHub Actions. Scripts are located in `scripts/` at the project root:
+
+```bash
+# Run alert evaluation and processing locally
+cd scripts
+npm install
+npx tsx run-alerts.ts
+```
+
+**Required environment variables:**
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ANTHROPIC_API_KEY=sk-ant-...
+RESEND_API_KEY=re_...
+```
+
+**Script structure:**
+- `scripts/run-alerts.ts` - Main entry point (runs both stages)
+- `scripts/lib/dataFetcher.ts` - Fetches buoy, forecast, tide, solar data
+- `scripts/lib/evaluator.ts` - Evaluates triggers against conditions
+- `scripts/lib/messenger.ts` - Generates alert messages (AI + templates)
+- `scripts/lib/emailer.ts` - Sends emails via Resend API
 
 ---
 
