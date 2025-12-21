@@ -35,7 +35,7 @@ export function Hero() {
   }, [notifications.length]);
 
   return (
-    <header className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20 torn-bottom">
+    <header className="relative min-h-screen flex flex-col justify-center pt-20 torn-bottom">
 
       {/* Background elements */}
       <div className="absolute inset-0 z-0">
@@ -54,7 +54,7 @@ export function Hero() {
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12 items-center">
 
           {/* Main Typography Layer */}
-          <div className="w-full lg:col-span-8 flex flex-col items-start relative order-2 lg:order-1">
+          <div className="w-full lg:col-span-8 flex flex-col items-start relative">
 
             {/* Decorative Top Label */}
             <div className="font-mono text-brand-acid text-xs tracking-[0.2em] mb-4 border-l-2 border-brand-rogue pl-4 py-1 tape">
@@ -88,7 +88,7 @@ export function Hero() {
           </div>
 
           {/* Right Column / Tech Visuals (SMS Style) */}
-          <div className="lg:col-span-4 flex flex-col w-full max-w-md mx-auto lg:mx-0 mt-8 lg:mt-0 order-1 lg:order-2">
+          <div className="lg:col-span-4 flex flex-col w-full max-w-md mx-auto lg:mx-0 mt-8 mb-[-120px] relative z-20 lg:mb-0 lg:static lg:z-auto">
 
             {/* Phone/Device container - loose box */}
             <div className="relative bg-brand-abyss/80 backdrop-blur-md border-2 border-brand-concrete p-4 sm:p-6 transform -rotate-1 hover:rotate-0 transition-transform duration-500 shadow-[8px_8px_0px_0px_rgba(255,255,255,0.1)] torn-bottom">

@@ -17,7 +17,7 @@ export function Footer() {
             </span>
           </div>
           <p className="font-mono text-xs text-brand-foam/50 uppercase tracking-widest pl-1">
-            v2.0 // EST. 2025
+            BETA // EST. 2025
           </p>
         </div>
 

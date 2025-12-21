@@ -11,7 +11,7 @@ export function Navbar() {
       <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 text-brand-acid group">
           <div className="transform -rotate-6 transition-transform group-hover:rotate-0 duration-300">
-            <Logo className="w-12 h-12" style={{ filter: 'drop-shadow(0 0 2px rgba(226,253,92,0.5))' }} />
+            <Logo className="w-8 h-8 sm:w-12 sm:h-12" style={{ filter: 'drop-shadow(0 0 2px rgba(226,253,92,0.5))' }} />
           </div>
           <span className="font-display font-bold text-xl tracking-wider text-white">
             WAVE_WIRE
@@ -23,14 +23,15 @@ export function Navbar() {
             to="/login"
             className="text-xs font-mono text-brand-foam/60 hover:text-brand-acid transition-colors"
           >
-            LOGIN TO BETA
+            <span className="block sm:hidden">LOGIN</span>
+            <span className="hidden sm:block">LOGIN TO BETA</span>
           </Link>
 
           <button
             onClick={() => setShowWaitlist(true)}
             className="font-mono text-xs border border-brand-acid/50 text-brand-acid px-4 py-1.5 hover:bg-brand-acid hover:text-brand-abyss transition-all uppercase tracking-wider"
           >
-            Join_Waitlist
+            JOIN WAITLIST
           </button>
         </div>
       </div>
