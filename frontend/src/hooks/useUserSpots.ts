@@ -1,4 +1,6 @@
-
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { mapUserSpot, toDbUserSpotInsert, toDbUserSpotUpdate, type UserSpot } from '../lib/mappers';
 
 type SubscriptionTier = 'free' | 'pro' | 'premium';
 
