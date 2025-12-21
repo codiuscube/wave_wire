@@ -8,8 +8,8 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email sender configuration
-const FROM_EMAIL = 'Homebreak <alerts@homebreak.app>';
-const FROM_EMAIL_DEV = 'Homebreak <onboarding@resend.dev>'; // For development/testing
+const FROM_EMAIL = 'Wave_Wire <alerts@wave-wire.com>';
+const FROM_EMAIL_DEV = 'Wave_Wire <onboarding@resend.dev>'; // For development/testing
 
 export interface EmailContent {
   to: string;
@@ -92,50 +92,126 @@ function generateEmailHtml(params: {
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Surf Alert: ${spotName}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surf Alert: ${spotName}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #020817; /* Brand Abyss */
+            font-family: 'Courier New', Courier, monospace;
+            color: #e2e8f0; /* Brand Foam */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .card {
+            background-color: #020817;
+            border: 1px solid #1e293b; /* Muted Border */
+            border-radius: 0; /* Brutalist */
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fafafa; /* Primary White */
+            margin-bottom: 24px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(250, 250, 250, 0.3);
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: #fafafa;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border: 1px solid ${conditionColor};
+            background-color: #1e293b;
+            color: ${conditionColor};
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            font-family: monospace;
+            box-shadow: 0 0 10px ${conditionColor}40;
+        }
+
+        p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #94a3b8; /* Concrete */
+            margin-bottom: 32px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #fafafa; /* Primary White */
+            color: #020817; /* Background Dark */
+            font-weight: bold;
+            text-decoration: none;
+            padding: 14px 32px;
+            text-transform: uppercase;
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.2s;
+            border: 1px solid #fafafa;
+            box-shadow: 4px 4px 0px 0px #1e293b; /* Brutalist shadow */
+        }
+
+        .btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px #1e293b;
+        }
+
+        .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: #52525b;
+            text-align: center;
+        }
+
+        .link-url {
+            color: #94a3b8;
+            text-decoration: underline;
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 40px 20px;">
-        <table role="presentation" style="max-width: 500px; margin: 0 auto; background-color: #1a1a1a; border-radius: 12px; overflow: hidden;">
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, ${conditionColor} 0%, #1a1a1a 100%); padding: 24px; text-align: center;">
-              <div style="font-size: 48px; margin-bottom: 8px;">${icon}</div>
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">${spotName}</h1>
-              <div style="display: inline-block; background-color: ${conditionColor}; color: #000000; padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-top: 8px;">
-                ${condition}
-              </div>
-            </td>
-          </tr>
 
-          <!-- Message -->
-          <tr>
-            <td style="padding: 32px 24px;">
-              <p style="margin: 0; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-                ${escapeHtml(message)}
-              </p>
-            </td>
-          </tr>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">Wave_Wire</div>
+            
+            <h1>${spotName}</h1>
+            
+            <div class="badge">
+                ${icon} ${condition}
+            </div>
 
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 24px; border-top: 1px solid #2a2a2a; text-align: center;">
-              <p style="margin: 0; color: #666666; font-size: 12px;">
-                Homebreak Surf Alerts
-              </p>
-              <p style="margin: 8px 0 0 0; color: #444444; font-size: 11px;">
-                You received this because you set up a trigger for ${spotName}
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+            <p>${escapeHtml(message)}</p>
+
+            <a href="https://wave-wire.com" class="btn">View Dashboard</a>
+        </div>
+
+        <div class="footer">
+            <p>You received this because you set up a trigger for ${spotName}</p>
+            <p>Sent from <a href="https://wave-wire.com" class="link-url">wave-wire.com</a></p>
+        </div>
+    </div>
 </body>
 </html>
 `;
