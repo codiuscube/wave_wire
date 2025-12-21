@@ -1,23 +1,32 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Water, CheckCircle, CloseCircle } from '@solar-icons/react';
+import { Water, CheckCircle, CloseCircle, Copy, Share } from '@solar-icons/react';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Sheet } from './Sheet';
 import { supabase } from '../../lib/supabase';
+import { useReferral } from '../../contexts/ReferralContext';
 
 interface WaitlistModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface SignupData {
+  referralCode: string;
+  referralLink: string;
+}
+
 export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
   const [email, setEmail] = useState('');
   const [honeypot, setHoneypot] = useState(''); // Spam protection - bots fill this
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [signupData, setSignupData] = useState<SignupData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasExistingAccount, setHasExistingAccount] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const { referralCode: incomingReferralCode, clearReferralCode } = useReferral();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +34,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
 
     // Honeypot check - if filled, it's a bot. Show fake success.
     if (honeypot) {
-      setSuccess(true);
+      setSignupData({ referralCode: 'FAKE01', referralLink: '' });
       return;
     }
 
@@ -45,9 +54,24 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
       return;
     }
 
-    const { error: insertError } = await supabase
+    // Look up referrer ID if we have a referral code
+    let referredById: string | null = null;
+    if (incomingReferralCode) {
+      const { data: referrerId } = await supabase.rpc('get_referrer_id', {
+        code: incomingReferralCode,
+      });
+      referredById = referrerId;
+    }
+
+    // Insert into waitlist with referral info
+    const { data: insertedRow, error: insertError } = await supabase
       .from('waitlist')
-      .insert({ email: normalizedEmail });
+      .insert({
+        email: normalizedEmail,
+        referred_by: referredById,
+      })
+      .select('referral_code')
+      .single();
 
     setLoading(false);
 
@@ -60,15 +84,64 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
       return;
     }
 
-    setSuccess(true);
+    // Clear the incoming referral code from localStorage
+    clearReferralCode();
+
+    // Set success state with the new user's referral code
+    const newReferralCode = insertedRow?.referral_code || '';
+    const baseUrl = window.location.origin;
+    setSignupData({
+      referralCode: newReferralCode,
+      referralLink: `${baseUrl}?ref=${newReferralCode}`,
+    });
+  };
+
+  const handleCopy = async () => {
+    if (!signupData?.referralLink) return;
+
+    try {
+      await navigator.clipboard.writeText(signupData.referralLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const input = document.createElement('input');
+      input.value = signupData.referralLink;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!signupData?.referralLink) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join WAVE_WIRE',
+          text: 'Get early access to WAVE_WIRE - surf alerts for when conditions are perfect!',
+          url: signupData.referralLink,
+        });
+      } catch {
+        // User cancelled or share failed, fall back to copy
+        handleCopy();
+      }
+    } else {
+      handleCopy();
+    }
   };
 
   const handleClose = () => {
     setEmail('');
     setHoneypot('');
     setError(null);
-    setSuccess(false);
+    setSignupData(null);
     setHasExistingAccount(false);
+    setCopied(false);
     onClose();
   };
 
@@ -95,7 +168,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
     );
   }
 
-  if (success) {
+  if (signupData) {
     return (
       <Sheet isOpen={isOpen} onClose={handleClose} title="You're In">
         <div className="p-6 flex-1 flex flex-col items-center justify-center text-center">
@@ -103,11 +176,48 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
             <CheckCircle weight="BoldDuotone" size={32} className="text-green-500" />
           </div>
           <h3 className="font-mono text-xl font-bold uppercase tracking-wider mb-2">You're on the list!</h3>
-          <p className="font-mono text-sm text-muted-foreground mb-6">
+          <p className="font-mono text-sm text-muted-foreground mb-4">
             We'll send you an invite when we're ready for you.
           </p>
-          <Button onClick={handleClose} className="w-full">
-            Got it
+
+          {/* Referral section */}
+          <div className="w-full bg-muted/50 border border-border rounded-lg p-4 mb-4">
+            <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Want to move up the list?
+            </p>
+            <p className="font-mono text-sm mb-3">
+              Share your link. Each signup bumps you up!
+            </p>
+
+            {/* Referral code display */}
+            <div className="bg-background border border-border rounded p-3 mb-3">
+              <p className="font-mono text-xs text-muted-foreground mb-1">Your referral code</p>
+              <p className="font-mono text-lg font-bold tracking-widest">{signupData.referralCode}</p>
+            </div>
+
+            {/* Referral link with copy */}
+            <div className="flex gap-2">
+              <div className="flex-1 bg-background border border-border rounded p-2 overflow-hidden">
+                <p className="font-mono text-xs truncate">{signupData.referralLink}</p>
+              </div>
+              <button
+                onClick={handleCopy}
+                className="px-3 py-2 bg-primary text-primary-foreground rounded font-mono text-xs uppercase tracking-wider hover:bg-primary/90 transition-colors flex items-center gap-1"
+              >
+                <Copy weight="Bold" size={14} />
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          {/* Share button for mobile */}
+          <Button onClick={handleShare} className="w-full mb-3" variant="outline">
+            <Share weight="Bold" size={16} className="mr-2" />
+            Share Link
+          </Button>
+
+          <Button onClick={handleClose} className="w-full" variant="ghost">
+            Done
           </Button>
         </div>
       </Sheet>
@@ -125,6 +235,12 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
           <p className="text-muted-foreground mb-6">
             WAVE_WIRE is currently in private beta. Join the waitlist to get early access.
           </p>
+
+          {incomingReferralCode && (
+            <div className="inline-block bg-green-500/10 border border-green-500/20 text-green-500 px-3 py-1 rounded font-mono text-xs mb-4">
+              Referred by: {incomingReferralCode}
+            </div>
+          )}
         </div>
 
         <div>

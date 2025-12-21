@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Letter, CheckCircle, TrashBinMinimalistic, Magnifer, Crown } from '@solar-icons/react';
+import { Letter, CheckCircle, TrashBinMinimalistic, Magnifer, Crown, UsersGroupRounded, ArrowUp, ArrowDown } from '@solar-icons/react';
 import { supabase } from '../../lib/supabase';
 import { Button, Input, DnaLogo, Sheet } from '../ui';
 import { showSuccess, showError } from '../../lib/toast';
@@ -8,8 +8,15 @@ interface WaitlistEntry {
   id: string;
   email: string;
   status: 'pending' | 'invited';
+  referral_code: string;
+  referred_by: string | null;
+  referral_count: number;
   created_at: string;
+  referrer?: { email: string } | null;
 }
+
+type SortField = 'referrals' | 'date';
+type SortDirection = 'asc' | 'desc';
 
 export function WaitlistTab() {
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
@@ -20,6 +27,8 @@ export function WaitlistTab() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<WaitlistEntry | null>(null);
   const [inviteTier, setInviteTier] = useState('pro');
+  const [sortField, setSortField] = useState<SortField>('referrals');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const fetchWaitlist = useCallback(async () => {
     setIsLoading(true);
@@ -27,8 +36,12 @@ export function WaitlistTab() {
     try {
       const { data, error: fetchError } = await supabase
         .from('waitlist')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          referrer:referred_by(email)
+        `)
+        .order('referral_count', { ascending: false })
+        .order('created_at', { ascending: true });
 
       if (fetchError) {
         setError(fetchError.message);
@@ -46,17 +59,41 @@ export function WaitlistTab() {
     fetchWaitlist();
   }, [fetchWaitlist]);
 
-  const filteredEntries = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return entries;
-    const query = searchQuery.toLowerCase();
-    return entries.filter(e => e.email.toLowerCase().includes(query));
-  }, [entries, searchQuery]);
+  const filteredAndSortedEntries = useMemo(() => {
+    let result = entries;
+
+    // Filter by search query
+    if (searchQuery && searchQuery.length >= 2) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(e => e.email.toLowerCase().includes(query));
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      if (sortField === 'referrals') {
+        const diff = sortDirection === 'desc'
+          ? (b.referral_count || 0) - (a.referral_count || 0)
+          : (a.referral_count || 0) - (b.referral_count || 0);
+        if (diff !== 0) return diff;
+        // Secondary sort by date
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      } else {
+        return sortDirection === 'desc'
+          ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          : new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [entries, searchQuery, sortField, sortDirection]);
 
   const stats = useMemo(() => {
     const total = entries.length;
     const pending = entries.filter(e => e.status === 'pending').length;
     const invited = entries.filter(e => e.status === 'invited').length;
-    return { total, pending, invited };
+    const withReferrals = entries.filter(e => (e.referral_count || 0) > 0).length;
+    const totalReferrals = entries.reduce((sum, e) => sum + (e.referral_count || 0), 0);
+    return { total, pending, invited, withReferrals, totalReferrals };
   }, [entries]);
 
   const handleInviteClick = (entry: WaitlistEntry) => {
@@ -128,6 +165,22 @@ export function WaitlistTab() {
     return new Date(dateStr).toLocaleDateString();
   };
 
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'desc'
+      ? <ArrowDown weight="Bold" size={12} className="inline ml-1" />
+      : <ArrowUp weight="Bold" size={12} className="inline ml-1" />;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -147,7 +200,7 @@ export function WaitlistTab() {
   return (
     <div>
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <div className="tech-card p-4">
           <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">Total</div>
           <div className="font-mono text-2xl font-bold">{stats.total}</div>
@@ -159,6 +212,17 @@ export function WaitlistTab() {
         <div className="tech-card p-4">
           <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">Invited</div>
           <div className="font-mono text-2xl font-bold text-green-500">{stats.invited}</div>
+        </div>
+        <div className="tech-card p-4">
+          <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+            <UsersGroupRounded weight="Bold" size={12} />
+            Referrers
+          </div>
+          <div className="font-mono text-2xl font-bold text-primary">{stats.withReferrals}</div>
+        </div>
+        <div className="tech-card p-4">
+          <div className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Referrals</div>
+          <div className="font-mono text-2xl font-bold text-primary">{stats.totalReferrals}</div>
         </div>
       </div>
 
@@ -177,7 +241,10 @@ export function WaitlistTab() {
 
       {/* Results count */}
       <div className="font-mono text-xs text-muted-foreground mb-4">
-        Showing {filteredEntries.length} of {stats.total} entries
+        Showing {filteredAndSortedEntries.length} of {stats.total} entries
+        <span className="ml-2 text-primary">
+          (sorted by {sortField === 'referrals' ? 'referral count' : 'date'})
+        </span>
       </div>
 
       {/* Table */}
@@ -189,8 +256,22 @@ export function WaitlistTab() {
                 <th className="text-left px-4 py-3 font-mono text-sm uppercase tracking-wider text-muted-foreground">
                   Email
                 </th>
+                <th
+                  className="text-left px-4 py-3 font-mono text-sm uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => toggleSort('referrals')}
+                >
+                  Referrals
+                  <SortIcon field="referrals" />
+                </th>
                 <th className="text-left px-4 py-3 font-mono text-sm uppercase tracking-wider text-muted-foreground">
-                  Date Joined
+                  Referred By
+                </th>
+                <th
+                  className="text-left px-4 py-3 font-mono text-sm uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => toggleSort('date')}
+                >
+                  Joined
+                  <SortIcon field="date" />
                 </th>
                 <th className="text-left px-4 py-3 font-mono text-sm uppercase tracking-wider text-muted-foreground">
                   Status
@@ -201,9 +282,29 @@ export function WaitlistTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {filteredEntries.map((entry) => (
+              {filteredAndSortedEntries.map((entry) => (
                 <tr key={entry.id} className="hover:bg-secondary/10 transition-colors">
-                  <td className="px-4 py-3 font-mono text-sm">{entry.email}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-mono text-sm">{entry.email}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{entry.referral_code}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {(entry.referral_count || 0) > 0 ? (
+                      <span className="inline-flex items-center gap-1 font-mono text-sm font-bold text-primary">
+                        <UsersGroupRounded weight="Bold" size={14} />
+                        {entry.referral_count}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">0</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {entry.referrer?.email ? (
+                      <span className="font-mono text-xs text-muted-foreground">{entry.referrer.email}</span>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground/50">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                     {formatDate(entry.created_at)}
                   </td>
@@ -247,7 +348,7 @@ export function WaitlistTab() {
             </tbody>
           </table>
         </div>
-        {filteredEntries.length === 0 && (
+        {filteredAndSortedEntries.length === 0 && (
           <div className="px-4 py-12 text-center font-mono text-sm text-muted-foreground">
             No waitlist entries found
           </div>
@@ -272,6 +373,15 @@ export function WaitlistTab() {
               {selectedEntry?.email}
             </div>
           </div>
+
+          {selectedEntry && (selectedEntry.referral_count || 0) > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded">
+              <UsersGroupRounded weight="Bold" size={16} className="text-primary" />
+              <span className="font-mono text-sm">
+                This user has <strong>{selectedEntry.referral_count}</strong> referral{selectedEntry.referral_count !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
 
           <div>
             <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
