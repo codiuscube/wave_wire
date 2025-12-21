@@ -349,7 +349,7 @@ export function mapAlertSettings(row: DbAlertSettings): AlertSettings {
   return {
     id: row.id,
     userId: row.user_id,
-    windowMode: row.window_mode ?? 'solar',
+    windowMode: (row.window_mode ?? 'solar') as 'solar' | 'clock' | 'always',
     windowStartTime: row.window_start_time ?? '06:00',
     windowEndTime: row.window_end_time ?? '22:00',
     activeDays: row.active_days ?? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
