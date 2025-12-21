@@ -149,6 +149,7 @@ export function AdminSpotsPage() {
       verified: true,
       source: 'official' as const,
       localsKnowledge: null,
+      submittedBy: null,
     };
 
     const { error } = await addSurfSpot(newSpot);

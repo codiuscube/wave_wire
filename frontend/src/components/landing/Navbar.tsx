@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Logo } from "../ui/Logo";
-import { ComingSoonModal } from "../ui";
+import { WaitlistModal } from "../ui";
 
 export function Navbar() {
-  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [showWaitlist, setShowWaitlist] = useState(false);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-brand-abyss/40 backdrop-blur-md">
@@ -26,8 +26,15 @@ export function Navbar() {
             [ VIEW_DEMO_MODE ]
           </Link>
 
+          <Link
+            to="/login"
+            className="text-xs font-mono text-brand-foam/60 hover:text-brand-acid transition-colors"
+          >
+            Login
+          </Link>
+
           <button
-            onClick={() => setShowComingSoon(true)}
+            onClick={() => setShowWaitlist(true)}
             className="font-mono text-xs border border-brand-acid/50 text-brand-acid px-4 py-1.5 hover:bg-brand-acid hover:text-brand-abyss transition-all uppercase tracking-wider"
           >
             Join_Beta
@@ -35,9 +42,9 @@ export function Navbar() {
         </div>
       </div>
 
-      <ComingSoonModal
-        isOpen={showComingSoon}
-        onClose={() => setShowComingSoon(false)}
+      <WaitlistModal
+        isOpen={showWaitlist}
+        onClose={() => setShowWaitlist(false)}
       />
     </nav>
   );

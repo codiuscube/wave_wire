@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ComingSoonModal } from "../ui";
+import { WaitlistModal } from "../ui";
 import { useSpotName } from "../../contexts/LocationContext";
 
 function getNotifications(spotName: string) {
@@ -26,7 +26,7 @@ export function Hero() {
   const notifications = useMemo(() => getNotifications(spotName), [spotName]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [showWaitlist, setShowWaitlist] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -80,7 +80,7 @@ export function Hero() {
             {/* CTA Buttons */}
             <div className="mt-12 flex flex-col sm:flex-row gap-6">
               <button
-                onClick={() => setShowComingSoon(true)}
+                onClick={() => setShowWaitlist(true)}
                 className="btn-brutal text-lg"
               >
                 JOIN WAVE_WIRE
@@ -141,9 +141,9 @@ export function Hero() {
         </div>
       </div>
 
-      <ComingSoonModal
-        isOpen={showComingSoon}
-        onClose={() => setShowComingSoon(false)}
+      <WaitlistModal
+        isOpen={showWaitlist}
+        onClose={() => setShowWaitlist(false)}
       />
     </header>
   );

@@ -14,13 +14,17 @@ import {
   Letter,
   DollarMinimalistic,
   AddCircle,
+  UsersGroupRounded,
+  ClipboardList,
 } from '@solar-icons/react';
 import { Button, Input, DnaLogo } from "../components/ui";
-import { AdminHeader, UserDetailModal, InviteUserModal } from "../components/admin";
+import { AdminHeader, UserDetailModal, InviteUserModal, WaitlistTab } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import type { AdminUserStats } from "../lib/mappers";
 import { mapAdminUserStats } from "../lib/mappers";
+
+type ActiveTab = 'users' | 'waitlist';
 
 type FilterTier = "all" | "free" | "pro" | "premium";
 
@@ -56,6 +60,7 @@ function formatRelativeTime(date: Date): string {
 
 export function UserManagementPage() {
   const { isAdmin, loading: authLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState<ActiveTab>('users');
   const [users, setUsers] = useState<AdminUserStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -205,12 +210,44 @@ export function UserManagementPage() {
               View and manage user accounts, subscription tiers, and admin access.
             </p>
           </div>
-          <Button onClick={() => setShowInviteModal(true)}>
-            <AddCircle weight="Bold" size={16} className="mr-2" />
-            Invite User
-          </Button>
+          {activeTab === 'users' && (
+            <Button onClick={() => setShowInviteModal(true)}>
+              <AddCircle weight="Bold" size={16} className="mr-2" />
+              Invite User
+            </Button>
+          )}
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center gap-2 px-4 py-2 font-mono text-sm uppercase tracking-wider transition-colors ${
+              activeTab === 'users'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+            }`}
+          >
+            <UsersGroupRounded weight="Bold" size={16} />
+            Users
+          </button>
+          <button
+            onClick={() => setActiveTab('waitlist')}
+            className={`flex items-center gap-2 px-4 py-2 font-mono text-sm uppercase tracking-wider transition-colors ${
+              activeTab === 'waitlist'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary/20 text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+            }`}
+          >
+            <ClipboardList weight="Bold" size={16} />
+            Waitlist
+          </button>
+        </div>
+
+        {activeTab === 'waitlist' ? (
+          <WaitlistTab />
+        ) : (
+          <>
         {/* Stats */}
         <div className="grid grid-cols-5 gap-4 mb-8">
           <div className="tech-card p-4">
@@ -399,6 +436,8 @@ export function UserManagementPage() {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {/* User Detail Modal */}
