@@ -45,6 +45,7 @@ export interface SurfSpot {
   verified: boolean;
   source: 'official' | 'community' | 'user';
   localsKnowledge: SpotLocalsKnowledge | null;
+  submittedBy: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -247,6 +248,7 @@ export function mapSurfSpot(row: DbSurfSpot): SurfSpot {
     verified: row.verified ?? false,
     source: (row.source as SurfSpot['source']) ?? 'official',
     localsKnowledge: row.locals_knowledge as SpotLocalsKnowledge | null,
+    submittedBy: (row as unknown as Record<string, unknown>).submitted_by as string | null ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -511,10 +513,10 @@ export function toDbUserPreferencesUpdate(
   return update;
 }
 
-// Admin-only mapper for surf_spots
+// Mapper for surf_spots (admins can insert any, users can submit for review)
 export function toDbSurfSpotInsert(
   spot: Omit<SurfSpot, 'createdAt' | 'updatedAt'>
-): TablesInsert<'surf_spots'> {
+): TablesInsert<'surf_spots'> & { submitted_by?: string | null } {
   return {
     id: spot.id,
     name: spot.name,
@@ -527,6 +529,7 @@ export function toDbSurfSpotInsert(
     buoy_name: spot.buoyName,
     verified: spot.verified,
     source: spot.source,
+    submitted_by: spot.submittedBy,
   };
 }
 

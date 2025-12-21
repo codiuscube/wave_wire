@@ -16,7 +16,8 @@ import {
 } from "../data/noaaBuoys";
 import { Reorder, useDragControls } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
-import { useUserSpots, useProfile, useMinimumLoading } from "../hooks";
+import { useUserSpots, useProfile, useMinimumLoading, useSurfSpots } from "../hooks";
+import { showSuccess } from "../lib/toast";
 import type { UserSpot } from "../lib/mappers";
 
 // Convert UserSpot (DB) to SpotOption (UI)
@@ -266,6 +267,9 @@ export function SpotPage() {
     reorderSpots,
   } = useUserSpots(user?.id, tier);
 
+  // For submitting custom spots for admin review
+  const { submitSpotForReview } = useSurfSpots();
+
   // Convert DB spots to UI format
   const mySpots: SpotOption[] = userSpots.map(userSpotToSpotOption);
 
@@ -302,6 +306,40 @@ export function SpotPage() {
       return;
     }
 
+    // Check if this is a custom spot (generated ID starts with "custom-")
+    const isCustomSpot = spot.id.startsWith('custom-');
+    let masterSpotId = spot.id;
+
+    if (isCustomSpot && user?.id) {
+      // Submit custom spot to surf_spots for admin review
+      const { data: surfSpot, error: submitError } = await submitSpotForReview(
+        {
+          name: spot.name,
+          lat: spot.lat || 0,
+          lon: spot.lon || 0,
+          region: spot.region || 'Custom Location',
+          countryGroup: 'USA', // Default, could be inferred from coordinates
+          country: null,
+          buoyId: spot.buoyId || null,
+          buoyName: null,
+          localsKnowledge: null,
+        },
+        user.id
+      );
+
+      if (submitError) {
+        console.error('Error submitting spot for review:', submitError);
+        alert(`Failed to submit spot: ${submitError}`);
+        return;
+      }
+
+      if (surfSpot) {
+        masterSpotId = surfSpot.id;
+        showSuccess('Spot submitted for admin review!');
+      }
+    }
+
+    // Add to user's personal spots collection
     const { data, error } = await addUserSpot({
       name: spot.name,
       latitude: spot.lat || null,
@@ -309,7 +347,7 @@ export function SpotPage() {
       region: spot.region || null,
       buoyId: spot.buoyId || null,
       icon: spot.icon || null,
-      masterSpotId: spot.id, // Link to master surf_spots table
+      masterSpotId: masterSpotId, // Link to master surf_spots table
     });
 
     if (error) {

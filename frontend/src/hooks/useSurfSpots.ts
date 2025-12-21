@@ -31,6 +31,8 @@ interface UseSurfSpotsReturn {
   totalCount: number;
   /** Admin: Add a new surf spot */
   addSpot: (spot: Omit<SurfSpot, 'createdAt' | 'updatedAt'>) => Promise<{ data: SurfSpot | null; error: string | null }>;
+  /** Any user: Submit a new spot for admin review (unverified, source='user') */
+  submitSpotForReview: (spot: Omit<SurfSpot, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'source' | 'submittedBy'>, userId: string) => Promise<{ data: SurfSpot | null; error: string | null }>;
   /** Admin: Update a surf spot */
   updateSpot: (spotId: string, updates: Partial<Omit<SurfSpot, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<{ error: string | null }>;
   /** Admin: Delete a surf spot */
@@ -202,6 +204,49 @@ export function useSurfSpots(options: UseSurfSpotsOptions = {}): UseSurfSpotsRet
     [updateSpot]
   );
 
+  // User submission function - submits spot for admin review
+  const submitSpotForReview = useCallback(
+    async (
+      spot: Omit<SurfSpot, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'source' | 'submittedBy'>,
+      userId: string
+    ): Promise<{ data: SurfSpot | null; error: string | null }> => {
+      // Generate a unique ID for the user-submitted spot
+      const spotId = `user-${userId.slice(0, 8)}-${Date.now()}`;
+
+      const submissionSpot: Omit<SurfSpot, 'createdAt' | 'updatedAt'> = {
+        ...spot,
+        id: spotId,
+        verified: false, // User submissions are always unverified
+        source: 'user',  // Mark as user-submitted
+        submittedBy: userId, // Track who submitted it
+      };
+
+      const dbSpot = toDbSurfSpotInsert(submissionSpot);
+
+      const { data, error: insertError } = await supabase
+        .from('surf_spots')
+        .insert(dbSpot)
+        .select()
+        .single();
+
+      if (insertError) {
+        showError('Failed to submit spot for review');
+        return { data: null, error: insertError.message };
+      }
+
+      if (data) {
+        const mappedSpot = mapSurfSpot(data);
+        // Add to local state so user can see their submission
+        setSpots((prev) => [...prev, mappedSpot].sort((a, b) => a.name.localeCompare(b.name)));
+        setTotalCount((prev) => prev + 1);
+        return { data: mappedSpot, error: null };
+      }
+
+      return { data: null, error: 'No data returned' };
+    },
+    []
+  );
+
   return {
     spots,
     isLoading,
@@ -209,6 +254,7 @@ export function useSurfSpots(options: UseSurfSpotsOptions = {}): UseSurfSpotsRet
     refresh: fetchSpots,
     totalCount,
     addSpot,
+    submitSpotForReview,
     updateSpot,
     deleteSpot,
     toggleVerified,
