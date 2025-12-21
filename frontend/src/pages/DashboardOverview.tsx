@@ -57,7 +57,7 @@ interface AlertCardData {
   condition: 'epic' | 'good' | 'fair' | 'poor';
 }
 
-function sentAlertToAlertCard(alert: SentAlert): AlertCardData {
+function sentAlertToAlertCard(alert: SentAlert, spotNames: Map<string, string>): AlertCardData {
   // Map delivery status / alert type to condition
   let condition: 'epic' | 'good' | 'fair' | 'poor' = 'good';
   if (alert.conditionMatched?.toLowerCase().includes('epic')) {
@@ -70,7 +70,7 @@ function sentAlertToAlertCard(alert: SentAlert): AlertCardData {
 
   return {
     id: alert.id,
-    spotName: alert.spotId || 'Unknown Spot', // Would need to join with spots for name
+    spotName: (alert.spotId && spotNames.get(alert.spotId)) || 'Unknown Spot',
     type: alert.alertType || 'Alert',
     message: alert.messageContent || 'No message content',
     time: alert.sentAt || alert.createdAt || new Date().toISOString(),
@@ -247,10 +247,15 @@ export function DashboardOverview() {
       .filter((spot): spot is BaseSpot => spot !== null);
   }, [visibleDbSpots]);
 
+  // Create spot names lookup map
+  const spotNamesMap = useMemo(() => {
+    return new Map(dbSpots.map(s => [s.id, s.name]));
+  }, [dbSpots]);
+
   // Convert DB alerts to alert card format
   const recentAlerts: AlertCardData[] = useMemo(() => {
-    return dbAlerts.map(sentAlertToAlertCard);
-  }, [dbAlerts]);
+    return dbAlerts.map(alert => sentAlertToAlertCard(alert, spotNamesMap));
+  }, [dbAlerts, spotNamesMap]);
 
   // Extract unique buoy IDs from visible spots
   const buoyIds = useMemo(() => {
@@ -521,7 +526,8 @@ export function DashboardOverview() {
         <AlertsModal
           isOpen={showAlertsModal}
           onClose={() => setShowAlertsModal(false)}
-          initialAlerts={recentAlerts}
+          userId={user?.id}
+          spotNames={new Map(dbSpots.map(s => [s.id, s.name]))}
         />
         <OnboardingModal
           isOpen={showOnboarding}
