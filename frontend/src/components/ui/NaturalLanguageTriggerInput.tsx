@@ -23,36 +23,28 @@ export function NaturalLanguageTriggerInput({
   const [isExpanded, setIsExpanded] = useState(false);
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleParse = useCallback(async () => {
     if (!description.trim() || isLoading) return;
 
     setIsLoading(true);
-    setError(null);
     setSuccess(false);
 
-    try {
-      const result = await parseTriggerCommand(description, spotName, spotRegion, spotId);
+    const result = await parseTriggerCommand(description, spotName, spotRegion, spotId);
 
-      if (result.success && result.trigger) {
-        setSuccess(true);
-        onParsed(result.trigger);
-        // Collapse after short delay to show success
-        setTimeout(() => {
-          setIsExpanded(false);
-          setSuccess(false);
-          setDescription('');
-        }, 1000);
-      } else {
-        setError(result.error || 'Could not parse the description. Try being more specific.');
-      }
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
+    if (result.success && result.trigger) {
+      setSuccess(true);
+      onParsed(result.trigger);
+      // Collapse after short delay to show success
+      setTimeout(() => {
+        setIsExpanded(false);
+        setSuccess(false);
+        setDescription('');
+      }, 1000);
     }
+
+    setIsLoading(false);
   }, [description, spotName, spotRegion, spotId, onParsed, isLoading]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -107,10 +99,7 @@ export function NaturalLanguageTriggerInput({
               <div className="space-y-2">
                 <textarea
                   value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    if (error) setError(null);
-                  }}
+                  onChange={(e) => setDescription(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={`e.g. "Alert me when it's 4-6ft with offshore wind and low tide"`}
                   className="w-full h-24 p-3 rounded-lg border border-border bg-background text-base resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground/60"
@@ -120,20 +109,6 @@ export function NaturalLanguageTriggerInput({
                   Try: overhead waves, NW swell, low tide, offshore wind, epic conditions
                 </p>
               </div>
-
-              {/* Error message */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Success message */}
               <AnimatePresence>

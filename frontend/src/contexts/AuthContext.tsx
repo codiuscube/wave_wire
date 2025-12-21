@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../lib/mappers';
+import { showError } from '../lib/toast';
 
 interface AuthContextType {
   user: User | null;
@@ -108,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       options: { shouldCreateUser: true },
     });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
@@ -118,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       type: 'email',
     });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
@@ -126,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/reset-password`,
     });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
@@ -134,12 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
   // Send OTP to phone number
   const signInWithPhone = useCallback(async (phone: string) => {
     const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
@@ -152,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (error) {
+      showError(error.message);
       return { error: error as Error | null };
     }
 
@@ -162,18 +169,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update user's email after phone verification
   const updateEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.updateUser({ email });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
   // Legacy email/password signup
   const signUp = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 
   // Legacy email/password signin
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) showError(error.message);
     return { error: error as Error | null };
   }, []);
 

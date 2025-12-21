@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { mapAlertSettings, toDbAlertSettingsUpdate, type AlertSettings } from '../lib/mappers';
+import { showError } from '../lib/toast';
 
 interface UseAlertSettingsReturn {
   /** The user's alert settings, or null if not yet loaded */
@@ -88,12 +89,14 @@ export function useAlertSettings(userId: string | undefined): UseAlertSettingsRe
 
           if (insertError) {
             setError(insertError.message);
+            showError('Failed to create alert settings');
             setSettings(null);
           } else if (insertedData) {
             setSettings(mapAlertSettings(insertedData));
           }
         } else {
           setError(fetchError.message);
+          showError('Failed to load alert settings');
           setSettings(null);
         }
       } else if (data) {
@@ -128,6 +131,7 @@ export function useAlertSettings(userId: string | undefined): UseAlertSettingsRe
         .single();
 
       if (updateError) {
+        showError('Failed to update alert settings');
         return { error: updateError.message };
       }
 

@@ -1,3 +1,5 @@
+import { showError } from '../../lib/toast';
+
 export interface ParsedSpot {
   name: string;
   lat: number | null;
@@ -27,11 +29,14 @@ export async function parseSpotDescription(description: string): Promise<ParseSp
 
     if (!response.ok) {
       if (response.status === 429) {
+        showError('Too many requests. Please wait a moment.');
         return { success: false, error: 'Too many requests. Please wait a moment.' };
       }
       if (response.status >= 500) {
+        showError('AI service unavailable');
         return { success: false, error: 'AI service unavailable. Please try again.' };
       }
+      showError('Something went wrong. Please try again.');
       return { success: false, error: 'Something went wrong. Please try again.' };
     }
 
@@ -47,6 +52,7 @@ export async function parseSpotDescription(description: string): Promise<ParseSp
     };
   } catch (error) {
     console.error('Spot parsing error:', error);
+    showError('Network error. Please check your connection.');
     return {
       success: false,
       error: 'Network error. Please check your connection.',

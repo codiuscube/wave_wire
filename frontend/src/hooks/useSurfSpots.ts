@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { mapSurfSpot, toDbSurfSpotInsert, toDbSurfSpotUpdate, type SurfSpot } from '../lib/mappers';
+import { showError } from '../lib/toast';
 
 type CountryGroup = 'USA' | 'Mexico' | 'Central America' | 'Canada';
 
@@ -96,6 +97,7 @@ export function useSurfSpots(options: UseSurfSpotsOptions = {}): UseSurfSpotsRet
 
       if (fetchError) {
         setError(fetchError.message);
+        showError('Failed to load surf spots');
         setSpots([]);
         setTotalCount(0);
       } else if (data) {
@@ -127,6 +129,7 @@ export function useSurfSpots(options: UseSurfSpotsOptions = {}): UseSurfSpotsRet
         .single();
 
       if (insertError) {
+        showError('Failed to add spot');
         return { data: null, error: insertError.message };
       }
 
@@ -157,6 +160,7 @@ export function useSurfSpots(options: UseSurfSpotsOptions = {}): UseSurfSpotsRet
         .single();
 
       if (updateError) {
+        showError('Failed to update spot');
         return { error: updateError.message };
       }
 
@@ -180,6 +184,7 @@ export function useSurfSpots(options: UseSurfSpotsOptions = {}): UseSurfSpotsRet
         .eq('id', spotId);
 
       if (deleteError) {
+        showError('Failed to delete spot');
         return { error: deleteError.message };
       }
 

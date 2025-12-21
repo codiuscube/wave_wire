@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { mapTrigger, toDbTriggerInsert, toDbTriggerUpdate, type Trigger } from '../lib/mappers';
+import { showError } from '../lib/toast';
 
 type SubscriptionTier = 'free' | 'pro' | 'premium';
 
@@ -82,6 +83,7 @@ export function useTriggers(
 
       if (fetchError) {
         setError(fetchError.message);
+        showError('Failed to load triggers');
         setTriggers([]);
       } else if (data) {
         setTriggers(data.map(mapTrigger));
@@ -134,10 +136,7 @@ export function useTriggers(
         .single();
 
       if (insertError) {
-        // Handle server-side trigger limit error
-        if (insertError.message.includes('trigger maximum')) {
-          return { data: null, error: insertError.message };
-        }
+        showError('Failed to add trigger');
         return { data: null, error: insertError.message };
       }
 
@@ -172,6 +171,7 @@ export function useTriggers(
         .single();
 
       if (updateError) {
+        showError('Failed to update trigger');
         return { error: updateError.message };
       }
 
@@ -200,6 +200,7 @@ export function useTriggers(
         .eq('user_id', userId); // Ensure user owns the trigger
 
       if (deleteError) {
+        showError('Failed to delete trigger');
         return { error: deleteError.message };
       }
 

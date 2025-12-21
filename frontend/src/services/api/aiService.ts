@@ -1,4 +1,5 @@
 import type { TriggerTier } from '../../types';
+import { showError } from '../../lib/toast';
 
 export interface ParseResult {
   success: boolean;
@@ -56,6 +57,7 @@ export async function parseTriggerCommand(
 
     if (!response.ok) {
       if (response.status === 429) {
+        showError('Too many requests. Please wait a moment.');
         return { success: false, error: 'Too many requests. Please wait a moment.' };
       }
       if (response.status >= 500) {
@@ -64,8 +66,10 @@ export async function parseTriggerCommand(
         if (Object.keys(fallbackResult).length > 0) {
           return { success: true, trigger: normalizeRanges(fallbackResult) };
         }
+        showError('AI service unavailable');
         return { success: false, error: 'AI service unavailable. Try using specific values.' };
       }
+      showError('Something went wrong. Please try again.');
       return { success: false, error: 'Something went wrong. Please try again.' };
     }
 
@@ -94,8 +98,10 @@ export async function parseTriggerCommand(
     }
 
     if (err instanceof TypeError && err.message.includes('fetch')) {
+      showError('Network error. Check your connection.');
       return { success: false, error: 'Network error. Check your connection.' };
     }
+    showError('Unexpected error. Try again or use manual form.');
     return { success: false, error: 'Unexpected error. Try again or use manual form.' };
   }
 }
