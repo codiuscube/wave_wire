@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { mapProfile, toDbProfileUpdate, type Profile } from '../lib/mappers';
+import { showError } from '../lib/toast';
 
 interface UseProfileReturn {
   /** The user profile, or null if not yet loaded */
@@ -56,6 +57,7 @@ export function useProfile(userId: string | undefined): UseProfileReturn {
 
       if (fetchError) {
         setError(fetchError.message);
+        showError('Failed to load profile');
         setProfile(null);
       } else if (data) {
         setProfile(mapProfile(data));
@@ -89,6 +91,7 @@ export function useProfile(userId: string | undefined): UseProfileReturn {
         .single();
 
       if (updateError) {
+        showError('Failed to update profile');
         return { error: updateError.message };
       }
 

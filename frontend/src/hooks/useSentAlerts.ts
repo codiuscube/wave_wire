@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { mapSentAlert, type SentAlert } from '../lib/mappers';
+import { showError } from '../lib/toast';
 
 interface UseSentAlertsOptions {
   /** Limit number of alerts returned */
@@ -93,6 +94,7 @@ export function useSentAlerts(
 
       if (fetchError) {
         setError(fetchError.message);
+        showError('Failed to load alert history');
         setAlerts([]);
         setTotalCount(0);
       } else if (data) {

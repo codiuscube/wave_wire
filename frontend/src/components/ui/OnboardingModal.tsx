@@ -71,116 +71,86 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     const [address, setAddress] = useState("");
     const [createdSpotId, setCreatedSpotId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const handleAddressSubmit = async () => {
         if (!address.trim() || !user?.id) return;
         setLoading(true);
-        setError(null);
 
-        try {
-            const { error: updateError } = await updateProfile({
-                homeAddress: address,
-            });
+        const { error: updateError } = await updateProfile({
+            homeAddress: address,
+        });
 
-            if (updateError) throw new Error(updateError);
-            setStep("spot");
-        } catch (err: any) {
-            setError(err.message || "Failed to save address");
-        } finally {
-            setLoading(false);
-        }
+        setLoading(false);
+        if (!updateError) setStep("spot");
     };
 
     const handleSpotAdd = async (spot: SpotOption) => {
         if (!user?.id) return;
         setLoading(true);
-        setError(null);
 
-        try {
-            const { data, error: addError } = await addSpot({
-                name: spot.name,
-                latitude: spot.lat || null,
-                longitude: spot.lon || null,
-                region: spot.region || null,
-                buoyId: spot.buoyId || null,
-                icon: spot.icon || null,
-                masterSpotId: spot.id,
-            });
+        const { data, error: addError } = await addSpot({
+            name: spot.name,
+            latitude: spot.lat || null,
+            longitude: spot.lon || null,
+            region: spot.region || null,
+            buoyId: spot.buoyId || null,
+            icon: spot.icon || null,
+            masterSpotId: spot.id,
+        });
 
-            if (addError) throw new Error(addError);
-            if (data) {
-                setCreatedSpotId(data.id);
-                setStep("trigger");
-            }
-        } catch (err: any) {
-            setError(err.message || "Failed to create spot");
-        } finally {
-            setLoading(false);
+        setLoading(false);
+        if (!addError && data) {
+            setCreatedSpotId(data.id);
+            setStep("trigger");
         }
     };
 
     const handleTriggerAdd = async (trigger: TriggerTier) => {
         if (!user?.id || !createdSpotId) return;
         setLoading(true);
-        setError(null);
 
-        try {
-            const dbTrigger = toDbTriggerInsert({
-                userId: user.id,
-                spotId: createdSpotId,
-                name: trigger.name,
-                emoji: trigger.emoji,
-                condition: trigger.condition,
-                minHeight: trigger.minHeight,
-                maxHeight: trigger.maxHeight,
-                minPeriod: trigger.minPeriod,
-                maxPeriod: trigger.maxPeriod,
-                minWindSpeed: trigger.minWindSpeed,
-                maxWindSpeed: trigger.maxWindSpeed,
-                minWindDirection: trigger.minWindDirection,
-                maxWindDirection: trigger.maxWindDirection,
-                minSwellDirection: trigger.minSwellDirection,
-                maxSwellDirection: trigger.maxSwellDirection,
-                tideType: trigger.tideType,
-                minTideHeight: trigger.minTideHeight,
-                maxTideHeight: trigger.maxTideHeight,
-                messageTemplate: trigger.messageTemplate,
-                notificationStyle: trigger.notificationStyle ?? null,
-                priority: 1,
-            });
+        const dbTrigger = toDbTriggerInsert({
+            userId: user.id,
+            spotId: createdSpotId,
+            name: trigger.name,
+            emoji: trigger.emoji,
+            condition: trigger.condition,
+            minHeight: trigger.minHeight,
+            maxHeight: trigger.maxHeight,
+            minPeriod: trigger.minPeriod,
+            maxPeriod: trigger.maxPeriod,
+            minWindSpeed: trigger.minWindSpeed,
+            maxWindSpeed: trigger.maxWindSpeed,
+            minWindDirection: trigger.minWindDirection,
+            maxWindDirection: trigger.maxWindDirection,
+            minSwellDirection: trigger.minSwellDirection,
+            maxSwellDirection: trigger.maxSwellDirection,
+            tideType: trigger.tideType,
+            minTideHeight: trigger.minTideHeight,
+            maxTideHeight: trigger.maxTideHeight,
+            messageTemplate: trigger.messageTemplate,
+            notificationStyle: trigger.notificationStyle ?? null,
+            priority: 1,
+        });
 
-            const { error: insertError } = await supabase
-                .from("triggers")
-                .insert(dbTrigger);
+        const { error: insertError } = await supabase
+            .from("triggers")
+            .insert(dbTrigger);
 
-            if (insertError) throw new Error(insertError.message);
-
-            setStep("complete");
-        } catch (err: any) {
-            setError(err.message || "Failed to create trigger");
-        } finally {
-            setLoading(false);
-        }
+        setLoading(false);
+        if (!insertError) setStep("complete");
     };
 
     const handleComplete = async () => {
         if (!user?.id) return;
         setLoading(true);
-        setError(null);
 
-        try {
-            const { error: updateError } = await updateProfile({
-                onboardingCompleted: true,
-            });
+        const { error: updateError } = await updateProfile({
+            onboardingCompleted: true,
+        });
 
-            if (updateError) throw new Error(updateError);
-            onClose();
-        } catch (err: any) {
-            setError(err.message || "Failed to complete onboarding");
-        } finally {
-            setLoading(false);
-        }
+        setLoading(false);
+        if (!updateError) onClose();
     };
 
     const renderStep = () => {
@@ -313,11 +283,6 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
             zIndex={100}
         >
             <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
-                {error && (
-                    <div className="mx-6 mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm font-medium">
-                        {error}
-                    </div>
-                )}
                 {renderStep()}
             </div>
         </Sheet>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Button, Input, Sheet } from '../ui';
 import { Letter, CheckCircle, Crown } from '@solar-icons/react';
+import { showError } from '../../lib/toast';
 
 interface InviteUserModalProps {
     isOpen: boolean;
@@ -13,7 +14,6 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
     const [email, setEmail] = useState('');
     const [tier, setTier] = useState('free');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
     const handleInvite = async (e: React.FormEvent) => {
@@ -21,47 +21,41 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
         if (!email) return;
 
         setLoading(true);
-        setError(null);
 
-        try {
-            // Use signInWithOtp to send a magic link.
-            // This works for new users (creates account) and existing users (logs them in).
-            const { error } = await supabase.auth.signInWithOtp({
-                email,
-                options: {
-                    shouldCreateUser: true,
-                    // Redirect them to dashboard/account to set up their profile
-                    // Use VITE_SITE_URL in production to avoid localhost redirects
-                    emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/dashboard/account`,
-                    data: {
-                        subscription_tier: tier,
-                    },
+        // Use signInWithOtp to send a magic link.
+        // This works for new users (creates account) and existing users (logs them in).
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                shouldCreateUser: true,
+                // Redirect them to dashboard/account to set up their profile
+                // Use VITE_SITE_URL in production to avoid localhost redirects
+                emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/dashboard/account`,
+                data: {
+                    subscription_tier: tier,
                 },
-            });
+            },
+        });
 
-            if (error) {
-                throw error;
-            }
+        setLoading(false);
 
-            setSuccess(true);
-            if (onSuccess) onSuccess();
-
-            // Auto close after 2 seconds
-            setTimeout(() => {
-                onClose();
-            }, 2000);
-
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to send invitation');
-        } finally {
-            setLoading(false);
+        if (error) {
+            showError(error.message);
+            return;
         }
+
+        setSuccess(true);
+        if (onSuccess) onSuccess();
+
+        // Auto close after 2 seconds
+        setTimeout(() => {
+            onClose();
+        }, 2000);
     };
 
     const handleClose = () => {
         setEmail('');
         setTier('free');
-        setError(null);
         setSuccess(false);
         onClose();
     };
@@ -124,12 +118,6 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
                 <p className="font-mono text-xs text-muted-foreground">
                     The user will receive a magic link to sign in. If they don't have an account, one will be created automatically with the selected tier.
                 </p>
-
-                {error && (
-                    <div className="px-3 py-2 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm font-mono">
-                        {error}
-                    </div>
-                )}
 
                 <div className="flex gap-3 pt-2">
                     <Button type="button" variant="outline" onClick={handleClose} className="flex-1">

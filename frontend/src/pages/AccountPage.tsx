@@ -36,8 +36,6 @@ export function AccountPage() {
   const [homeLat, setHomeLat] = useState<number | null>(null);
   const [homeLon, setHomeLon] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Sync local state when profile loads
   useEffect(() => {
@@ -63,10 +61,8 @@ export function AccountPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
 
-    const { error: updateError } = await update({
+    await update({
       phone: phone || null,
       email: email || null,
       homeAddress: homeAddress || null,
@@ -75,13 +71,6 @@ export function AccountPage() {
     });
 
     setIsSaving(false);
-
-    if (updateError) {
-      setSaveError(updateError);
-    } else {
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    }
   };
 
   const handleLogout = async () => {
@@ -359,12 +348,6 @@ export function AccountPage() {
 
         {/* Save */}
         <div className="mt-8 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3">
-          {saveError && (
-            <p className="text-sm text-destructive">{saveError}</p>
-          )}
-          {saveSuccess && (
-            <p className="text-sm text-green-600">Changes saved successfully!</p>
-          )}
           <Button
             size="lg"
             onClick={handleSave}
