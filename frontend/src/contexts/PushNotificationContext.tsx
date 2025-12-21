@@ -152,7 +152,14 @@ export function PushNotificationProvider({ children }: { children: ReactNode }) 
         const permission = await getPushPermissionState();
         setPermissionState(permission);
 
-        const playerId = await getPlayerId();
+        // Wait for OneSignal to assign player ID (can take a moment)
+        let playerId: string | null = null;
+        for (let i = 0; i < 10; i++) {
+          playerId = await getPlayerId();
+          if (playerId) break;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const subscribed = !!playerId && permission === 'granted';
         setIsSubscribed(subscribed);
 
@@ -161,7 +168,7 @@ export function PushNotificationProvider({ children }: { children: ReactNode }) 
           await setExternalUserId(user.id);
 
           // Save to Supabase
-          await supabase.from('push_subscriptions').upsert(
+          const { error } = await supabase.from('push_subscriptions').upsert(
             {
               user_id: user.id,
               onesignal_player_id: playerId,
@@ -174,14 +181,24 @@ export function PushNotificationProvider({ children }: { children: ReactNode }) 
               onConflict: 'user_id,onesignal_player_id',
             }
           );
+
+          if (error) {
+            console.error('[PushNotification] Failed to save subscription:', error);
+          } else {
+            console.log('[PushNotification] Subscription saved to Supabase');
+          }
         }
 
+        setIsLoading(false);
         return subscribed;
       }
 
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
+    } catch (error) {
+      console.error('[PushNotification] Subscribe error:', error);
+      setIsLoading(false);
+      return false;
     }
   }, [user]);
 
