@@ -212,7 +212,7 @@ export function AddSpotContent({
     return (
         <div className={`flex flex-col h-full bg-card ${className}`}>
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 pb-32">
                 {/* Tabs - now inside scroll */}
                 <div className="flex border-b border-border/50 sticky top-0 bg-card z-10">
                     <button

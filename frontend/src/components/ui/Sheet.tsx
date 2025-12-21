@@ -58,7 +58,7 @@ export function Sheet({
   );
 
   return (
-    <Drawer.Root direction="right" open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Drawer.Root direction="right" open={isOpen} onOpenChange={(open) => !open && onClose()} shouldScaleBackground={false}>
       <Drawer.Portal>
         <Drawer.Overlay
           className="fixed inset-0 bg-black/40"
@@ -66,8 +66,11 @@ export function Sheet({
         />
         <Drawer.Content
           className={cn(
-            'right-2 top-2 bottom-2 fixed outline-none flex',
-            'w-[calc(100%-1rem)] sm:w-[400px] lg:w-[500px]',
+            'fixed outline-none flex',
+            // Mobile: flush right, full height
+            'inset-y-0 right-0 w-full',
+            // Desktop: floating with gaps
+            'sm:right-2 sm:top-2 sm:bottom-2 sm:w-[400px] lg:w-[500px]',
             className
           )}
           style={{
@@ -75,7 +78,7 @@ export function Sheet({
             '--initial-transform': 'calc(100% + 8px)',
           } as React.CSSProperties}
         >
-          <div className="bg-card h-full w-full grow flex flex-col rounded-2xl overflow-hidden shadow-2xl">
+          <div className="bg-card h-full w-full grow flex flex-col overflow-hidden border-l border-border/50 sm:border-none sm:rounded-2xl sm:shadow-2xl">
             {/* Header - always include Drawer.Title for accessibility */}
             {header ? (
               <>

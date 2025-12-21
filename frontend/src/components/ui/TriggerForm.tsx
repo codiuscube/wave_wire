@@ -686,7 +686,7 @@ export function TriggerForm({
 
     return (
         <div className={`flex flex-col h-full bg-card ${className}`}>
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 min-h-0">
+            <div className="flex-1 overflow-y-auto p-6 pb-32 space-y-8 min-h-0">
                 {/* AI Assistant - Only for new triggers */}
                 {!initialData && (
                     <NaturalLanguageTriggerInput
