@@ -29,7 +29,7 @@ export function Navbar() {
 
           <button
             onClick={() => setShowWaitlist(true)}
-            className="font-mono text-xs border border-brand-acid/50 text-brand-acid px-4 py-1.5 hover:bg-brand-acid hover:text-brand-abyss transition-all uppercase tracking-wider"
+            className="hidden sm:block font-mono text-xs border border-brand-acid/50 text-brand-acid px-4 py-1.5 hover:bg-brand-acid hover:text-brand-abyss transition-all uppercase tracking-wider"
           >
             JOIN WAITLIST
           </button>
