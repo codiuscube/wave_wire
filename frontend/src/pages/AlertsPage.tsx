@@ -1,6 +1,7 @@
-import { Sun, Moon, Bolt, InfoCircle, ClockCircle, History3, Lock, Calendar } from '@solar-icons/react';
+import { Sun, Moon, Bolt, InfoCircle, ClockCircle, History3, Lock, Calendar, Bell, Letter, Phone } from '@solar-icons/react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { usePushNotification } from '../contexts/PushNotificationContext';
 import { useAlertSettings } from '../hooks';
 import {
   Card,
@@ -8,6 +9,8 @@ import {
   Input,
   Switch,
   SegmentedControl,
+  Button,
+  Badge,
 } from '../components/ui';
 import { DnaLogo } from '../components/ui/DnaLogo';
 
@@ -16,6 +19,14 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export function AlertsPage() {
   const { user, profile } = useAuth();
   const { settings, isLoading, update } = useAlertSettings(user?.id);
+  const {
+    isSupported: pushSupported,
+    isSubscribed: pushSubscribed,
+    permissionState: pushPermission,
+    isLoading: pushLoading,
+    isIosWithoutPwa,
+    subscribe: subscribeToPush,
+  } = usePushNotification();
 
   // 'pro' = Free Beta tier in DB, 'premium' = paid tier
   const canUsePremiumAlerts = ['premium', 'pro'].includes(
@@ -23,13 +34,20 @@ export function AlertsPage() {
   ) || profile?.isAdmin;
 
   const handleToggle = async (
-    field: 'forecastAlertsEnabled' | 'liveAlertsEnabled' | 'twoDayForecastEnabled' | 'fiveDayForecastEnabled',
+    field: 'forecastAlertsEnabled' | 'liveAlertsEnabled' | 'twoDayForecastEnabled' | 'fiveDayForecastEnabled' | 'pushEnabled' | 'emailEnabled',
     value: boolean
   ) => {
     if (!canUsePremiumAlerts && (field === 'twoDayForecastEnabled' || field === 'forecastAlertsEnabled' || field === 'fiveDayForecastEnabled')) {
       return;
     }
     await update({ [field]: value });
+  };
+
+  const handleEnablePush = async () => {
+    const success = await subscribeToPush();
+    if (success) {
+      await update({ pushEnabled: true });
+    }
   };
 
   const handleModeChange = async (mode: 'solar' | 'clock' | 'always') => {
@@ -258,6 +276,94 @@ export function AlertsPage() {
             </motion.div>
           </div>
 
+        </div>
+
+        {/* Notification Channels Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="w-2 h-2 bg-blue-500 animate-pulse rounded-full" />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+              Notification Channels
+            </h2>
+          </div>
+
+          <Card className="tech-card">
+            <CardContent className="pt-6 space-y-4">
+              {/* Push Notifications */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={getIconStyle(!!(pushSubscribed && settings?.pushEnabled))}>
+                    <Bell weight="BoldDuotone" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Push Notifications</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {isIosWithoutPwa
+                        ? 'Add to Home Screen for push on iOS'
+                        : !pushSupported
+                          ? 'Not supported in this browser'
+                          : pushPermission === 'denied'
+                            ? 'Blocked in browser settings'
+                            : pushSubscribed
+                              ? 'Enabled on this device'
+                              : 'Get instant alerts on this device'}
+                    </p>
+                  </div>
+                </div>
+                {pushSupported && pushPermission !== 'denied' && !isIosWithoutPwa && (
+                  pushSubscribed ? (
+                    <Switch
+                      checked={settings?.pushEnabled ?? false}
+                      onChange={(checked) => handleToggle('pushEnabled', checked)}
+                      disabled={pushLoading}
+                    />
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEnablePush}
+                      disabled={pushLoading}
+                    >
+                      Enable
+                    </Button>
+                  )
+                )}
+              </div>
+
+              {/* Email */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={getIconStyle(settings?.emailEnabled ?? true)}>
+                    <Letter weight="BoldDuotone" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Email</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Receive alerts to your email address
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={settings?.emailEnabled ?? true}
+                  onChange={(checked) => handleToggle('emailEnabled', checked)}
+                />
+              </div>
+
+              {/* SMS - Coming Soon */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg opacity-50">
+                <div className="flex items-center gap-3">
+                  <div className={getIconStyle(false)}>
+                    <Phone weight="BoldDuotone" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">SMS</h3>
+                    <p className="text-xs text-muted-foreground">Coming soon</p>
+                  </div>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Surveillance Window Section */}

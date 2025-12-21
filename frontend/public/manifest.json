@@ -1,0 +1,19 @@
+{
+  "name": "Wave_Wire",
+  "short_name": "Wave_Wire",
+  "description": "Surf alert notifications - never miss your session",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#020817",
+  "theme_color": "#020817",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["sports", "weather", "lifestyle"]
+}

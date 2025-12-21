@@ -141,6 +141,9 @@ export interface AlertSettings {
   twoDayForecastEnabled: boolean;
   fiveDayForecastEnabled: boolean;
   liveAlertsEnabled: boolean;
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -357,6 +360,9 @@ export function mapAlertSettings(row: DbAlertSettings): AlertSettings {
     twoDayForecastEnabled: row.two_day_forecast_enabled ?? false,
     fiveDayForecastEnabled: row.five_day_forecast_enabled ?? false,
     liveAlertsEnabled: row.live_alerts_enabled ?? true,
+    pushEnabled: row.push_enabled ?? false,
+    emailEnabled: row.email_enabled ?? true,
+    smsEnabled: row.sms_enabled ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -568,6 +574,9 @@ export function toDbAlertSettingsInsert(
     two_day_forecast_enabled: settings.twoDayForecastEnabled,
     five_day_forecast_enabled: settings.fiveDayForecastEnabled,
     live_alerts_enabled: settings.liveAlertsEnabled,
+    push_enabled: settings.pushEnabled,
+    email_enabled: settings.emailEnabled,
+    sms_enabled: settings.smsEnabled,
   };
 }
 
@@ -583,5 +592,8 @@ export function toDbAlertSettingsUpdate(
   if (settings.twoDayForecastEnabled !== undefined) update.two_day_forecast_enabled = settings.twoDayForecastEnabled;
   if (settings.fiveDayForecastEnabled !== undefined) update.five_day_forecast_enabled = settings.fiveDayForecastEnabled;
   if (settings.liveAlertsEnabled !== undefined) update.live_alerts_enabled = settings.liveAlertsEnabled;
+  if (settings.pushEnabled !== undefined) update.push_enabled = settings.pushEnabled;
+  if (settings.emailEnabled !== undefined) update.email_enabled = settings.emailEnabled;
+  if (settings.smsEnabled !== undefined) update.sms_enabled = settings.smsEnabled;
   return update;
 }

@@ -25,6 +25,9 @@ const DEFAULT_SETTINGS: Omit<AlertSettings, 'id' | 'userId' | 'createdAt' | 'upd
   twoDayForecastEnabled: false,
   fiveDayForecastEnabled: false,
   liveAlertsEnabled: true,
+  pushEnabled: false,
+  emailEnabled: true,
+  smsEnabled: false,
 };
 
 /**
@@ -83,6 +86,9 @@ export function useAlertSettings(userId: string | undefined): UseAlertSettingsRe
               two_day_forecast_enabled: DEFAULT_SETTINGS.twoDayForecastEnabled,
               five_day_forecast_enabled: DEFAULT_SETTINGS.fiveDayForecastEnabled,
               live_alerts_enabled: DEFAULT_SETTINGS.liveAlertsEnabled,
+              push_enabled: DEFAULT_SETTINGS.pushEnabled,
+              email_enabled: DEFAULT_SETTINGS.emailEnabled,
+              sms_enabled: DEFAULT_SETTINGS.smsEnabled,
             })
             .select()
             .single();

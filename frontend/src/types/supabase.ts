@@ -97,10 +97,13 @@ export type Database = {
         Row: {
           active_days: string[] | null
           created_at: string | null
+          email_enabled: boolean | null
           five_day_forecast_enabled: boolean | null
           forecast_alerts_enabled: boolean | null
           id: string
           live_alerts_enabled: boolean | null
+          push_enabled: boolean | null
+          sms_enabled: boolean | null
           two_day_forecast_enabled: boolean | null
           updated_at: string | null
           user_id: string
@@ -111,10 +114,13 @@ export type Database = {
         Insert: {
           active_days?: string[] | null
           created_at?: string | null
+          email_enabled?: boolean | null
           five_day_forecast_enabled?: boolean | null
           forecast_alerts_enabled?: boolean | null
           id?: string
           live_alerts_enabled?: boolean | null
+          push_enabled?: boolean | null
+          sms_enabled?: boolean | null
           two_day_forecast_enabled?: boolean | null
           updated_at?: string | null
           user_id: string
@@ -125,10 +131,13 @@ export type Database = {
         Update: {
           active_days?: string[] | null
           created_at?: string | null
+          email_enabled?: boolean | null
           five_day_forecast_enabled?: boolean | null
           forecast_alerts_enabled?: boolean | null
           id?: string
           live_alerts_enabled?: boolean | null
+          push_enabled?: boolean | null
+          sms_enabled?: boolean | null
           two_day_forecast_enabled?: boolean | null
           updated_at?: string | null
           user_id?: string
@@ -201,6 +210,57 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          browser: string | null
+          created_at: string | null
+          device_type: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          onesignal_player_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          onesignal_player_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          onesignal_player_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiet_hours: {
         Row: {
           enabled: boolean | null
@@ -252,7 +312,9 @@ export type Database = {
           delivery_status: string | null
           error_message: string | null
           id: string
+          match_id: string | null
           message_content: string | null
+          onesignal_id: string | null
           resend_id: string | null
           sent_at: string | null
           spot_id: string | null
@@ -267,7 +329,9 @@ export type Database = {
           delivery_status?: string | null
           error_message?: string | null
           id?: string
+          match_id?: string | null
           message_content?: string | null
+          onesignal_id?: string | null
           resend_id?: string | null
           sent_at?: string | null
           spot_id?: string | null
@@ -282,7 +346,9 @@ export type Database = {
           delivery_status?: string | null
           error_message?: string | null
           id?: string
+          match_id?: string | null
           message_content?: string | null
+          onesignal_id?: string | null
           resend_id?: string | null
           sent_at?: string | null
           spot_id?: string | null
@@ -290,6 +356,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sent_alerts_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "trigger_matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sent_alerts_spot_id_fkey"
             columns: ["spot_id"]

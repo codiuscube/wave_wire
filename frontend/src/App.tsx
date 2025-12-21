@@ -4,6 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ReferralProvider } from './contexts/ReferralContext';
+import { PushNotificationProvider } from './contexts/PushNotificationContext';
 import { SurfTechLayout } from './components/layout/SurfTechLayout';
 import { DashboardLayout } from './components/dashboard';
 import { ProtectedRoute } from './components/auth';
@@ -28,9 +29,10 @@ function App() {
     <BrowserRouter>
       <ReferralProvider>
         <AuthProvider>
-          <ThemeProvider>
-          <Toaster position="bottom-center" richColors closeButton />
-          <LocationProvider>
+          <PushNotificationProvider>
+            <ThemeProvider>
+            <Toaster position="bottom-center" richColors closeButton />
+            <LocationProvider>
             <SurfTechLayout>
               <Routes>
                 {/* Public Routes */}
@@ -91,8 +93,9 @@ function App() {
                 />
               </Routes>
             </SurfTechLayout>
-          </LocationProvider>
-          </ThemeProvider>
+            </LocationProvider>
+            </ThemeProvider>
+          </PushNotificationProvider>
         </AuthProvider>
       </ReferralProvider>
     </BrowserRouter>

@@ -14,6 +14,7 @@ import { fetchSpotConditions, type SolarData } from './lib/dataFetcher.js';
 import { evaluateTrigger, mapDbTrigger, type Trigger, type ConditionData } from './lib/evaluator.js';
 import { generateMessage, generateSubject } from './lib/messenger.js';
 import { sendAlertEmail, isValidEmail } from './lib/emailer.js';
+import { sendPushNotification, isOneSignalConfigured } from './lib/pushNotifier.js';
 
 // Initialize Supabase client with service role key
 const supabase = createClient(
@@ -30,6 +31,8 @@ interface AlertSettings {
   activeDays: string[];
   liveAlertsEnabled: boolean;
   forecastAlertsEnabled: boolean;
+  pushEnabled: boolean;
+  emailEnabled: boolean;
 }
 
 interface SpotInfo {
@@ -145,6 +148,8 @@ async function evaluateAllTriggers(): Promise<number> {
         activeDays: alertSettings.active_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         liveAlertsEnabled: alertSettings.live_alerts_enabled ?? true,
         forecastAlertsEnabled: alertSettings.forecast_alerts_enabled ?? false,
+        pushEnabled: alertSettings.push_enabled ?? false,
+        emailEnabled: alertSettings.email_enabled ?? true,
       },
       emoji: row.emoji,
     };
@@ -235,7 +240,8 @@ async function processPendingMatches(): Promise<number> {
       profiles!inner (
         email, timezone,
         alert_settings (
-          window_mode, window_start_time, window_end_time, active_days
+          window_mode, window_start_time, window_end_time, active_days,
+          push_enabled, email_enabled
         )
       )
     `)
@@ -304,14 +310,22 @@ async function processPendingMatches(): Promise<number> {
       continue;
     }
 
-    // Check email validity
-    if (!profile.email || !isValidEmail(profile.email)) {
-      console.log(`  Skipped: invalid or missing email`);
+    // Get channel preferences (default: email enabled, push disabled)
+    const emailEnabled = alertSettings?.email_enabled ?? true;
+    const pushEnabled = alertSettings?.push_enabled ?? false;
+
+    // Check if at least one channel is available
+    const hasValidEmail = profile.email && isValidEmail(profile.email);
+    const canSendEmail = emailEnabled && hasValidEmail;
+    const canSendPush = pushEnabled && isOneSignalConfigured();
+
+    if (!canSendEmail && !canSendPush) {
+      console.log(`  Skipped: no valid delivery channels`);
       await supabase
         .from('trigger_matches')
         .update({
           status: 'skipped',
-          skip_reason: 'invalid_email',
+          skip_reason: 'no_valid_channels',
           processed_at: new Date().toISOString(),
         })
         .eq('id', match.id);
@@ -334,31 +348,92 @@ async function processPendingMatches(): Promise<number> {
 
     console.log(`  Message: ${message.substring(0, 50)}...`);
 
-    // Send email
-    const sendResult = await sendAlertEmail({
-      to: profile.email,
-      subject,
-      message,
-      spotName,
-      condition: trigger.condition || 'good',
-      emoji: trigger.emoji,
-    });
+    // Track delivery results
+    let anySuccess = false;
 
-    // Record in sent_alerts
-    await supabase.from('sent_alerts').insert({
-      user_id: match.user_id,
-      spot_id: match.spot_id,
-      trigger_id: match.trigger_id,
-      match_id: match.id,
-      alert_type: match.match_type,
-      condition_matched: match.condition_matched,
-      message_content: message,
-      delivery_channel: 'email',
-      delivery_status: sendResult.success ? 'sent' : 'failed',
-      resend_id: sendResult.resendId,
-      error_message: sendResult.error,
-      sent_at: new Date().toISOString(),
-    });
+    // Send via EMAIL if enabled
+    if (canSendEmail) {
+      const emailResult = await sendAlertEmail({
+        to: profile.email,
+        subject,
+        message,
+        spotName,
+        condition: trigger.condition || 'good',
+        emoji: trigger.emoji,
+      });
+
+      // Record email delivery
+      await supabase.from('sent_alerts').insert({
+        user_id: match.user_id,
+        spot_id: match.spot_id,
+        trigger_id: match.trigger_id,
+        match_id: match.id,
+        alert_type: match.match_type,
+        condition_matched: match.condition_matched,
+        message_content: message,
+        delivery_channel: 'email',
+        delivery_status: emailResult.success ? 'sent' : 'failed',
+        resend_id: emailResult.resendId,
+        error_message: emailResult.error,
+        sent_at: new Date().toISOString(),
+      });
+
+      if (emailResult.success) {
+        console.log(`  Email sent: ${emailResult.resendId}`);
+        anySuccess = true;
+      } else {
+        console.log(`  Email failed: ${emailResult.error}`);
+      }
+    }
+
+    // Send via PUSH if enabled
+    if (canSendPush) {
+      // Fetch active push subscriptions for this user
+      const { data: pushSubs } = await supabase
+        .from('push_subscriptions')
+        .select('onesignal_player_id')
+        .eq('user_id', match.user_id)
+        .eq('is_active', true);
+
+      const playerIds = pushSubs?.map(s => s.onesignal_player_id) ?? [];
+
+      if (playerIds.length > 0) {
+        const pushTitle = `${trigger.emoji || '🌊'} ${spotName}`;
+        const pushResult = await sendPushNotification({
+          playerIds,
+          title: pushTitle,
+          message: message.substring(0, 200), // Truncate for push
+          spotName,
+          condition: trigger.condition || 'good',
+          emoji: trigger.emoji,
+        });
+
+        // Record push delivery
+        await supabase.from('sent_alerts').insert({
+          user_id: match.user_id,
+          spot_id: match.spot_id,
+          trigger_id: match.trigger_id,
+          match_id: match.id,
+          alert_type: match.match_type,
+          condition_matched: match.condition_matched,
+          message_content: message.substring(0, 200),
+          delivery_channel: 'push',
+          delivery_status: pushResult.success ? 'sent' : 'failed',
+          onesignal_id: pushResult.onesignalId,
+          error_message: pushResult.error,
+          sent_at: new Date().toISOString(),
+        });
+
+        if (pushResult.success) {
+          console.log(`  Push sent to ${playerIds.length} device(s): ${pushResult.onesignalId}`);
+          anySuccess = true;
+        } else {
+          console.log(`  Push failed: ${pushResult.error}`);
+        }
+      } else {
+        console.log(`  Push skipped: no active subscriptions`);
+      }
+    }
 
     // Update trigger last_fired_at
     await supabase
@@ -366,20 +441,14 @@ async function processPendingMatches(): Promise<number> {
       .update({ last_fired_at: new Date().toISOString() })
       .eq('id', match.trigger_id);
 
-    // Update match status
+    // Update match status (success if at least one channel succeeded)
     await supabase
       .from('trigger_matches')
       .update({
-        status: sendResult.success ? 'sent' : 'failed',
+        status: anySuccess ? 'sent' : 'failed',
         processed_at: new Date().toISOString(),
       })
       .eq('id', match.id);
-
-    if (sendResult.success) {
-      console.log(`  Email sent: ${sendResult.resendId}`);
-    } else {
-      console.log(`  Email failed: ${sendResult.error}`);
-    }
 
     processedCount++;
   }

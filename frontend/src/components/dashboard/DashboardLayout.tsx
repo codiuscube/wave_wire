@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar, MobileNav, MobileHeader } from './';
+import { PwaInstallBanner } from '../ui';
 
 export function DashboardLayout() {
   return (
@@ -14,6 +15,7 @@ export function DashboardLayout() {
         <Outlet />
       </main>
       <MobileNav />
+      <PwaInstallBanner />
     </div>
   );
 }
