@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint, Pen } from '@solar-icons/react';
+import { Target, AddCircle, TrashBinMinimalistic, AltArrowDown, DangerTriangle, MapPoint, Pen, MenuDots, CheckCircle } from '@solar-icons/react';
 import {
   Button,
   AddSpotModal,
@@ -43,6 +43,7 @@ interface DraggableSpotCardProps {
   isExpanded: boolean;
   getBuoys: () => BuoyRecommendation[];
   onAssignBuoy: (buoy: BuoyRecommendation) => void;
+  isReordering: boolean;
 }
 
 function DraggableSpotCard({
@@ -54,6 +55,7 @@ function DraggableSpotCard({
   isExpanded,
   getBuoys,
   onAssignBuoy,
+  isReordering,
 }: DraggableSpotCardProps) {
   const controls = useDragControls();
   const longPressTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,20 +97,22 @@ function DraggableSpotCard({
         cursor: "grabbing"
       }}
     >
-      {/* Drag Handle - Outside on the left */}
-      {/* <div
-        className="flex items-center justify-center px-2 py-4 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/30 hover:text-muted-foreground/60 active:text-muted-foreground transition-colors select-none"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          controls.start(e);
-        }}
-        style={{ touchAction: 'none' }}
-      >
-        <div className="flex -space-x-3">
-          <MenuDots weight="Bold" size={16} className="rotate-90" />
-          <MenuDots weight="Bold" size={16} className="rotate-90" />
+      {/* Drag Handle - Outside on the left (visible in reorder mode) */}
+      {isReordering && (
+        <div
+          className="flex items-center justify-center px-2 py-4 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/50 hover:text-muted-foreground active:text-primary transition-colors select-none"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            controls.start(e);
+          }}
+          style={{ touchAction: 'none' }}
+        >
+          <div className="flex -space-x-3">
+            <MenuDots weight="Bold" size={16} className="rotate-90" />
+            <MenuDots weight="Bold" size={16} className="rotate-90" />
+          </div>
         </div>
-      </div> */}
+      )}
 
       {/* Card Container */}
       <div
@@ -268,6 +272,7 @@ export function SpotPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Icon Picker State
   const [isIconModalOpen, setIsIconModalOpen] = useState(false);
@@ -408,6 +413,28 @@ export function SpotPage() {
             <span className="font-mono text-xs text-muted-foreground bg-secondary/10 px-2 py-1 rounded">
               {spotCount} / {spotLimit === Infinity ? '∞' : spotLimit} spots active
             </span>
+            {userSpots.length > 1 && (
+              <button
+                onClick={() => setIsReordering(!isReordering)}
+                className={`font-mono text-xs px-2 py-1 rounded flex items-center gap-1.5 transition-colors ${
+                  isReordering
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary/10 text-muted-foreground hover:text-foreground hover:bg-secondary/20'
+                }`}
+              >
+                {isReordering ? (
+                  <>
+                    <CheckCircle weight="Bold" size={12} />
+                    Done
+                  </>
+                ) : (
+                  <>
+                    <MenuDots weight="Bold" size={12} className="rotate-90" />
+                    Reorder
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Add Spot Button - Top of page */}
@@ -465,6 +492,7 @@ export function SpotPage() {
                     isExpanded={expandedSpotId === spot.id}
                     getBuoys={() => getSpotBuoys(spot)}
                     onAssignBuoy={(buoy) => assignBuoy(spot.id, buoy)}
+                    isReordering={isReordering}
                   />
                 );
               })}
