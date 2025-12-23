@@ -84,7 +84,7 @@ export function Select({
         <div
           ref={dropdownRef}
           style={dropdownStyle}
-          className="z-50 rounded-sm border border-border bg-popover p-1 shadow-md"
+          className="z-[100] rounded-sm border border-border bg-popover p-1 shadow-md"
         >
           {options.map((option) => (
             <button

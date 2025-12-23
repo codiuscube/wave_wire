@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Refresh, AltArrowDown } from '@solar-icons/react';
 import { Select } from './Select';
 import type { UserSpot } from '../../lib/mappers';
 import type { SessionConditions, SessionQuality, SessionCrowd } from '../../lib/mappers';
@@ -57,6 +58,12 @@ const DURATION_OPTIONS = [
   { value: '180', label: '3+ hours' },
 ];
 
+const TIDE_STATE_OPTIONS = [
+  { value: '', label: 'Unknown' },
+  { value: 'rising', label: 'Rising' },
+  { value: 'falling', label: 'Falling' },
+];
+
 // Format date for datetime-local input (YYYY-MM-DDTHH:MM)
 const formatDateForInput = (dateStr?: string): string => {
   const date = dateStr ? new Date(dateStr) : new Date();
@@ -66,22 +73,14 @@ const formatDateForInput = (dateStr?: string): string => {
   return localDate.toISOString().slice(0, 16);
 };
 
-// Format conditions for display
-const formatConditions = (conditions: SessionConditions | null): string => {
-  if (!conditions) return 'No conditions data';
-
-  const parts: string[] = [];
-  if (conditions.waveHeight != null && conditions.wavePeriod != null) {
-    parts.push(`${conditions.waveHeight}ft @ ${conditions.wavePeriod}s`);
+// Get source display label
+const getSourceLabel = (source: 'live' | 'historical' | 'custom' | null): string => {
+  switch (source) {
+    case 'live': return 'Live forecast';
+    case 'historical': return 'Historical data';
+    case 'custom': return 'Custom';
+    default: return 'Not fetched';
   }
-  if (conditions.windSpeed != null) {
-    parts.push(`${conditions.windSpeed}kt wind`);
-  }
-  if (conditions.tideHeight != null && conditions.tideState) {
-    parts.push(`${conditions.tideHeight}ft ${conditions.tideState}`);
-  }
-
-  return parts.length > 0 ? parts.join(' / ') : 'Conditions unavailable';
 };
 
 export function SurfSessionForm({
@@ -99,20 +98,53 @@ export function SurfSessionForm({
   const [crowd, setCrowd] = useState<SessionCrowd>(initialData?.crowd || 'moderate');
   const [notes, setNotes] = useState(initialData?.notes || '');
 
-  // Conditions state
-  const [conditions, setConditions] = useState<SessionConditions | null>(
-    initialData?.conditions || null
-  );
+  // Individual condition states for editing
+  const [waveHeight, setWaveHeight] = useState<string>('');
+  const [wavePeriod, setWavePeriod] = useState<string>('');
+  const [swellHeight, setSwellHeight] = useState<string>('');
+  const [swellPeriod, setSwellPeriod] = useState<string>('');
+  const [swellDirection, setSwellDirection] = useState<string>('');
+  const [windWaveHeight, setWindWaveHeight] = useState<string>('');
+  const [windSpeed, setWindSpeed] = useState<string>('');
+  const [windGusts, setWindGusts] = useState<string>('');
+  const [windDirection, setWindDirection] = useState<string>('');
+  const [tideHeight, setTideHeight] = useState<string>('');
+  const [tideState, setTideState] = useState<'rising' | 'falling' | ''>('');
+  const [waterTemp, setWaterTemp] = useState<string>('');
+  const [conditionsSource, setConditionsSource] = useState<'live' | 'historical' | 'custom' | null>(null);
+
+  // Fetch state
   const [isFetchingConditions, setIsFetchingConditions] = useState(false);
   const [conditionsError, setConditionsError] = useState<string | null>(null);
+  const [isConditionsExpanded, setIsConditionsExpanded] = useState(false);
+
+  // Initialize condition fields from initialData (for editing existing sessions)
+  useEffect(() => {
+    if (initialData?.conditions) {
+      const c = initialData.conditions;
+      setWaveHeight(c.waveHeight?.toString() ?? '');
+      setWavePeriod(c.wavePeriod?.toString() ?? '');
+      setSwellHeight(c.swellHeight?.toString() ?? '');
+      setSwellPeriod(c.swellPeriod?.toString() ?? '');
+      setSwellDirection(c.swellDirection?.toString() ?? '');
+      setWindWaveHeight(c.windWaveHeight?.toString() ?? '');
+      setWindSpeed(c.windSpeed?.toString() ?? '');
+      setWindGusts(c.windGusts?.toString() ?? '');
+      setWindDirection(c.windDirection?.toString() ?? '');
+      setTideHeight(c.tideHeight?.toString() ?? '');
+      setTideState(c.tideState ?? '');
+      setWaterTemp(c.waterTemp?.toString() ?? '');
+      setConditionsSource(c.source);
+      setIsConditionsExpanded(true);
+    }
+  }, [initialData]);
 
   // Get selected spot
   const selectedSpot = spots.find((s) => s.id === spotId);
 
-  // Fetch conditions when spot or date changes
+  // Fetch conditions manually
   const fetchConditions = useCallback(async () => {
     if (!selectedSpot?.latitude || !selectedSpot?.longitude) {
-      setConditions(null);
       setConditionsError('Spot has no coordinates');
       return;
     }
@@ -138,26 +170,63 @@ export function SurfSessionForm({
       }
 
       const data: SessionConditions = await response.json();
-      setConditions(data);
+
+      // Populate all fields from fetched data
+      setWaveHeight(data.waveHeight?.toString() ?? '');
+      setWavePeriod(data.wavePeriod?.toString() ?? '');
+      setSwellHeight(data.swellHeight?.toString() ?? '');
+      setSwellPeriod(data.swellPeriod?.toString() ?? '');
+      setSwellDirection(data.swellDirection?.toString() ?? '');
+      setWindWaveHeight(data.windWaveHeight?.toString() ?? '');
+      setWindSpeed(data.windSpeed?.toString() ?? '');
+      setWindGusts(data.windGusts?.toString() ?? '');
+      setWindDirection(data.windDirection?.toString() ?? '');
+      setTideHeight(data.tideHeight?.toString() ?? '');
+      setTideState(data.tideState ?? '');
+      setWaterTemp(data.waterTemp?.toString() ?? '');
+      setConditionsSource(data.source);
+      setIsConditionsExpanded(true);
     } catch (err) {
       console.error('Error fetching conditions:', err);
       setConditionsError(err instanceof Error ? err.message : 'Failed to fetch conditions');
-      setConditions(null);
     } finally {
       setIsFetchingConditions(false);
     }
   }, [selectedSpot, sessionDate]);
 
-  // Auto-fetch on spot/date change (debounced)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (spotId && sessionDate) {
-        fetchConditions();
-      }
-    }, 500);
+  // Mark as custom when any condition is edited
+  const handleConditionChange = (
+    setter: (value: string) => void,
+    value: string
+  ) => {
+    setter(value);
+    if (conditionsSource !== null && conditionsSource !== 'custom') {
+      setConditionsSource('custom');
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [spotId, sessionDate, fetchConditions]);
+  // Build conditions object for submission
+  const buildConditions = (): SessionConditions | null => {
+    // Only include conditions if we have data
+    if (conditionsSource === null) return null;
+
+    return {
+      waveHeight: waveHeight ? parseFloat(waveHeight) : null,
+      wavePeriod: wavePeriod ? parseFloat(wavePeriod) : null,
+      swellHeight: swellHeight ? parseFloat(swellHeight) : null,
+      swellPeriod: swellPeriod ? parseFloat(swellPeriod) : null,
+      swellDirection: swellDirection ? parseFloat(swellDirection) : null,
+      windWaveHeight: windWaveHeight ? parseFloat(windWaveHeight) : null,
+      windSpeed: windSpeed ? parseFloat(windSpeed) : null,
+      windGusts: windGusts ? parseFloat(windGusts) : null,
+      windDirection: windDirection ? parseFloat(windDirection) : null,
+      tideHeight: tideHeight ? parseFloat(tideHeight) : null,
+      tideState: tideState || null,
+      waterTemp: waterTemp ? parseFloat(waterTemp) : null,
+      fetchedAt: new Date().toISOString(),
+      source: conditionsSource,
+    };
+  };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,7 +244,7 @@ export function SurfSessionForm({
       quality,
       crowd,
       notes: notes.trim() || null,
-      conditions,
+      conditions: buildConditions(),
     });
   };
 
@@ -184,6 +253,48 @@ export function SurfSessionForm({
     value: s.id,
     label: s.name,
   }));
+
+  // Condition input component
+  const ConditionInput = ({
+    label,
+    value,
+    onChange,
+    unit,
+    placeholder = '',
+    min,
+    max,
+    step = '0.1',
+  }: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    unit: string;
+    placeholder?: string;
+    min?: number;
+    max?: number;
+    step?: string;
+  }) => (
+    <div>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => handleConditionChange(onChange, e.target.value)}
+          placeholder={placeholder}
+          min={min}
+          max={max}
+          step={step}
+          className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 pr-10"
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          {unit}
+        </span>
+      </div>
+    </div>
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -212,27 +323,218 @@ export function SurfSessionForm({
         />
       </div>
 
-      {/* Conditions Preview */}
-      <div className="bg-muted/50 rounded-md p-3 border border-border">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">
-            Conditions
-          </span>
-          {isFetchingConditions && <Spinner className="w-3 h-3" />}
-        </div>
-        <div className="font-mono text-sm">
-          {isFetchingConditions ? (
-            <span className="text-muted-foreground">Loading...</span>
-          ) : conditionsError ? (
-            <span className="text-destructive">{conditionsError}</span>
-          ) : (
-            <span className="text-foreground">{formatConditions(conditions)}</span>
-          )}
-        </div>
-        {conditions?.source && (
-          <span className="text-xs text-muted-foreground">
-            Source: {conditions.source === 'historical' ? 'Historical data' : 'Live forecast'}
-          </span>
+      {/* Fetch Conditions Button */}
+      <button
+        type="button"
+        onClick={fetchConditions}
+        disabled={isFetchingConditions || !spotId || !sessionDate}
+        className="w-full flex items-center justify-center gap-2 h-10 px-4 rounded-md border border-primary/50 bg-primary/5 text-primary text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isFetchingConditions ? (
+          <>
+            <Spinner className="w-4 h-4" />
+            Fetching...
+          </>
+        ) : (
+          <>
+            <Refresh weight="Bold" size={16} />
+            Fetch Conditions for This Date
+          </>
+        )}
+      </button>
+
+      {/* Conditions Section */}
+      <div className="bg-muted/50 rounded-md border border-border overflow-hidden">
+        {/* Header */}
+        <button
+          type="button"
+          onClick={() => setIsConditionsExpanded(!isConditionsExpanded)}
+          className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Conditions
+            </span>
+            {conditionsSource && (
+              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                conditionsSource === 'custom'
+                  ? 'bg-amber-500/10 text-amber-500'
+                  : 'bg-primary/10 text-primary'
+              }`}>
+                {getSourceLabel(conditionsSource)}
+              </span>
+            )}
+          </div>
+          <AltArrowDown
+            weight="Bold"
+            size={14}
+            className={`text-muted-foreground transition-transform ${isConditionsExpanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {/* Error */}
+        {conditionsError && (
+          <div className="px-3 pb-3">
+            <span className="text-destructive text-sm">{conditionsError}</span>
+          </div>
+        )}
+
+        {/* Expanded Content */}
+        {isConditionsExpanded && (
+          <div className="p-3 pt-0 space-y-4">
+            {/* Waves Section */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                Waves
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <ConditionInput
+                  label="Total Height"
+                  value={waveHeight}
+                  onChange={setWaveHeight}
+                  unit="ft"
+                  min={0}
+                  max={50}
+                />
+                <ConditionInput
+                  label="Mean Period"
+                  value={wavePeriod}
+                  onChange={setWavePeriod}
+                  unit="s"
+                  min={0}
+                  max={30}
+                  step="1"
+                />
+              </div>
+            </div>
+
+            {/* Swell Section */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                Primary Swell
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <ConditionInput
+                  label="Height"
+                  value={swellHeight}
+                  onChange={setSwellHeight}
+                  unit="ft"
+                  min={0}
+                  max={50}
+                />
+                <ConditionInput
+                  label="Peak Period"
+                  value={swellPeriod}
+                  onChange={setSwellPeriod}
+                  unit="s"
+                  min={0}
+                  max={30}
+                  step="1"
+                />
+              </div>
+              <ConditionInput
+                label="Direction"
+                value={swellDirection}
+                onChange={setSwellDirection}
+                unit="°"
+                min={0}
+                max={360}
+                step="1"
+              />
+            </div>
+
+            {/* Wind Section */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                Wind
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <ConditionInput
+                  label="Speed"
+                  value={windSpeed}
+                  onChange={setWindSpeed}
+                  unit="kt"
+                  min={0}
+                  max={100}
+                  step="1"
+                />
+                <ConditionInput
+                  label="Gusts"
+                  value={windGusts}
+                  onChange={setWindGusts}
+                  unit="kt"
+                  min={0}
+                  max={100}
+                  step="1"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <ConditionInput
+                  label="Direction"
+                  value={windDirection}
+                  onChange={setWindDirection}
+                  unit="°"
+                  min={0}
+                  max={360}
+                  step="1"
+                />
+                <ConditionInput
+                  label="Chop Height"
+                  value={windWaveHeight}
+                  onChange={setWindWaveHeight}
+                  unit="ft"
+                  min={0}
+                  max={20}
+                />
+              </div>
+            </div>
+
+            {/* Tide Section */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                Tide
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <ConditionInput
+                  label="Height"
+                  value={tideHeight}
+                  onChange={setTideHeight}
+                  unit="ft"
+                  min={-5}
+                  max={15}
+                />
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    State
+                  </label>
+                  <Select
+                    options={TIDE_STATE_OPTIONS}
+                    value={tideState}
+                    onChange={(v) => handleConditionChange(setTideState as (value: string) => void, v)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Water Section */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                Water
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <ConditionInput
+                  label="Temperature"
+                  value={waterTemp}
+                  onChange={setWaterTemp}
+                  unit="°F"
+                  min={30}
+                  max={100}
+                  step="1"
+                />
+                <div /> {/* Spacer for grid alignment */}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

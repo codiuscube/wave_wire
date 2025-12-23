@@ -6,14 +6,31 @@ const KMH_TO_KNOTS = 0.539957;
 const CELSIUS_TO_FAHRENHEIT = (c: number) => (c * 9) / 5 + 32;
 
 interface SessionConditions {
+  // Combined wave metrics
   waveHeight: number | null;
   wavePeriod: number | null;
+
+  // Primary swell
+  swellHeight: number | null;
+  swellPeriod: number | null;
   swellDirection: number | null;
+
+  // Wind waves (chop)
+  windWaveHeight: number | null;
+
+  // Wind conditions
   windSpeed: number | null;
+  windGusts: number | null;
   windDirection: number | null;
+
+  // Tide
   tideHeight: number | null;
   tideState: 'rising' | 'falling' | null;
+
+  // Water
   waterTemp: number | null;
+
+  // Metadata
   fetchedAt: string;
   source: 'live' | 'historical';
 }
@@ -24,7 +41,11 @@ interface OpenMeteoHistoricalResponse {
     wave_height?: number[];
     wave_period?: number[];
     wave_direction?: number[];
+    swell_wave_height?: number[];
+    swell_wave_peak_period?: number[];
     swell_wave_direction?: number[];
+    wind_wave_height?: number[];
+    sea_surface_temperature?: number[];
   };
 }
 
@@ -32,6 +53,7 @@ interface OpenMeteoWeatherHistoricalResponse {
   hourly: {
     time: string[];
     wind_speed_10m?: number[];
+    wind_gusts_10m?: number[];
     wind_direction_10m?: number[];
   };
 }
@@ -171,39 +193,53 @@ async function fetchHistoricalConditions(
       ? 'https://marine-api.open-meteo.com/v1/marine'  // Archive has same base URL with past_days
       : 'https://marine-api.open-meteo.com/v1/marine';
 
+    // Marine API hourly variables - expanded to capture all available data
+    const marineHourlyVars = [
+      'wave_height',
+      'wave_period',
+      'wave_direction',
+      'swell_wave_height',
+      'swell_wave_peak_period',
+      'swell_wave_direction',
+      'wind_wave_height',
+      'sea_surface_temperature',
+    ].join(',');
+
     // Build URL based on whether historical or forecast
     let marineUrl: string;
     if (isHistorical) {
       // For historical data, use start_date and end_date
       marineUrl = `${marineBaseUrl}?` +
         `latitude=${lat}&longitude=${lon}&` +
-        `hourly=wave_height,wave_period,wave_direction,swell_wave_direction&` +
+        `hourly=${marineHourlyVars}&` +
         `start_date=${dateStr}&end_date=${dateStr}&` +
         `timezone=${timezone || 'auto'}`;
     } else {
       // For forecast, use standard forecast_days
       marineUrl = `${marineBaseUrl}?` +
         `latitude=${lat}&longitude=${lon}&` +
-        `hourly=wave_height,wave_period,wave_direction,swell_wave_direction&` +
+        `hourly=${marineHourlyVars}&` +
         `forecast_days=3&timezone=${timezone || 'auto'}`;
     }
 
-    // Weather URL (for wind)
+    // Weather URL (for wind) - includes gusts
     const weatherBaseUrl = isHistorical
       ? 'https://archive-api.open-meteo.com/v1/archive'
       : 'https://api.open-meteo.com/v1/forecast';
+
+    const weatherHourlyVars = 'wind_speed_10m,wind_gusts_10m,wind_direction_10m';
 
     let weatherUrl: string;
     if (isHistorical) {
       weatherUrl = `${weatherBaseUrl}?` +
         `latitude=${lat}&longitude=${lon}&` +
-        `hourly=wind_speed_10m,wind_direction_10m&` +
+        `hourly=${weatherHourlyVars}&` +
         `start_date=${dateStr}&end_date=${dateStr}&` +
         `timezone=${timezone || 'auto'}`;
     } else {
       weatherUrl = `${weatherBaseUrl}?` +
         `latitude=${lat}&longitude=${lon}&` +
-        `hourly=wind_speed_10m,wind_direction_10m&` +
+        `hourly=${weatherHourlyVars}&` +
         `forecast_days=3&timezone=${timezone || 'auto'}`;
     }
 
@@ -229,15 +265,34 @@ async function fetchHistoricalConditions(
       });
 
       if (index !== -1) {
-        const heightM = marineJson.hourly.wave_height?.[index];
-        const period = marineJson.hourly.wave_period?.[index];
+        // Combined wave metrics
+        const waveHeightM = marineJson.hourly.wave_height?.[index];
+        const wavePeriodS = marineJson.hourly.wave_period?.[index];
+
+        // Primary swell
+        const swellHeightM = marineJson.hourly.swell_wave_height?.[index];
+        const swellPeakPeriod = marineJson.hourly.swell_wave_peak_period?.[index];
         const swellDir = marineJson.hourly.swell_wave_direction?.[index] ??
           marineJson.hourly.wave_direction?.[index];
 
+        // Wind waves (chop)
+        const windWaveHeightM = marineJson.hourly.wind_wave_height?.[index];
+
+        // Sea surface temperature
+        const sstCelsius = marineJson.hourly.sea_surface_temperature?.[index];
+
         waveData = {
-          waveHeight: heightM != null ? Math.round(heightM * METERS_TO_FEET * 10) / 10 : null,
-          wavePeriod: period != null ? Math.round(period) : null,
+          // Combined
+          waveHeight: waveHeightM != null ? Math.round(waveHeightM * METERS_TO_FEET * 10) / 10 : null,
+          wavePeriod: wavePeriodS != null ? Math.round(wavePeriodS) : null,
+          // Primary swell
+          swellHeight: swellHeightM != null ? Math.round(swellHeightM * METERS_TO_FEET * 10) / 10 : null,
+          swellPeriod: swellPeakPeriod != null ? Math.round(swellPeakPeriod) : null,
           swellDirection: swellDir != null ? Math.round(swellDir) : null,
+          // Wind waves
+          windWaveHeight: windWaveHeightM != null ? Math.round(windWaveHeightM * METERS_TO_FEET * 10) / 10 : null,
+          // Water temp
+          waterTemp: sstCelsius != null ? Math.round(CELSIUS_TO_FAHRENHEIT(sstCelsius)) : null,
         };
       }
     }
@@ -256,10 +311,12 @@ async function fetchHistoricalConditions(
 
       if (index !== -1) {
         const windKmh = weatherJson.hourly.wind_speed_10m?.[index];
+        const gustsKmh = weatherJson.hourly.wind_gusts_10m?.[index];
         const windDir = weatherJson.hourly.wind_direction_10m?.[index];
 
         windData = {
           windSpeed: windKmh != null ? Math.round(windKmh * KMH_TO_KNOTS) : null,
+          windGusts: gustsKmh != null ? Math.round(gustsKmh * KMH_TO_KNOTS) : null,
           windDirection: windDir != null ? Math.round(windDir) : null,
         };
       }
@@ -319,14 +376,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const result: SessionConditions = {
+      // Combined wave metrics
       waveHeight: conditions.waveHeight ?? null,
       wavePeriod: conditions.wavePeriod ?? null,
+
+      // Primary swell
+      swellHeight: conditions.swellHeight ?? null,
+      swellPeriod: conditions.swellPeriod ?? null,
       swellDirection: conditions.swellDirection ?? null,
+
+      // Wind waves (chop)
+      windWaveHeight: conditions.windWaveHeight ?? null,
+
+      // Wind conditions
       windSpeed: conditions.windSpeed ?? null,
+      windGusts: conditions.windGusts ?? null,
       windDirection: conditions.windDirection ?? null,
+
+      // Tide
       tideHeight: tideData?.height ?? null,
       tideState: tideData?.state ?? null,
-      waterTemp: null, // Not available from Open-Meteo historical
+
+      // Water
+      waterTemp: conditions.waterTemp ?? null,
+
+      // Metadata
       fetchedAt: new Date().toISOString(),
       source: conditions.source ?? 'historical',
     };

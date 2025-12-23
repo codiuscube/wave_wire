@@ -650,16 +650,33 @@ export function toDbAlertSettingsUpdate(
 
 /** Typed conditions snapshot auto-fetched from APIs */
 export interface SessionConditions {
-  waveHeight: number | null;      // feet
-  wavePeriod: number | null;      // seconds
-  swellDirection: number | null;  // degrees (0-360)
-  windSpeed: number | null;       // mph
-  windDirection: number | null;   // degrees (0-360)
-  tideHeight: number | null;      // feet
+  // Combined wave metrics
+  waveHeight: number | null;      // Total significant wave height (ft)
+  wavePeriod: number | null;      // Mean wave period (s)
+
+  // Primary swell (ground swell)
+  swellHeight: number | null;     // Primary swell height (ft)
+  swellPeriod: number | null;     // Primary swell peak period (s)
+  swellDirection: number | null;  // Primary swell direction (°)
+
+  // Wind waves (chop)
+  windWaveHeight: number | null;  // Wind sea height (ft)
+
+  // Wind conditions
+  windSpeed: number | null;       // Wind speed (kt)
+  windGusts: number | null;       // Wind gusts (kt)
+  windDirection: number | null;   // Wind direction (°)
+
+  // Tide
+  tideHeight: number | null;      // Tide height (ft)
   tideState: 'rising' | 'falling' | null;
-  waterTemp: number | null;       // fahrenheit
+
+  // Water
+  waterTemp: number | null;       // Sea surface temp (°F)
+
+  // Metadata
   fetchedAt: string;              // ISO timestamp
-  source: 'live' | 'historical';  // data source indicator
+  source: 'live' | 'historical' | 'custom';  // data source indicator
 }
 
 export type SessionQuality = 'flat' | 'poor' | 'fair' | 'good' | 'epic';
