@@ -4,8 +4,11 @@ import { AVAILABLE_ICONS } from "./ui/IconPickerModal";
 import { Target, MapPoint } from '@solar-icons/react';
 import { DnaLogo } from "./ui/DnaLogo";
 import { fetchForecastDataForTime, getTidePredictionsForDay, type ForecastTime } from "../services/api";
-import { useTideData } from "../hooks/useTideData";
+import { useTideData, useUserPreferences } from "../hooks";
+import { useAuth } from "../contexts/AuthContext";
 import { TideChart } from "./TideChart";
+import type { WaveModel } from "../types";
+import { WAVE_MODEL_OPTIONS } from "../types";
 
 // Scrambled placeholder text generator for skeleton loading
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -108,10 +111,35 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
   const [forecastError, setForecastError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Update active forecast when prop changes or time selector changes
+  // User preferences for wave model
+  const { user } = useAuth();
+  const { preferences, update: updatePreferences } = useUserPreferences(user?.id);
+  const [selectedModel, setSelectedModel] = useState<WaveModel>('best_match');
+
+  // Initialize model from user preferences when loaded
   useEffect(() => {
-    // If "now" is selected, use the passed-in forecast
-    if (forecastTime === "now") {
+    if (preferences?.defaultWaveModel) {
+      setSelectedModel(preferences.defaultWaveModel as WaveModel);
+    }
+  }, [preferences?.defaultWaveModel]);
+
+  // Track if user has explicitly changed the model (vs initial load)
+  const [userChangedModel, setUserChangedModel] = useState(false);
+
+  // Handle model change - persist to user preferences and mark as user-changed
+  const onModelChange = async (model: WaveModel) => {
+    console.log('[SpotCard] Model changed to:', model);
+    setSelectedModel(model);
+    setUserChangedModel(true);
+    if (user?.id) {
+      await updatePreferences({ defaultWaveModel: model });
+    }
+  };
+
+  // Update active forecast when prop changes, time selector changes, or model changes
+  useEffect(() => {
+    // If "now" is selected and user hasn't changed model, use the passed-in forecast
+    if (forecastTime === "now" && !userChangedModel) {
       setActiveForecast(spot.forecast);
       setForecastError(null);
       if (spot.forecast) {
@@ -120,7 +148,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
       return;
     }
 
-    // For tomorrow/next_day, fetch the data
+    // Fetch fresh data when time != now OR when user changed the model
     if (spot.lat === undefined || spot.lon === undefined) {
       setActiveForecast(null);
       setForecastError("No coordinates available");
@@ -131,9 +159,12 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
     setIsLoadingForecast(true);
     setForecastError(null);
 
-    fetchForecastDataForTime(spot.lat, spot.lon, forecastTime)
+    console.log('[SpotCard] Fetching forecast with model:', selectedModel, 'time:', forecastTime);
+
+    fetchForecastDataForTime(spot.lat, spot.lon, forecastTime, selectedModel)
       .then((result) => {
         if (!cancelled) {
+          console.log('[SpotCard] Forecast result:', result.data?.primary);
           setActiveForecast(result.data);
           setForecastError(result.error);
           setLastUpdated(new Date());
@@ -142,6 +173,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
       })
       .catch((err) => {
         if (!cancelled) {
+          console.error('[SpotCard] Forecast fetch error:', err);
           setActiveForecast(null);
           setForecastError(err.message || "Failed to fetch forecast");
           setIsLoadingForecast(false);
@@ -151,7 +183,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
     return () => {
       cancelled = true;
     };
-  }, [forecastTime, spot.lat, spot.lon, spot.forecast]);
+  }, [forecastTime, spot.lat, spot.lon, spot.forecast, selectedModel, userChangedModel]);
 
   // Format last updated time
   const formatLastUpdated = (date: Date | null): string => {
@@ -264,7 +296,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
     : Target;
 
   return (
-    <div className="border border-border/30 bg-card/60 backdrop-blur-sm transition-colors group relative overflow-hidden">
+    <div className="border border-border/30 bg-card/60 backdrop-blur-sm transition-colors group relative">
       {/* Header Row */}
       <div className="p-4 flex items-center justify-between border-b border-border/30">
         <div className="flex items-center gap-3">
@@ -297,18 +329,31 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
 
 
         {/* MODEL FORECAST (Forecast) - NOW FIRST & EMPHASIZED */}
-        <div className="p-5 bg-background/20">
-          <div className="mb-4 border-l-2  border-muted pl-3">
-            <Select
-              options={[
-                { value: "now", label: "MODEL FORECAST NOW", shortLabel: "FORECAST NOW" },
-                { value: "tomorrow", label: "MODEL FORECAST TOMORROW", shortLabel: "FORECAST TOMORROW" },
-                { value: "next_day", label: "MODEL FORECAST THE NEXT DAY", shortLabel: "FORECAST NEXT DAY" },
-              ]}
-              value={forecastTime}
-              onChange={(val) => setForecastTime(val as "now" | "tomorrow" | "next_day")}
-              variant="model"
-            />
+        <div className="p-5 bg-background/20 gap-4">
+          <div className="mb-4 border-l-2  border-muted pl-3 space-y-2">
+            <div className="flex gap-4">
+              <Select
+                options={WAVE_MODEL_OPTIONS.map(m => ({
+                  value: m.value,
+                  label: m.label,
+                  shortLabel: m.value === 'best_match' ? 'BEST MATCH' : m.label.toUpperCase().replace(' WAVE', '').replace('METEO', 'MF').replace('REANALYSIS', '')
+                }))}
+                value={selectedModel}
+                onChange={(val) => onModelChange(val as WaveModel)}
+                variant="model"
+              />
+              <Select
+                options={[
+                  { value: "now", label: "MODEL FORECAST NOW", shortLabel: "FORECAST NOW" },
+                  { value: "tomorrow", label: "MODEL FORECAST TOMORROW", shortLabel: "FORECAST TOMORROW" },
+                  { value: "next_day", label: "MODEL FORECAST THE NEXT DAY", shortLabel: "FORECAST NEXT DAY" },
+                ]}
+                value={forecastTime}
+                onChange={(val) => setForecastTime(val as "now" | "tomorrow" | "next_day")}
+                variant="model"
+              />
+
+            </div>
           </div>
 
           {(isLoadingForecast || (forecastLoading && !activeForecast)) ? (

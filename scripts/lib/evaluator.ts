@@ -27,6 +27,15 @@ export interface Trigger {
   notificationStyle: 'local' | 'hype' | 'custom' | null;
   messageTemplate: string | null;
   enabled: boolean;
+  // Wave model selection
+  waveModel: string | null;
+  // Buoy trigger fields
+  buoyTriggerEnabled: boolean;
+  buoyMinHeight: number | null;
+  buoyMaxHeight: number | null;
+  buoyMinPeriod: number | null;
+  buoyMaxPeriod: number | null;
+  buoyTriggerMode: 'or' | 'and' | null;
 }
 
 export interface MatchResult {
@@ -68,38 +77,49 @@ function isDirectionInRange(degrees: number, min: number, max: number): boolean 
 }
 
 /**
- * Evaluate a trigger against current conditions.
- * Uses FORECAST data for swell evaluation (primary source).
- * Buoy data is supplementary info only - not used for trigger matching.
+ * Evaluate buoy conditions against trigger thresholds.
+ * Returns whether the buoy data matches the trigger's buoy criteria.
  */
-export function evaluateTrigger(
+function evaluateBuoyConditions(
   trigger: Trigger,
-  conditions: SpotConditions,
+  buoy: BuoyData | null
+): { matches: boolean; reason?: string } {
+  if (!trigger.buoyTriggerEnabled || !buoy) {
+    return { matches: false, reason: 'Buoy trigger not enabled or no buoy data' };
+  }
+
+  // Buoy height check
+  if (trigger.buoyMinHeight !== null && buoy.waveHeight < trigger.buoyMinHeight) {
+    return { matches: false, reason: `Buoy height ${buoy.waveHeight}ft < min ${trigger.buoyMinHeight}ft` };
+  }
+  if (trigger.buoyMaxHeight !== null && buoy.waveHeight > trigger.buoyMaxHeight) {
+    return { matches: false, reason: `Buoy height ${buoy.waveHeight}ft > max ${trigger.buoyMaxHeight}ft` };
+  }
+
+  // Buoy period check
+  if (trigger.buoyMinPeriod !== null && buoy.wavePeriod < trigger.buoyMinPeriod) {
+    return { matches: false, reason: `Buoy period ${buoy.wavePeriod}s < min ${trigger.buoyMinPeriod}s` };
+  }
+  if (trigger.buoyMaxPeriod !== null && buoy.wavePeriod > trigger.buoyMaxPeriod) {
+    return { matches: false, reason: `Buoy period ${buoy.wavePeriod}s > max ${trigger.buoyMaxPeriod}s` };
+  }
+
+  return { matches: true };
+}
+
+/**
+ * Evaluate forecast conditions only (extracted for clarity).
+ * Returns the match result for forecast-based evaluation.
+ */
+function evaluateForecastConditions(
+  trigger: Trigger,
+  forecast: ForecastData | null,
+  tide: TideData | null,
   spotName: string
 ): MatchResult {
-  const { forecast, tide } = conditions;
-
-  // Always use forecast for trigger evaluation
-  // Buoy data is supplementary info (displayed in UI) but not for matching
   const matchType: 'live' | 'forecast' = 'forecast';
 
-  // Get wave data from forecast
-  let waveHeight: number;
-  let wavePeriod: number;
-  let swellDegrees: number;
-  let windSpeed: number;
-  let windDegrees: number;
-  let windDirection: string;
-
-  if (forecast) {
-    waveHeight = forecast.waveHeight;
-    wavePeriod = forecast.wavePeriod;
-    swellDegrees = forecast.swellDegrees;
-    windSpeed = forecast.windSpeed;
-    windDegrees = forecast.windDegrees;
-    windDirection = forecast.windDirection;
-  } else {
-    // No forecast data available
+  if (!forecast) {
     return {
       matches: false,
       matchType: 'forecast',
@@ -107,6 +127,8 @@ export function evaluateTrigger(
       conditionData: createEmptyConditionData(spotName),
     };
   }
+
+  const { waveHeight, wavePeriod, swellDegrees, windSpeed, windDegrees, windDirection } = forecast;
 
   const conditionData: ConditionData = {
     waveHeight,
@@ -119,8 +141,6 @@ export function evaluateTrigger(
     spotName,
     buoyId: null,
   };
-
-  // ===== EVALUATE CONDITIONS =====
 
   // Wave height check
   if (trigger.minHeight !== null && waveHeight < trigger.minHeight) {
@@ -233,12 +253,73 @@ export function evaluateTrigger(
     }
   }
 
-  // All conditions passed!
+  // All forecast conditions passed!
   return {
     matches: true,
     matchType,
     conditionData,
   };
+}
+
+/**
+ * Evaluate a trigger against current conditions.
+ * Uses FORECAST data for swell evaluation (primary source).
+ * If buoy trigger is enabled, combines buoy and forecast results based on buoy_trigger_mode.
+ */
+export function evaluateTrigger(
+  trigger: Trigger,
+  conditions: SpotConditions,
+  spotName: string
+): MatchResult {
+  const { forecast, tide, buoy } = conditions;
+
+  // Evaluate forecast conditions (primary evaluation)
+  const forecastResult = evaluateForecastConditions(trigger, forecast, tide, spotName);
+
+  // Evaluate buoy conditions if enabled
+  const buoyResult = evaluateBuoyConditions(trigger, buoy);
+
+  // Combine results based on buoy_trigger_mode
+  if (trigger.buoyTriggerEnabled) {
+    if (trigger.buoyTriggerMode === 'and') {
+      // Both must match
+      if (!forecastResult.matches || !buoyResult.matches) {
+        return {
+          matches: false,
+          matchType: forecastResult.matchType,
+          reason: !forecastResult.matches
+            ? forecastResult.reason
+            : buoyResult.reason,
+          conditionData: forecastResult.conditionData,
+        };
+      }
+      // Both matched
+      return {
+        matches: true,
+        matchType: 'live', // Use 'live' when buoy data confirms the match
+        conditionData: forecastResult.conditionData,
+      };
+    } else {
+      // OR mode: Either can match
+      if (forecastResult.matches || buoyResult.matches) {
+        return {
+          matches: true,
+          matchType: buoyResult.matches ? 'live' : 'forecast',
+          conditionData: forecastResult.conditionData,
+        };
+      }
+      // Neither matched
+      return {
+        matches: false,
+        matchType: 'forecast',
+        reason: forecastResult.reason,
+        conditionData: forecastResult.conditionData,
+      };
+    }
+  }
+
+  // No buoy trigger - just use forecast result
+  return forecastResult;
 }
 
 function createEmptyConditionData(spotName: string): ConditionData {
@@ -281,5 +362,12 @@ export function mapDbTrigger(row: Record<string, unknown>): Trigger {
     notificationStyle: row.notification_style as Trigger['notificationStyle'],
     messageTemplate: row.message_template as string | null,
     enabled: row.enabled !== false,
+    waveModel: row.wave_model as string | null,
+    buoyTriggerEnabled: (row.buoy_trigger_enabled as boolean) ?? false,
+    buoyMinHeight: row.buoy_min_height as number | null,
+    buoyMaxHeight: row.buoy_max_height as number | null,
+    buoyMinPeriod: row.buoy_min_period as number | null,
+    buoyMaxPeriod: row.buoy_max_period as number | null,
+    buoyTriggerMode: row.buoy_trigger_mode as 'or' | 'and' | null,
   };
 }

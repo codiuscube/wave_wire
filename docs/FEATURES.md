@@ -175,6 +175,53 @@ Status is determined by matching current conditions against user triggers:
 
 ---
 
+## Wave Model Selection
+
+Power users can select their preferred wave forecast model for both dashboard display and individual triggers.
+
+### Available Models
+
+| Model | API Value | Description |
+|-------|-----------|-------------|
+| Best Match (Default) | `best_match` | Automatically picks the best model for your spot's location |
+| GFS Wave | `gfs_wave` | NOAA's global model. Great for US coasts, updates every 6 hours |
+| ECMWF WAM | `ecmwf_wam` | European model with high accuracy. Excellent for Atlantic swells |
+| MeteoFrance Wave | `mfwam` | French model, strong for European Atlantic and Mediterranean |
+| DWD Europe | `dwd_ewam` | German regional model. Best for North Sea and Baltic spots |
+| DWD Global | `dwd_gwam` | German global model. Good general coverage worldwide |
+| ERA5 Reanalysis | `era5_ocean` | Historical reanalysis data. Most accurate for past conditions |
+
+### Per-Trigger Model Selection
+
+Users can select which forecast model to use for trigger evaluation in the "Advanced Options" section of the trigger form:
+- Default: "Best Match" (auto-selects optimal model for location)
+- Selection persists per-trigger
+- Allows comparing different models for same conditions
+
+### Dashboard Model Preference
+
+The dashboard displays forecast data using the user's preferred model:
+- Model selector dropdown in the SpotCard header
+- Changes persist to `user_preferences.default_wave_model`
+- Affects all SpotCards in the dashboard view
+- Triggers still use their individually configured models
+
+### Buoy Trigger Option
+
+For spots with linked buoys, users can enable buoy-based triggers in addition to forecast-based triggers:
+
+**Settings:**
+- **Enable/Disable**: Toggle buoy trigger functionality
+- **Buoy Height Range**: Min/max wave height from buoy (0-15ft)
+- **Buoy Period Range**: Min/max wave period from buoy (0-20s)
+- **Match Mode**:
+  - **Either (OR)**: Alert fires if forecast OR buoy conditions match
+  - **Both (AND)**: Alert only fires when BOTH forecast AND buoy conditions match
+
+**Note:** Buoy trigger option only appears when the spot has a linked NOAA buoy.
+
+---
+
 ## Alert Types & Scheduling
 
 ### Alert Types

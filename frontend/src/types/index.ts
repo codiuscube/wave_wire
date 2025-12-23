@@ -30,6 +30,19 @@ export interface SpotLocalsKnowledge {
   notes?: string;
 }
 
+// Wave model types - these must match Open-Meteo Marine API parameter values
+// Only includes models verified to work with the API
+export type WaveModel =
+  | 'best_match'
+  | 'ecmwf_wam'
+  | 'meteofrance_wave';
+
+export const WAVE_MODEL_OPTIONS: { value: WaveModel; label: string; description: string }[] = [
+  { value: 'best_match', label: 'Best Match (Recommended)', description: 'Automatically picks the best model for your spot\'s location' },
+  { value: 'ecmwf_wam', label: 'ECMWF WAM', description: 'European model with high accuracy. Excellent for Atlantic swells' },
+  { value: 'meteofrance_wave', label: 'MeteoFrance Wave', description: 'French model, strong for European Atlantic and Mediterranean' },
+];
+
 export interface TriggerTier {
   id: string;
   name: string;
@@ -59,6 +72,15 @@ export interface TriggerTier {
   spotId: string;
   messageTemplate: string;
   notificationStyle?: 'local' | 'hype' | 'custom';
+  // Wave model selection (defaults to 'best_match')
+  waveModel?: WaveModel;
+  // Buoy trigger fields (only applicable when spot has buoyId)
+  buoyTriggerEnabled?: boolean;
+  buoyMinHeight?: number;
+  buoyMaxHeight?: number;
+  buoyMinPeriod?: number;
+  buoyMaxPeriod?: number;
+  buoyTriggerMode?: 'or' | 'and';
 }
 
 export interface AlertSchedule {

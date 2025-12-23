@@ -611,6 +611,9 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251222000002_add_alert_columns.sql` | Add last_fired_at/enabled to triggers, resend_id/match_id to sent_alerts, timezone to profiles |
 | `20251222000003_add_waitlist_referrals.sql` | Add referral system to waitlist (referral_code, referred_by, referral_count) |
 | `20251222000006_add_push_notifications.sql` | Add push_subscriptions table, channel preferences (push_enabled, email_enabled, sms_enabled) to alert_settings, onesignal_id to sent_alerts |
+| `20251223000001_add_wave_model_to_triggers.sql` | Add wave_model column to triggers for forecast model selection |
+| `20251223000002_add_default_wave_model.sql` | Add default_wave_model to user_preferences for dashboard display |
+| `20251223000003_add_buoy_trigger_fields.sql` | Add buoy trigger fields (buoy_trigger_enabled, buoy height/period ranges, buoy_trigger_mode) |
 
 ---
 

@@ -91,6 +91,15 @@ export interface Trigger {
   priority: number | null;
   createdAt: string | null;
   updatedAt: string | null;
+  // Wave model selection (optional)
+  waveModel?: string | null;
+  // Buoy trigger fields (optional)
+  buoyTriggerEnabled?: boolean;
+  buoyMinHeight?: number | null;
+  buoyMaxHeight?: number | null;
+  buoyMinPeriod?: number | null;
+  buoyMaxPeriod?: number | null;
+  buoyTriggerMode?: 'or' | 'and' | null;
 }
 
 export interface SentAlert {
@@ -127,6 +136,7 @@ export interface UserPreferences {
   includeEmoji: boolean;
   includeBuoyData: boolean;
   includeTraffic: boolean;
+  defaultWaveModel: string | null;
   updatedAt: string | null;
 }
 
@@ -302,6 +312,13 @@ export function mapTrigger(row: DbTrigger): Trigger {
     priority: row.priority,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    waveModel: row.wave_model,
+    buoyTriggerEnabled: row.buoy_trigger_enabled ?? false,
+    buoyMinHeight: row.buoy_min_height,
+    buoyMaxHeight: row.buoy_max_height,
+    buoyMinPeriod: row.buoy_min_period,
+    buoyMaxPeriod: row.buoy_max_period,
+    buoyTriggerMode: row.buoy_trigger_mode as 'or' | 'and' | null,
   };
 }
 
@@ -344,6 +361,7 @@ export function mapUserPreferences(row: DbUserPreferences): UserPreferences {
     includeEmoji: row.include_emoji ?? true,
     includeBuoyData: row.include_buoy_data ?? true,
     includeTraffic: row.include_traffic ?? false,
+    defaultWaveModel: row.default_wave_model,
     updatedAt: row.updated_at,
   };
 }
@@ -444,6 +462,13 @@ export function toDbTriggerInsert(
     message_template: trigger.messageTemplate,
     notification_style: trigger.notificationStyle,
     priority: trigger.priority,
+    wave_model: trigger.waveModel,
+    buoy_trigger_enabled: trigger.buoyTriggerEnabled,
+    buoy_min_height: trigger.buoyMinHeight,
+    buoy_max_height: trigger.buoyMaxHeight,
+    buoy_min_period: trigger.buoyMinPeriod,
+    buoy_max_period: trigger.buoyMaxPeriod,
+    buoy_trigger_mode: trigger.buoyTriggerMode,
   };
 }
 
@@ -470,6 +495,13 @@ export function toDbTriggerUpdate(
   if (trigger.messageTemplate !== undefined) update.message_template = trigger.messageTemplate;
   if (trigger.notificationStyle !== undefined) update.notification_style = trigger.notificationStyle;
   if (trigger.priority !== undefined) update.priority = trigger.priority;
+  if (trigger.waveModel !== undefined) update.wave_model = trigger.waveModel;
+  if (trigger.buoyTriggerEnabled !== undefined) update.buoy_trigger_enabled = trigger.buoyTriggerEnabled;
+  if (trigger.buoyMinHeight !== undefined) update.buoy_min_height = trigger.buoyMinHeight;
+  if (trigger.buoyMaxHeight !== undefined) update.buoy_max_height = trigger.buoyMaxHeight;
+  if (trigger.buoyMinPeriod !== undefined) update.buoy_min_period = trigger.buoyMinPeriod;
+  if (trigger.buoyMaxPeriod !== undefined) update.buoy_max_period = trigger.buoyMaxPeriod;
+  if (trigger.buoyTriggerMode !== undefined) update.buoy_trigger_mode = trigger.buoyTriggerMode;
   return update;
 }
 
@@ -509,6 +541,7 @@ export function toDbUserPreferencesInsert(
     include_emoji: prefs.includeEmoji,
     include_buoy_data: prefs.includeBuoyData,
     include_traffic: prefs.includeTraffic,
+    default_wave_model: prefs.defaultWaveModel,
   };
 }
 
@@ -520,6 +553,7 @@ export function toDbUserPreferencesUpdate(
   if (prefs.includeEmoji !== undefined) update.include_emoji = prefs.includeEmoji;
   if (prefs.includeBuoyData !== undefined) update.include_buoy_data = prefs.includeBuoyData;
   if (prefs.includeTraffic !== undefined) update.include_traffic = prefs.includeTraffic;
+  if (prefs.defaultWaveModel !== undefined) update.default_wave_model = prefs.defaultWaveModel;
   return update;
 }
 

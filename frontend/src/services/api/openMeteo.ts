@@ -1,4 +1,5 @@
 import type { ForecastData, SwellComponent } from '../../components/SpotCard';
+import type { WaveModel } from '../../types';
 
 // Unit conversion constants
 const METERS_TO_FEET = 3.28084;
@@ -59,11 +60,20 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-// Generate cache key from coordinates (rounded to reduce cache fragmentation)
-const getCacheKey = (lat: number, lon: number): string => {
+// Generate cache key from coordinates and model (rounded to reduce cache fragmentation)
+const getCacheKey = (lat: number, lon: number, model?: WaveModel): string => {
   const roundedLat = Math.round(lat * 100) / 100;
   const roundedLon = Math.round(lon * 100) / 100;
-  return `${roundedLat}:${roundedLon}`;
+  return `${roundedLat}:${roundedLon}:${model ?? 'best_match'}`;
+};
+
+// Build model query parameter for Open-Meteo Marine API
+const getModelParam = (model?: WaveModel): string => {
+  // Only add models parameter if not best_match (best_match = auto-select)
+  if (model && model !== 'best_match') {
+    return `&models=${model}`;
+  }
+  return '';
 };
 
 // Find the index for current hour or nearest future hour
@@ -121,13 +131,16 @@ export interface ForecastFetchResult {
 // Fetch forecast data for a location
 export async function fetchForecastData(
   lat: number,
-  lon: number
+  lon: number,
+  model?: WaveModel
 ): Promise<ForecastFetchResult> {
-  const cacheKey = getCacheKey(lat, lon);
+  const cacheKey = getCacheKey(lat, lon, model);
+  const modelParam = getModelParam(model);
 
   // Check cache first
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    console.log('[OpenMeteo] Cache HIT for:', cacheKey);
     return {
       data: cached.data,
       error: null,
@@ -135,15 +148,19 @@ export async function fetchForecastData(
     };
   }
 
+  console.log('[OpenMeteo] Cache MISS for:', cacheKey);
+
   try {
+    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?` +
+      `latitude=${lat}&longitude=${lon}&` +
+      `hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&` +
+      `forecast_days=3&timezone=auto${modelParam}`;
+
+    console.log('[OpenMeteo] Fetching forecast data with model:', model ?? 'best_match', 'URL:', marineUrl);
+
     // Fetch marine data and weather data in parallel
     const [marineResponse, weatherResponse] = await Promise.all([
-      fetch(
-        `https://marine-api.open-meteo.com/v1/marine?` +
-        `latitude=${lat}&longitude=${lon}&` +
-        `hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&` +
-        `forecast_days=3&timezone=auto`
-      ),
+      fetch(marineUrl),
       fetch(
         `https://api.open-meteo.com/v1/forecast?` +
         `latitude=${lat}&longitude=${lon}&` +
@@ -234,13 +251,16 @@ export type ForecastTime = 'now' | 'tomorrow' | 'next_day';
 export async function fetchForecastDataForTime(
   lat: number,
   lon: number,
-  time: ForecastTime
+  time: ForecastTime,
+  model?: WaveModel
 ): Promise<ForecastFetchResult> {
-  const cacheKey = `${getCacheKey(lat, lon)}:${time}`;
+  const cacheKey = `${getCacheKey(lat, lon, model)}:${time}`;
+  const modelParam = getModelParam(model);
 
   // Check cache first
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    console.log('[OpenMeteo] Cache HIT for time fetch:', cacheKey);
     return {
       data: cached.data,
       error: null,
@@ -248,15 +268,19 @@ export async function fetchForecastDataForTime(
     };
   }
 
+  console.log('[OpenMeteo] Cache MISS for time fetch:', cacheKey);
+
   try {
+    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?` +
+      `latitude=${lat}&longitude=${lon}&` +
+      `hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&` +
+      `forecast_days=3&timezone=auto${modelParam}`;
+
+    console.log('[OpenMeteo] Fetching forecast for time:', time, 'model:', model ?? 'best_match', 'URL:', marineUrl);
+
     // Fetch marine data and weather data in parallel
     const [marineResponse, weatherResponse] = await Promise.all([
-      fetch(
-        `https://marine-api.open-meteo.com/v1/marine?` +
-        `latitude=${lat}&longitude=${lon}&` +
-        `hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&` +
-        `forecast_days=3&timezone=auto`
-      ),
+      fetch(marineUrl),
       fetch(
         `https://api.open-meteo.com/v1/forecast?` +
         `latitude=${lat}&longitude=${lon}&` +
@@ -344,12 +368,13 @@ export async function fetchForecastDataForTime(
 
 // Fetch forecast data for multiple locations in parallel
 export async function fetchMultipleForecastData(
-  locations: Array<{ lat: number; lon: number; id?: string }>
+  locations: Array<{ lat: number; lon: number; id?: string }>,
+  model?: WaveModel
 ): Promise<Map<string, ForecastFetchResult>> {
   const results = await Promise.all(
     locations.map(async (loc) => {
-      const result = await fetchForecastData(loc.lat, loc.lon);
-      const key = loc.id ?? getCacheKey(loc.lat, loc.lon);
+      const result = await fetchForecastData(loc.lat, loc.lon, model);
+      const key = loc.id ?? getCacheKey(loc.lat, loc.lon, model);
       return [key, result] as const;
     })
   );

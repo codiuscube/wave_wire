@@ -574,6 +574,12 @@ export type Database = {
       }
       triggers: {
         Row: {
+          buoy_max_height: number | null
+          buoy_max_period: number | null
+          buoy_min_height: number | null
+          buoy_min_period: number | null
+          buoy_trigger_enabled: boolean | null
+          buoy_trigger_mode: string | null
           condition: string | null
           created_at: string | null
           emoji: string | null
@@ -600,8 +606,15 @@ export type Database = {
           tide_type: string | null
           updated_at: string | null
           user_id: string
+          wave_model: string | null
         }
         Insert: {
+          buoy_max_height?: number | null
+          buoy_max_period?: number | null
+          buoy_min_height?: number | null
+          buoy_min_period?: number | null
+          buoy_trigger_enabled?: boolean | null
+          buoy_trigger_mode?: string | null
           condition?: string | null
           created_at?: string | null
           emoji?: string | null
@@ -628,8 +641,15 @@ export type Database = {
           tide_type?: string | null
           updated_at?: string | null
           user_id: string
+          wave_model?: string | null
         }
         Update: {
+          buoy_max_height?: number | null
+          buoy_max_period?: number | null
+          buoy_min_height?: number | null
+          buoy_min_period?: number | null
+          buoy_trigger_enabled?: boolean | null
+          buoy_trigger_mode?: string | null
           condition?: string | null
           created_at?: string | null
           emoji?: string | null
@@ -656,6 +676,7 @@ export type Database = {
           tide_type?: string | null
           updated_at?: string | null
           user_id?: string
+          wave_model?: string | null
         }
         Relationships: [
           {
@@ -684,6 +705,7 @@ export type Database = {
       user_preferences: {
         Row: {
           ai_personality: string | null
+          default_wave_model: string | null
           id: string
           include_buoy_data: boolean | null
           include_emoji: boolean | null
@@ -693,6 +715,7 @@ export type Database = {
         }
         Insert: {
           ai_personality?: string | null
+          default_wave_model?: string | null
           id?: string
           include_buoy_data?: boolean | null
           include_emoji?: boolean | null
@@ -702,6 +725,7 @@ export type Database = {
         }
         Update: {
           ai_personality?: string | null
+          default_wave_model?: string | null
           id?: string
           include_buoy_data?: boolean | null
           include_emoji?: boolean | null

@@ -152,6 +152,34 @@ https://api.open-meteo.com/v1/forecast
 | Wind speed | `wind_speed_10m` | km/h |
 | Wind direction | `wind_direction_10m` | degrees |
 
+### Wave Models
+
+The Marine API supports model selection via the `models` parameter:
+
+```
+https://marine-api.open-meteo.com/v1/marine
+  ?latitude={lat}
+  &longitude={lon}
+  &hourly=...
+  &models={model}
+```
+
+**Available Models:**
+
+| Model | Value | Description |
+|-------|-------|-------------|
+| Best Match | (omit parameter) | Auto-selects optimal model for location |
+| GFS Wave | `gfs_wave` | NOAA global model, 6-hour updates |
+| ECMWF WAM | `ecmwf_wam` | European model, 9km resolution |
+| MeteoFrance Wave | `mfwam` | French model, 0.08° global resolution |
+| DWD EWAM | `dwd_ewam` | German regional model, 0.05° |
+| DWD GWAM | `dwd_gwam` | German global model, 0.25° |
+| ERA5 Ocean | `era5_ocean` | Reanalysis data, historical accuracy |
+
+**Usage:**
+- Omit `models` parameter for automatic best-match selection
+- Example: `&models=gfs_wave` for GFS Wave model
+
 ### Parsed Interface
 
 ```typescript

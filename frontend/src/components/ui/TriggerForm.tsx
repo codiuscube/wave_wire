@@ -8,7 +8,8 @@ import { DualSlider } from "./DualSlider";
 import { SegmentedControl } from "./SegmentedControl";
 import { DirectionSelector } from "./DirectionSelector";
 import { NaturalLanguageTriggerInput } from "./NaturalLanguageTriggerInput";
-import type { TriggerTier, SurfSpot } from "../../types";
+import type { TriggerTier, SurfSpot, WaveModel } from "../../types";
+import { WAVE_MODEL_OPTIONS } from "../../types";
 import { getOffshoreWindow, getSwellWindow } from "../../data/noaaBuoys";
 import { generateTriggerSummary, getTideLabel } from "../../lib/triggerUtils";
 
@@ -416,7 +417,12 @@ export function TriggerForm({
         return !!(initialData?.secondarySwellEnabled || autofillData?.secondarySwellEnabled);
     });
 
-
+    const [advancedExpanded, setAdvancedExpanded] = useState(() => {
+        // Expand if wave model is set to something other than best_match or buoy trigger is enabled
+        const hasCustomModel = initialData?.waveModel && initialData.waveModel !== 'best_match';
+        const hasBuoyTrigger = initialData?.buoyTriggerEnabled;
+        return !!(hasCustomModel || hasBuoyTrigger);
+    });
 
     const toggleWind = (expanded: boolean) => {
         setWindExpanded(expanded);
@@ -466,6 +472,22 @@ export function TriggerForm({
                 maxSecondarySwellHeight: prev.maxSecondarySwellHeight ?? 5,
                 minSecondarySwellPeriod: prev.minSecondarySwellPeriod ?? 6,
                 maxSecondarySwellPeriod: prev.maxSecondarySwellPeriod ?? 15
+            }));
+        }
+    };
+
+    const toggleAdvanced = (expanded: boolean) => {
+        setAdvancedExpanded(expanded);
+        if (!expanded) {
+            setTrigger(prev => ({
+                ...prev,
+                waveModel: 'best_match',
+                buoyTriggerEnabled: false,
+                buoyMinHeight: undefined,
+                buoyMaxHeight: undefined,
+                buoyMinPeriod: undefined,
+                buoyMaxPeriod: undefined,
+                buoyTriggerMode: 'or'
             }));
         }
     };
@@ -588,6 +610,14 @@ export function TriggerForm({
             messageTemplate: finalTemplate,
             notificationStyle,
             spotId,
+            // Wave model and buoy trigger fields
+            waveModel: trigger.waveModel as WaveModel,
+            buoyTriggerEnabled: trigger.buoyTriggerEnabled,
+            buoyMinHeight: trigger.buoyMinHeight,
+            buoyMaxHeight: trigger.buoyMaxHeight,
+            buoyMinPeriod: trigger.buoyMinPeriod,
+            buoyMaxPeriod: trigger.buoyMaxPeriod,
+            buoyTriggerMode: trigger.buoyTriggerMode,
         };
 
         onSubmit(newTrigger);
@@ -959,13 +989,128 @@ export function TriggerForm({
                     </div>
                 </CollapsibleSection>
 
+                {/* Advanced Options - Collapsible */}
+                <CollapsibleSection
+                    title="Advanced Options"
+                    step="6"
+                    description={!advancedExpanded
+                        ? `Model: ${WAVE_MODEL_OPTIONS.find(m => m.value === (trigger.waveModel || 'best_match'))?.label || 'Best Match'}`
+                        : undefined
+                    }
+                    isExpanded={advancedExpanded}
+                    onToggle={toggleAdvanced}
+                >
+                    <div className="space-y-6">
+                        {/* Wave Model Selector */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold">Forecast Model</label>
+                            <Select
+                                value={trigger.waveModel || 'best_match'}
+                                onChange={(val) => setTrigger(prev => ({ ...prev, waveModel: val as WaveModel }))}
+                                options={WAVE_MODEL_OPTIONS.map(m => ({
+                                    value: m.value,
+                                    label: m.label
+                                }))}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                {WAVE_MODEL_OPTIONS.find(m => m.value === (trigger.waveModel || 'best_match'))?.description}
+                            </p>
+                        </div>
 
+                        {/* Buoy Trigger - Only show if spot has buoyId */}
+                        {spot?.buoyId && (
+                            <div className="space-y-4 border-t border-border/30 pt-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <label className="text-sm font-semibold">Buoy Data Trigger</label>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            Trigger based on live buoy readings
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTrigger(prev => ({
+                                            ...prev,
+                                            buoyTriggerEnabled: !prev.buoyTriggerEnabled,
+                                            buoyMinHeight: prev.buoyMinHeight ?? 2,
+                                            buoyMaxHeight: prev.buoyMaxHeight ?? 10,
+                                            buoyMinPeriod: prev.buoyMinPeriod ?? 8,
+                                            buoyMaxPeriod: prev.buoyMaxPeriod ?? 16,
+                                            buoyTriggerMode: prev.buoyTriggerMode ?? 'or'
+                                        }))}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${trigger.buoyTriggerEnabled ? 'bg-primary' : 'bg-muted'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${trigger.buoyTriggerEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+
+                                {trigger.buoyTriggerEnabled && (
+                                    <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                                        {/* Buoy Height Range */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-baseline">
+                                                <label className="text-sm font-medium">Buoy Wave Height</label>
+                                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                                    {trigger.buoyMinHeight ?? 2}-{trigger.buoyMaxHeight ?? 10}ft
+                                                </span>
+                                            </div>
+                                            <DualSlider
+                                                min={0} max={15} step={0.5}
+                                                value={[trigger.buoyMinHeight ?? 2, trigger.buoyMaxHeight ?? 10]}
+                                                onValueChange={([min, max]) => setTrigger(prev => ({
+                                                    ...prev,
+                                                    buoyMinHeight: min,
+                                                    buoyMaxHeight: max
+                                                }))}
+                                            />
+                                        </div>
+
+                                        {/* Buoy Period Range */}
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-baseline">
+                                                <label className="text-sm font-medium">Buoy Wave Period</label>
+                                                <span className="text-sm text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                                                    {trigger.buoyMinPeriod ?? 8}-{trigger.buoyMaxPeriod ?? 16}s
+                                                </span>
+                                            </div>
+                                            <DualSlider
+                                                min={0} max={20} step={1}
+                                                value={[trigger.buoyMinPeriod ?? 8, trigger.buoyMaxPeriod ?? 16]}
+                                                onValueChange={([min, max]) => setTrigger(prev => ({
+                                                    ...prev,
+                                                    buoyMinPeriod: min,
+                                                    buoyMaxPeriod: max
+                                                }))}
+                                            />
+                                        </div>
+
+                                        {/* Combine Mode */}
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium">Match Behavior</label>
+                                            <SegmentedControl
+                                                options={[
+                                                    { value: 'or', label: 'Either', tooltip: 'Alert if forecast OR buoy matches' },
+                                                    { value: 'and', label: 'Both', tooltip: 'Alert only if forecast AND buoy both match' },
+                                                ]}
+                                                value={trigger.buoyTriggerMode || 'or'}
+                                                onChange={(val) => setTrigger(prev => ({
+                                                    ...prev,
+                                                    buoyTriggerMode: val as 'or' | 'and'
+                                                }))}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </CollapsibleSection>
 
                 {/* Personality & Message */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold flex items-center gap-2">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">6</span>
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">7</span>
                             Notification Message
                         </h3>
                         <div className="group relative">

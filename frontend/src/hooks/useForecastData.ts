@@ -6,6 +6,7 @@ import {
   type ForecastTime,
 } from '../services/api';
 import type { ForecastData } from '../components/SpotCard';
+import type { WaveModel } from '../types';
 
 interface UseForecastDataOptions {
   /** Refresh interval in milliseconds. Set to 0 to disable auto-refresh. */
@@ -14,6 +15,8 @@ interface UseForecastDataOptions {
   fetchOnMount?: boolean;
   /** Forecast time period: 'now', 'tomorrow', or 'next_day' */
   time?: ForecastTime;
+  /** Wave model to use for forecast. Defaults to 'best_match'. */
+  model?: WaveModel;
 }
 
 interface UseForecastDataReturn {
@@ -57,6 +60,7 @@ export function useForecastData(
     refreshInterval = DEFAULT_REFRESH_INTERVAL,
     fetchOnMount = true,
     time = 'now',
+    model,
   } = options;
 
   const [data, setData] = useState<ForecastData | null>(null);
@@ -78,9 +82,9 @@ export function useForecastData(
       let result: ForecastFetchResult;
 
       if (time === 'now') {
-        result = await fetchForecastData(lat, lon);
+        result = await fetchForecastData(lat, lon, model);
       } else {
-        result = await fetchForecastDataForTime(lat, lon, time);
+        result = await fetchForecastDataForTime(lat, lon, time, model);
       }
 
       setData(result.data);
@@ -91,7 +95,7 @@ export function useForecastData(
     } finally {
       setIsLoading(false);
     }
-  }, [lat, lon, time]);
+  }, [lat, lon, time, model]);
 
   // Fetch on mount
   useEffect(() => {
@@ -145,6 +149,7 @@ export function useMultipleForecastData(
   const {
     refreshInterval = DEFAULT_REFRESH_INTERVAL,
     fetchOnMount = true,
+    model,
   } = options;
 
   const [data, setData] = useState<Map<string, ForecastData | null>>(new Map());
@@ -168,7 +173,7 @@ export function useMultipleForecastData(
     try {
       const results = await Promise.all(
         locations.map(async (loc) => {
-          const result = await fetchForecastData(loc.lat, loc.lon);
+          const result = await fetchForecastData(loc.lat, loc.lon, model);
           const key = loc.id ?? `${loc.lat.toFixed(2)}:${loc.lon.toFixed(2)}`;
           return { key, result };
         })
@@ -189,7 +194,7 @@ export function useMultipleForecastData(
     } finally {
       setIsLoading(false);
     }
-  }, [locationsKey]);
+  }, [locationsKey, model]);
 
   // Fetch on mount
   useEffect(() => {

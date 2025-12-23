@@ -178,14 +178,25 @@ interface OpenMeteoResponse {
   };
 }
 
-export async function fetchForecastData(lat: number, lon: number): Promise<ForecastData | null> {
+// Build model query parameter for Open-Meteo Marine API
+const getModelParam = (model?: string): string => {
+  // Only add models parameter if not best_match (best_match = auto-select)
+  if (model && model !== 'best_match') {
+    return `&models=${model}`;
+  }
+  return '';
+};
+
+export async function fetchForecastData(lat: number, lon: number, waveModel?: string): Promise<ForecastData | null> {
+  const modelParam = getModelParam(waveModel);
+
   try {
     const [marineResponse, weatherResponse] = await Promise.all([
       fetch(
         `https://marine-api.open-meteo.com/v1/marine?` +
         `latitude=${lat}&longitude=${lon}&` +
         `hourly=swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&` +
-        `forecast_days=1&timezone=auto`
+        `forecast_days=1&timezone=auto${modelParam}`
       ),
       fetch(
         `https://api.open-meteo.com/v1/forecast?` +
@@ -411,11 +422,12 @@ export async function fetchSpotConditions(
   lon: number,
   buoyId?: string,
   tideStationId?: string,
-  tideStationName?: string
+  tideStationName?: string,
+  waveModel?: string
 ): Promise<SpotConditions> {
   const [buoy, forecast, tide, solar] = await Promise.all([
     buoyId ? fetchBuoyData(buoyId) : Promise.resolve(null),
-    fetchForecastData(lat, lon),
+    fetchForecastData(lat, lon, waveModel),
     tideStationId && tideStationName
       ? fetchTideData(tideStationId, tideStationName)
       : Promise.resolve(null),

@@ -58,10 +58,12 @@ export function AddSpotModal({
       onClose={onClose}
       className="max-w-xl"
       header={customHeader}
+      dismissible={false}
     >
       <AddSpotContent
         savedSpots={savedSpots}
         onAddSpot={handleAddSpot}
+        onCancel={onClose}
         className="flex-1 overflow-hidden"
         userLocation={userLocation}
       />

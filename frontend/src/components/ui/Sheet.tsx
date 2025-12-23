@@ -9,6 +9,8 @@ interface SheetProps {
   title?: string;
   description?: string;
   className?: string;
+  /** Whether the sheet can be dismissed by swiping or clicking overlay. Defaults to true. */
+  dismissible?: boolean;
   /** Custom z-index, defaults to 50 */
   zIndex?: number;
   /** Custom indicator color class, defaults to 'bg-primary' */
@@ -30,6 +32,7 @@ export function Sheet({
   indicatorColor = 'bg-primary',
   header,
   footer,
+  dismissible = true,
 }: SheetProps) {
   const defaultHeader = (
     <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
@@ -58,7 +61,13 @@ export function Sheet({
   );
 
   return (
-    <Drawer.Root direction="right" open={isOpen} onOpenChange={(open) => !open && onClose()} shouldScaleBackground={false}>
+    <Drawer.Root
+      direction="right"
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      shouldScaleBackground={false}
+      dismissible={dismissible}
+    >
       <Drawer.Portal>
         <Drawer.Overlay
           className="fixed inset-0 bg-black/40"

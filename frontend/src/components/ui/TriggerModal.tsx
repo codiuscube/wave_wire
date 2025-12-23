@@ -59,6 +59,7 @@ export function TriggerModal({
             onClose={onClose}
             className="max-w-2xl"
             header={customHeader}
+            dismissible={false}
         >
             <TriggerForm
                 spotId={spotId}
@@ -67,6 +68,7 @@ export function TriggerModal({
                 lockedCondition={lockedCondition}
                 autofillData={autofillData}
                 onSubmit={handleSubmit}
+                onCancel={onClose}
                 className="flex-1 overflow-hidden"
             />
         </Sheet>

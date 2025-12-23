@@ -9,5 +9,6 @@ export { useSurfSpots } from './useSurfSpots';
 export { useSentAlerts } from './useSentAlerts';
 export { useTriggers } from './useTriggers';
 export { useAlertSettings } from './useAlertSettings';
+export { useUserPreferences } from './useUserPreferences';
 export { useMinimumLoading } from './useMinimumLoading';
 export { useMediaQuery } from './useMediaQuery';
