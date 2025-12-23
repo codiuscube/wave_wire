@@ -68,6 +68,7 @@ export function TriggerModal({
                 lockedCondition={lockedCondition}
                 autofillData={autofillData}
                 onSubmit={handleSubmit}
+                onCancel={onClose}
                 className="flex-1 overflow-hidden"
             />
         </Sheet>

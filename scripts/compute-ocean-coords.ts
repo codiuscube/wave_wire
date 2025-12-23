@@ -59,6 +59,31 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Track API calls for logging
+let apiCallCount = 0;
+
+/**
+ * Log API usage to Supabase for tracking
+ */
+async function logApiUsageToSupabase(callCount: number): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('log_api_usage', {
+      p_service: 'openmeteo_marine',
+      p_call_count: callCount,
+      p_source: 'script',
+      p_endpoint: '/v1/marine',
+    });
+
+    if (error) {
+      console.warn('Failed to log API usage:', error.message);
+    } else {
+      console.log(`Logged ${callCount} API calls to usage tracker`);
+    }
+  } catch (err) {
+    console.warn('Error logging API usage:', err);
+  }
+}
+
 /**
  * Infer the coastal exposure from region/country
  * Simplified version of frontend/src/data/noaaBuoys.ts inferExposure
@@ -156,6 +181,9 @@ function moveCoordinate(lat: number, lon: number, bearing: number, distanceKm: n
  */
 async function testCoordinates(lat: number, lon: number): Promise<{ valid: boolean; elevation: number; waveHeight: number }> {
   const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height&models=ncep_gfswave025&forecast_days=1`;
+
+  // Track API call
+  apiCallCount++;
 
   try {
     const response = await fetch(url);
@@ -373,7 +401,13 @@ async function main() {
   console.log(`  Updated: ${updated}`);
   console.log(`  Skipped: ${skipped}`);
   console.log(`  Failed: ${failed}`);
+  console.log(`  API Calls: ${apiCallCount}`);
   console.log('='.repeat(60));
+
+  // Log API usage to Supabase for tracking
+  if (apiCallCount > 0) {
+    await logApiUsageToSupabase(apiCallCount);
+  }
 }
 
 main().catch(console.error);

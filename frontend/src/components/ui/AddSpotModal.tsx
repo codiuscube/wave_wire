@@ -63,6 +63,7 @@ export function AddSpotModal({
       <AddSpotContent
         savedSpots={savedSpots}
         onAddSpot={handleAddSpot}
+        onCancel={onClose}
         className="flex-1 overflow-hidden"
         userLocation={userLocation}
       />

@@ -1,10 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
   getOpenMeteoUsage,
   checkRateLimitStatus,
   OPENMETEO_LIMITS,
 } from '../../services/api/apiUsageTracker';
+
+interface ApiHealthCheck {
+  name: string;
+  endpoint: string;
+  status: 'idle' | 'checking' | 'healthy' | 'degraded' | 'down';
+  latency?: number;
+  lastChecked?: Date;
+  error?: string;
+  details?: string;
+}
 
 interface SystemStats {
   userCount: number;
@@ -28,11 +38,166 @@ interface ActualApiUsage {
   limitingFactor: string | null;
 }
 
+// Test coordinates - Hanalei Bay ocean coordinates (known to return valid wave data)
+const TEST_COORDS = { lat: 22.2995, lon: -159.5075, name: 'Hanalei Bay' };
+
 export function SystemHealth() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [actualUsage, setActualUsage] = useState<ActualApiUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiHealthChecks, setApiHealthChecks] = useState<ApiHealthCheck[]>([
+    {
+      name: 'Open-Meteo Marine (GFS Wave)',
+      endpoint: 'marine-api.open-meteo.com',
+      status: 'idle',
+    },
+    {
+      name: 'Open-Meteo Marine (ECMWF)',
+      endpoint: 'marine-api.open-meteo.com',
+      status: 'idle',
+    },
+    {
+      name: 'NOAA Tides & Currents',
+      endpoint: 'api.tidesandcurrents.noaa.gov',
+      status: 'idle',
+    },
+  ]);
+
+  const runApiHealthChecks = useCallback(async () => {
+    // Update all to checking state
+    setApiHealthChecks(prev => prev.map(check => ({ ...check, status: 'checking' as const })));
+
+    const results: ApiHealthCheck[] = [];
+
+    // Test Open-Meteo Marine API with GFS Wave model
+    try {
+      const gfsStart = Date.now();
+      const gfsUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${TEST_COORDS.lat}&longitude=${TEST_COORDS.lon}&hourly=wave_height,wave_period,wave_direction&models=ncep_gfswave025&forecast_days=1`;
+      const gfsResponse = await fetch(gfsUrl);
+      const gfsLatency = Date.now() - gfsStart;
+
+      if (!gfsResponse.ok) {
+        results.push({
+          name: 'Open-Meteo Marine (GFS Wave)',
+          endpoint: 'marine-api.open-meteo.com',
+          status: 'down',
+          latency: gfsLatency,
+          lastChecked: new Date(),
+          error: `HTTP ${gfsResponse.status}`,
+        });
+      } else {
+        const gfsData = await gfsResponse.json();
+        const waveHeight = gfsData?.hourly?.wave_height?.[0];
+        const hasValidData = typeof waveHeight === 'number' && waveHeight > 0;
+
+        results.push({
+          name: 'Open-Meteo Marine (GFS Wave)',
+          endpoint: 'marine-api.open-meteo.com',
+          status: hasValidData ? 'healthy' : 'degraded',
+          latency: gfsLatency,
+          lastChecked: new Date(),
+          details: hasValidData
+            ? `Wave: ${waveHeight.toFixed(1)}m at ${TEST_COORDS.name}`
+            : 'No wave data returned',
+        });
+      }
+    } catch (err) {
+      results.push({
+        name: 'Open-Meteo Marine (GFS Wave)',
+        endpoint: 'marine-api.open-meteo.com',
+        status: 'down',
+        lastChecked: new Date(),
+        error: err instanceof Error ? err.message : 'Connection failed',
+      });
+    }
+
+    // Test Open-Meteo Marine API with ECMWF model
+    try {
+      const ecmwfStart = Date.now();
+      const ecmwfUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${TEST_COORDS.lat}&longitude=${TEST_COORDS.lon}&hourly=wave_height,wave_period,wave_direction&models=ecmwf_wam&forecast_days=1`;
+      const ecmwfResponse = await fetch(ecmwfUrl);
+      const ecmwfLatency = Date.now() - ecmwfStart;
+
+      if (!ecmwfResponse.ok) {
+        results.push({
+          name: 'Open-Meteo Marine (ECMWF)',
+          endpoint: 'marine-api.open-meteo.com',
+          status: 'down',
+          latency: ecmwfLatency,
+          lastChecked: new Date(),
+          error: `HTTP ${ecmwfResponse.status}`,
+        });
+      } else {
+        const ecmwfData = await ecmwfResponse.json();
+        const waveHeight = ecmwfData?.hourly?.wave_height?.[0];
+        const hasValidData = typeof waveHeight === 'number' && waveHeight > 0;
+
+        results.push({
+          name: 'Open-Meteo Marine (ECMWF)',
+          endpoint: 'marine-api.open-meteo.com',
+          status: hasValidData ? 'healthy' : 'degraded',
+          latency: ecmwfLatency,
+          lastChecked: new Date(),
+          details: hasValidData
+            ? `Wave: ${waveHeight.toFixed(1)}m at ${TEST_COORDS.name}`
+            : 'No wave data returned',
+        });
+      }
+    } catch (err) {
+      results.push({
+        name: 'Open-Meteo Marine (ECMWF)',
+        endpoint: 'marine-api.open-meteo.com',
+        status: 'down',
+        lastChecked: new Date(),
+        error: err instanceof Error ? err.message : 'Connection failed',
+      });
+    }
+
+    // Test NOAA Tides API
+    try {
+      const noaaStart = Date.now();
+      // Use a known NOAA station (Honolulu)
+      const noaaUrl = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=today&station=1612340&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english&format=json';
+      const noaaResponse = await fetch(noaaUrl);
+      const noaaLatency = Date.now() - noaaStart;
+
+      if (!noaaResponse.ok) {
+        results.push({
+          name: 'NOAA Tides & Currents',
+          endpoint: 'api.tidesandcurrents.noaa.gov',
+          status: 'down',
+          latency: noaaLatency,
+          lastChecked: new Date(),
+          error: `HTTP ${noaaResponse.status}`,
+        });
+      } else {
+        const noaaData = await noaaResponse.json();
+        const hasPredictions = noaaData?.predictions?.length > 0;
+
+        results.push({
+          name: 'NOAA Tides & Currents',
+          endpoint: 'api.tidesandcurrents.noaa.gov',
+          status: hasPredictions ? 'healthy' : 'degraded',
+          latency: noaaLatency,
+          lastChecked: new Date(),
+          details: hasPredictions
+            ? `${noaaData.predictions.length} tide predictions`
+            : 'No predictions returned',
+        });
+      }
+    } catch (err) {
+      results.push({
+        name: 'NOAA Tides & Currents',
+        endpoint: 'api.tidesandcurrents.noaa.gov',
+        status: 'down',
+        lastChecked: new Date(),
+        error: err instanceof Error ? err.message : 'Connection failed',
+      });
+    }
+
+    setApiHealthChecks(results);
+  }, []);
 
   useEffect(() => {
     async function fetchStats() {
@@ -132,6 +297,34 @@ export function SystemHealth() {
         <StatBox label="Triggers" value={stats.triggerCount} />
         <StatBox label="Spots" value={stats.uniqueSpotsWithTriggers} />
         <StatBox label="Alerts (30d)" value={stats.alertsSent30Days} />
+      </div>
+
+      {/* API Health Checks Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-mono text-sm tracking-wider text-muted-foreground uppercase">
+            External API Health
+          </h4>
+          <button
+            onClick={runApiHealthChecks}
+            disabled={apiHealthChecks.some(c => c.status === 'checking')}
+            className="px-3 py-1 text-xs font-mono uppercase tracking-wider bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {apiHealthChecks.some(c => c.status === 'checking') ? 'Checking...' : 'Run Health Check'}
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {apiHealthChecks.map((check) => (
+            <ApiHealthCheckRow key={check.name} check={check} />
+          ))}
+        </div>
+
+        {apiHealthChecks.every(c => c.status === 'idle') && (
+          <p className="mt-3 text-xs font-mono text-muted-foreground">
+            Click "Run Health Check" to test external API connectivity and response times.
+          </p>
+        )}
       </div>
 
       {/* OpenMeteo API Usage Section */}
@@ -508,5 +701,64 @@ function calculateOpenMeteoUsage(stats: SystemStats): OpenMeteoUsage {
     callsPerRun: callsPerTriggerRun,
     dashboardViewsPerDay: Math.round(dashboardCallsPerDay / CALLS_PER_FORECAST),
   };
+}
+
+function ApiHealthCheckRow({ check }: { check: ApiHealthCheck }) {
+  const getStatusColor = () => {
+    switch (check.status) {
+      case 'healthy': return 'bg-green-500';
+      case 'degraded': return 'bg-yellow-500';
+      case 'down': return 'bg-destructive';
+      case 'checking': return 'bg-primary animate-pulse';
+      default: return 'bg-muted';
+    }
+  };
+
+  const getStatusText = () => {
+    switch (check.status) {
+      case 'healthy': return 'Healthy';
+      case 'degraded': return 'Degraded';
+      case 'down': return 'Down';
+      case 'checking': return 'Checking...';
+      default: return 'Not checked';
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-muted/20 rounded">
+      <div className="flex items-center gap-3">
+        <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+        <div>
+          <div className="font-mono text-sm">{check.name}</div>
+          <div className="font-mono text-xs text-muted-foreground">{check.endpoint}</div>
+        </div>
+      </div>
+      <div className="text-right">
+        <div className={`font-mono text-xs uppercase tracking-wider ${
+          check.status === 'healthy' ? 'text-green-500' :
+          check.status === 'degraded' ? 'text-yellow-500' :
+          check.status === 'down' ? 'text-destructive' :
+          'text-muted-foreground'
+        }`}>
+          {getStatusText()}
+        </div>
+        {check.latency && (
+          <div className="font-mono text-xs text-muted-foreground">
+            {check.latency}ms
+          </div>
+        )}
+        {check.details && (
+          <div className="font-mono text-xs text-muted-foreground mt-1">
+            {check.details}
+          </div>
+        )}
+        {check.error && (
+          <div className="font-mono text-xs text-destructive mt-1">
+            {check.error}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
