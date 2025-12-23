@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { VerifiedCheck, AltArrowRight, Home, MapPoint, Bolt, Water } from '@solar-icons/react';
+import { VerifiedCheck, AltArrowRight, Home, MapPoint, Bolt, Water, Bell } from '@solar-icons/react';
 import { Button } from "./Button";
 import { Sheet } from "./Sheet";
 import { AddressAutocomplete } from "./AddressAutocomplete";
@@ -8,13 +8,14 @@ import { AddSpotContent } from "./AddSpotContent";
 import { TriggerForm } from "./TriggerForm";
 import { useUserSpots, useProfile } from "../../hooks";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePushNotification } from "../../contexts/PushNotificationContext";
 import { supabase } from "../../lib/supabase";
 import { toDbTriggerInsert } from "../../lib/mappers";
 import type { TriggerTier } from "../../types";
 import type { SpotOption } from "./AddSpotModal";
 
 // Steps definition
-type OnboardingStep = "welcome" | "address" | "spot" | "trigger" | "complete";
+type OnboardingStep = "welcome" | "address" | "spot" | "trigger" | "notifications" | "complete";
 
 interface OnboardingModalProps {
     isOpen: boolean;
@@ -24,9 +25,10 @@ interface OnboardingModalProps {
 // Progress bar component
 function ProgressBar({ step }: { step: OnboardingStep }) {
     const progress = step === 'welcome' ? 0 :
-        step === 'address' ? 25 :
-        step === 'spot' ? 50 :
-        step === 'trigger' ? 75 : 100;
+        step === 'address' ? 20 :
+        step === 'spot' ? 40 :
+        step === 'trigger' ? 60 :
+        step === 'notifications' ? 80 : 100;
 
     return (
         <div className="h-1 bg-secondary w-full">
@@ -46,9 +48,10 @@ function OnboardingHeader({ step, onClose }: { step: OnboardingStep; onClose: ()
             <div className="flex items-center justify-between p-4 border-b border-border/50">
                 <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
                     {step === 'welcome' ? 'Welcome' :
-                     step === 'address' ? 'Step 1 of 3' :
-                     step === 'spot' ? 'Step 2 of 3' :
-                     step === 'trigger' ? 'Step 3 of 3' : 'Complete'}
+                     step === 'address' ? 'Step 1 of 4' :
+                     step === 'spot' ? 'Step 2 of 4' :
+                     step === 'trigger' ? 'Step 3 of 4' :
+                     step === 'notifications' ? 'Step 4 of 4' : 'Complete'}
                 </span>
                 {step !== 'complete' && (
                     <button
@@ -67,6 +70,14 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     const { user } = useAuth();
     const { profile, update: updateProfile } = useProfile(user?.id);
     const { addSpot } = useUserSpots(user?.id, profile?.subscriptionTier);
+    const {
+        isSupported: pushSupported,
+        isSubscribed: pushSubscribed,
+        permissionState: pushPermission,
+        isLoading: pushLoading,
+        isIosWithoutPwa,
+        subscribe: subscribeToPush,
+    } = usePushNotification();
 
     const [step, setStep] = useState<OnboardingStep>("welcome");
     const [address, setAddress] = useState("");
@@ -144,7 +155,16 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
             .insert(dbTrigger);
 
         setLoading(false);
-        if (!insertError) setStep("complete");
+        if (!insertError) setStep("notifications");
+    };
+
+    const handleNotificationsComplete = async (enablePush: boolean) => {
+        if (enablePush && !isIosWithoutPwa && pushSupported && pushPermission !== 'denied') {
+            setLoading(true);
+            await subscribeToPush();
+            setLoading(false);
+        }
+        setStep("complete");
     };
 
     const handleComplete = async () => {
@@ -261,15 +281,129 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     </div>
                 );
 
+            case "notifications":
+                return (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300 p-6">
+                        <div className="text-center">
+                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Bell weight="BoldDuotone" size={24} className="text-primary" />
+                            </div>
+                            <h3 className="text-xl font-bold uppercase">Stay in the Loop</h3>
+                            <p className="text-muted-foreground text-sm">
+                                Get instant alerts when conditions are firing at your spots.
+                            </p>
+                        </div>
+
+                        {isIosWithoutPwa ? (
+                            <div className="bg-secondary/50 border border-border rounded-lg p-4">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    iOS requires the app to be installed to receive push notifications.
+                                </p>
+                                <ol className="text-sm text-muted-foreground space-y-3">
+                                    <li className="flex items-start gap-3">
+                                        <span className="font-mono text-primary font-bold">1.</span>
+                                        <span>Tap the <strong className="text-foreground">Share</strong> button in Safari</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <span className="font-mono text-primary font-bold">2.</span>
+                                        <span>Scroll and tap <strong className="text-foreground">"Add to Home Screen"</strong></span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <span className="font-mono text-primary font-bold">3.</span>
+                                        <span>Open the app and enable push notifications</span>
+                                    </li>
+                                </ol>
+                                <p className="text-xs text-muted-foreground mt-4 pt-3 border-t border-border/50">
+                                    You can also receive alerts via <strong className="text-foreground">Email</strong> in Account settings.
+                                    <span className="text-muted-foreground/60"> SMS coming soon.</span>
+                                </p>
+                                <Button
+                                    onClick={() => handleNotificationsComplete(false)}
+                                    className="w-full mt-4"
+                                    variant="outline"
+                                >
+                                    I'll do this later
+                                </Button>
+                            </div>
+                        ) : !pushSupported ? (
+                            <div className="bg-secondary/50 border border-border rounded-lg p-4 text-center">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Push notifications aren't supported in this browser.
+                                </p>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    You can receive alerts via <strong className="text-foreground">Email</strong> instead.
+                                    <span className="text-muted-foreground/60"> SMS coming soon.</span>
+                                </p>
+                                <Button
+                                    onClick={() => handleNotificationsComplete(false)}
+                                    className="w-full"
+                                >
+                                    Continue
+                                </Button>
+                            </div>
+                        ) : pushPermission === 'denied' ? (
+                            <div className="bg-secondary/50 border border-border rounded-lg p-4 text-center">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Push notifications are blocked in your browser settings.
+                                </p>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    You can receive alerts via <strong className="text-foreground">Email</strong> instead, or unblock push in your browser.
+                                    <span className="text-muted-foreground/60"> SMS coming soon.</span>
+                                </p>
+                                <Button
+                                    onClick={() => handleNotificationsComplete(false)}
+                                    className="w-full"
+                                >
+                                    Continue
+                                </Button>
+                            </div>
+                        ) : pushSubscribed ? (
+                            <div className="text-center">
+                                <p className="text-sm text-green-500 mb-4">
+                                    Push notifications are already enabled!
+                                </p>
+                                <Button
+                                    onClick={() => handleNotificationsComplete(false)}
+                                    className="w-full"
+                                >
+                                    Continue
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <Button
+                                    onClick={() => handleNotificationsComplete(true)}
+                                    disabled={loading || pushLoading}
+                                    className="w-full"
+                                    variant="rogue"
+                                >
+                                    {loading || pushLoading ? "Enabling..." : "Enable Push Notifications"}
+                                </Button>
+                                <Button
+                                    onClick={() => handleNotificationsComplete(false)}
+                                    variant="ghost"
+                                    className="w-full text-muted-foreground"
+                                >
+                                    Skip for now
+                                </Button>
+                                <p className="text-xs text-muted-foreground text-center">
+                                    You can always enable notifications later in Account settings.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                );
+
             case "complete":
                 return (
                     <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-6 py-12">
                         <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
                             <VerifiedCheck weight="BoldDuotone" size={48} className="text-green-500" />
                         </div>
-                        <h2 className="text-2xl font-black uppercase tracking-tighter">All set!</h2>
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">You're All Set!</h2>
                         <p className="text-muted-foreground">
-                            Your home break is configured. You'll receive alerts when conditions are all-time.
+                            Your home break is configured and ready to go.
+                            {pushSubscribed && " We'll notify you when conditions fire."}
                         </p>
                         <Button
                             onClick={handleComplete}
@@ -290,9 +424,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
             onClose={onClose}
             header={<OnboardingHeader step={step} onClose={onClose} />}
             zIndex={100}
+            fullScreen
         >
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
-                {renderStep()}
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
+                <div className="w-full max-w-lg">
+                    {renderStep()}
+                </div>
             </div>
         </Sheet>
     );

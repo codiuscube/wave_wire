@@ -19,6 +19,8 @@ interface SheetProps {
   header?: React.ReactNode;
   /** Custom footer element */
   footer?: React.ReactNode;
+  /** When true, renders as full-screen overlay instead of right-slide drawer. Defaults to false. */
+  fullScreen?: boolean;
 }
 
 export function Sheet({
@@ -33,6 +35,7 @@ export function Sheet({
   header,
   footer,
   dismissible = true,
+  fullScreen = false,
 }: SheetProps) {
   const defaultHeader = (
     <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
@@ -76,18 +79,27 @@ export function Sheet({
         <Drawer.Content
           className={cn(
             'fixed outline-none flex',
-            // Mobile: flush right, full height
-            'inset-y-0 right-0 w-full',
-            // Desktop: floating with gaps
-            'sm:right-2 sm:top-2 sm:bottom-2 sm:w-[400px] lg:w-[500px]',
+            fullScreen
+              ? 'inset-0'
+              : [
+                  // Mobile: flush right, full height
+                  'inset-y-0 right-0 w-full',
+                  // Desktop: floating with gaps
+                  'sm:right-2 sm:top-2 sm:bottom-2 sm:w-[400px] lg:w-[500px]',
+                ],
             className
           )}
           style={{
             zIndex: zIndex + 1,
-            '--initial-transform': 'calc(100% + 8px)',
+            '--initial-transform': fullScreen ? 'translateY(20px)' : 'calc(100% + 8px)',
           } as React.CSSProperties}
         >
-          <div className="bg-card h-full w-full grow flex flex-col overflow-hidden border-l border-border/50 sm:border-none sm:rounded-2xl sm:shadow-2xl">
+          <div className={cn(
+            'bg-card h-full w-full grow flex flex-col overflow-hidden',
+            fullScreen
+              ? ''
+              : 'border-l border-border/50 sm:border-none sm:rounded-2xl sm:shadow-2xl'
+          )}>
             {/* Header - always include Drawer.Title for accessibility */}
             {header ? (
               <>

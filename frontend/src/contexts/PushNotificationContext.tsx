@@ -32,10 +32,14 @@ interface PushNotificationContextType {
   isLoading: boolean;
   /** Whether this is iOS without PWA (can't receive push) */
   isIosWithoutPwa: boolean;
+  /** Error message if subscription failed */
+  error: string | null;
   /** Subscribe to push notifications */
   subscribe: () => Promise<boolean>;
   /** Unsubscribe from push notifications */
   unsubscribe: () => Promise<void>;
+  /** Clear error state */
+  clearError: () => void;
 }
 
 const PushNotificationContext = createContext<PushNotificationContextType | undefined>(undefined);
@@ -63,6 +67,9 @@ export function PushNotificationProvider({ children }: { children: ReactNode }) 
   const [permissionState, setPermissionState] = useState<'default' | 'granted' | 'denied'>('default');
   const [isLoading, setIsLoading] = useState(true);
   const [isIosWithoutPwa, setIsIosWithoutPwa] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const clearError = useCallback(() => setError(null), []);
 
   // Initialize OneSignal on mount
   useEffect(() => {
@@ -138,65 +145,109 @@ export function PushNotificationProvider({ children }: { children: ReactNode }) 
   }, [user, isSubscribed]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
+    console.log('[PushNotification] subscribe() called');
+    setError(null); // Clear any previous error
+
+    // Check if device can receive push
     if (!canReceivePush()) {
-      console.warn('[PushNotification] Cannot receive push on this device');
+      const msg = 'Cannot receive push on this device (iOS requires PWA installation)';
+      console.warn('[PushNotification]', msg);
+      setError(msg);
       return false;
     }
 
     setIsLoading(true);
 
     try {
+      // Prompt for permission
+      console.log('[PushNotification] Calling promptForPushPermission()...');
       const success = await promptForPushPermission();
+      console.log('[PushNotification] promptForPushPermission returned:', success);
 
-      if (success) {
-        const permission = await getPushPermissionState();
-        setPermissionState(permission);
-
-        // Wait for OneSignal to assign player ID (can take a moment)
-        let playerId: string | null = null;
-        for (let i = 0; i < 10; i++) {
-          playerId = await getPlayerId();
-          if (playerId) break;
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        const subscribed = !!playerId && permission === 'granted';
-        setIsSubscribed(subscribed);
-
-        // Link to user if logged in
-        if (user && playerId) {
-          await setExternalUserId(user.id);
-
-          // Save to Supabase
-          const { error } = await supabase.from('push_subscriptions').upsert(
-            {
-              user_id: user.id,
-              onesignal_player_id: playerId,
-              device_type: detectDeviceType(),
-              browser: detectBrowser(),
-              is_active: true,
-              last_used_at: new Date().toISOString(),
-            },
-            {
-              onConflict: 'user_id,onesignal_player_id',
-            }
-          );
-
-          if (error) {
-            console.error('[PushNotification] Failed to save subscription:', error);
-          } else {
-            console.log('[PushNotification] Subscription saved to Supabase');
-          }
-        }
-
+      if (!success) {
+        const msg = 'Permission not granted - check browser notification settings';
+        console.warn('[PushNotification]', msg);
+        setError(msg);
         setIsLoading(false);
-        return subscribed;
+        return false;
+      }
+
+      const permission = await getPushPermissionState();
+      console.log('[PushNotification] Permission state:', permission);
+      setPermissionState(permission);
+
+      if (permission === 'denied') {
+        const msg = 'Notifications blocked in browser settings';
+        console.warn('[PushNotification]', msg);
+        setError(msg);
+        setIsLoading(false);
+        return false;
+      }
+
+      // Wait for OneSignal to assign player ID (can take a moment)
+      console.log('[PushNotification] Waiting for player ID...');
+      let playerId: string | null = null;
+      for (let i = 0; i < 10; i++) {
+        playerId = await getPlayerId();
+        console.log('[PushNotification] Player ID attempt', i + 1, ':', playerId ?? 'null');
+        if (playerId) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      if (!playerId) {
+        const msg = 'Failed to get player ID from OneSignal - try refreshing the page';
+        console.error('[PushNotification]', msg);
+        setError(msg);
+        setIsLoading(false);
+        return false;
+      }
+
+      const subscribed = permission === 'granted';
+      console.log('[PushNotification] Setting isSubscribed:', subscribed);
+      setIsSubscribed(subscribed);
+
+      // Link to user if logged in
+      if (user) {
+        console.log('[PushNotification] Linking to user:', user.id);
+        await setExternalUserId(user.id);
+
+        // Save to Supabase
+        console.log('[PushNotification] Saving to Supabase...');
+        const { error: dbError } = await supabase.from('push_subscriptions').upsert(
+          {
+            user_id: user.id,
+            onesignal_player_id: playerId,
+            device_type: detectDeviceType(),
+            browser: detectBrowser(),
+            is_active: true,
+            last_used_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id,onesignal_player_id',
+          }
+        );
+
+        if (dbError) {
+          console.error('[PushNotification] Failed to save subscription:', dbError);
+          setError('Failed to save subscription to database');
+          // Don't return false here - the push subscription itself worked
+        } else {
+          console.log('[PushNotification] Subscription saved to Supabase');
+        }
+      } else {
+        console.warn('[PushNotification] No user logged in, cannot save subscription');
+        setError('You must be logged in to enable push notifications');
+        setIsLoading(false);
+        return false;
       }
 
       setIsLoading(false);
-      return false;
-    } catch (error) {
-      console.error('[PushNotification] Subscribe error:', error);
+      console.log('[PushNotification] subscribe() completed successfully');
+      return subscribed;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error during subscription';
+      console.error('[PushNotification] Subscribe error:', err);
+      setError(msg);
       setIsLoading(false);
       return false;
     }
@@ -235,8 +286,10 @@ export function PushNotificationProvider({ children }: { children: ReactNode }) 
         permissionState,
         isLoading,
         isIosWithoutPwa,
+        error,
         subscribe,
         unsubscribe,
+        clearError,
       }}
     >
       {children}

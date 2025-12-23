@@ -48,7 +48,9 @@ export function AccountPage() {
     permissionState: pushPermission,
     isLoading: pushLoading,
     isIosWithoutPwa,
+    error: pushError,
     subscribe: subscribeToPush,
+    clearError: clearPushError,
   } = usePushNotification();
   const navigate = useNavigate();
 
@@ -118,9 +120,13 @@ export function AccountPage() {
   };
 
   const handleEnablePush = async () => {
+    console.log('[AccountPage] handleEnablePush() clicked');
+    clearPushError(); // Clear any previous error
     const success = await subscribeToPush();
+    console.log('[AccountPage] subscribeToPush returned:', success);
     if (success) {
       await updateAlertSettings({ pushEnabled: true });
+      console.log('[AccountPage] pushEnabled set to true in alert settings');
     }
   };
 
@@ -472,43 +478,50 @@ export function AccountPage() {
           <Card className="tech-card">
             <CardContent className="pt-6 space-y-4">
               {/* Push Notifications */}
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={getIconStyle(!!(pushSubscribed && alertSettings?.pushEnabled))}>
-                    <Bell weight="BoldDuotone" size={24} />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={getIconStyle(!!(pushSubscribed && alertSettings?.pushEnabled))}>
+                      <Bell weight="BoldDuotone" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold">Push Notifications</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {isIosWithoutPwa
+                          ? 'Add to Home Screen for push on iOS'
+                          : !pushSupported
+                            ? 'Not supported in this browser'
+                            : pushPermission === 'denied'
+                              ? 'Blocked in browser settings'
+                              : pushSubscribed
+                                ? 'Enabled on this device'
+                                : 'Get instant alerts on this device'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold">Push Notifications</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {isIosWithoutPwa
-                        ? 'Add to Home Screen for push on iOS'
-                        : !pushSupported
-                          ? 'Not supported in this browser'
-                          : pushPermission === 'denied'
-                            ? 'Blocked in browser settings'
-                            : pushSubscribed
-                              ? 'Enabled on this device'
-                              : 'Get instant alerts on this device'}
-                    </p>
-                  </div>
+                  {pushSupported && pushPermission !== 'denied' && !isIosWithoutPwa && (
+                    pushSubscribed ? (
+                      <Switch
+                        checked={alertSettings?.pushEnabled ?? false}
+                        onChange={(checked) => handleAlertToggle('pushEnabled', checked)}
+                        disabled={pushLoading}
+                      />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEnablePush}
+                        disabled={pushLoading}
+                      >
+                        {pushLoading ? 'Enabling...' : 'Enable'}
+                      </Button>
+                    )
+                  )}
                 </div>
-                {pushSupported && pushPermission !== 'denied' && !isIosWithoutPwa && (
-                  pushSubscribed ? (
-                    <Switch
-                      checked={alertSettings?.pushEnabled ?? false}
-                      onChange={(checked) => handleAlertToggle('pushEnabled', checked)}
-                      disabled={pushLoading}
-                    />
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleEnablePush}
-                      disabled={pushLoading}
-                    >
-                      Enable
-                    </Button>
-                  )
+                {pushError && (
+                  <div className="px-4 py-2 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-xs text-destructive">{pushError}</p>
+                  </div>
                 )}
               </div>
 
