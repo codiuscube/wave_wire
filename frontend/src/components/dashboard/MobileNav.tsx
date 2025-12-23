@@ -1,14 +1,11 @@
 
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-    Water,
+    Home as HomeIcon,
     MapPoint,
     Bolt,
-    ChatRoundDots,
     User,
-    Database,
-    ChartSquare,
-    UsersGroupRounded,
+    Shield,
     Logout,
     History,
 } from "@solar-icons/react";
@@ -21,11 +18,10 @@ import { Sheet } from "../ui/Sheet";
 const ICON_SIZE = 24;
 
 const navItems = [
-    { to: "/dashboard", icon: Water, label: "Overview", end: true },
+    { to: "/dashboard", icon: HomeIcon, label: "Home", end: true },
     { to: "/spots", icon: MapPoint, label: "Spots" },
-    { to: "/triggers", icon: Bolt, label: "Triggers" },
+    { to: "/triggers", icon: Bolt, label: "Alerts" },
     { to: "/surf-log", icon: History, label: "Log" },
-    { to: "/alerts", icon: ChatRoundDots, label: "Alerts" },
 ];
 
 export function MobileNav() {
@@ -76,7 +72,7 @@ export function MobileNav() {
     return (
         <>
             <nav
-                className="fixed left-4 right-4 z-50 bg-background/30 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl shadow-black/50 lg:hidden"
+                className="fixed left-2 right-2 z-50 bg-background/30 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl shadow-black/50 lg:hidden"
                 style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
             >
                 <div className="flex items-center justify-around h-16 px-2">
@@ -148,43 +144,16 @@ export function MobileNav() {
             >
                 <div className="p-4 space-y-4 pb-8">
                     {isAdmin && (
-                        <div className="space-y-2">
-                            <h3 className="text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-3">Admin Controls</h3>
-
+                        <>
                             <div
-                                onClick={() => { navigate('/admin/spots'); setIsAdminSheetOpen(false); }}
+                                onClick={() => { navigate('/admin'); setIsAdminSheetOpen(false); }}
                                 className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 active:scale-[0.98] transition-all cursor-pointer"
                             >
-                                <Database size={24} weight="BoldDuotone" />
-                                <span className="font-medium">Spot Management</span>
+                                <Shield size={24} weight="BoldDuotone" />
+                                <span className="font-medium">Admin Portal</span>
                             </div>
-
-                            <div
-                                onClick={() => { navigate('/admin/users'); setIsAdminSheetOpen(false); }}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 active:scale-[0.98] transition-all cursor-pointer"
-                            >
-                                <UsersGroupRounded size={24} weight="BoldDuotone" />
-                                <span className="font-medium">User Management</span>
-                            </div>
-
-                            <div
-                                onClick={() => { navigate('/admin/investment'); setIsAdminSheetOpen(false); }}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 active:scale-[0.98] transition-all cursor-pointer"
-                            >
-                                <ChartSquare size={24} weight="BoldDuotone" />
-                                <span className="font-medium">Investment</span>
-                            </div>
-
-                            <div
-                                onClick={() => { navigate('/dashboard?onboarding=true'); setIsAdminSheetOpen(false); }}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 active:scale-[0.98] transition-all cursor-pointer"
-                            >
-                                <Bolt size={24} weight="BoldDuotone" />
-                                <span className="font-medium">Test Onboarding</span>
-                            </div>
-
                             <div className="h-px bg-border/50 my-4" />
-                        </div>
+                        </>
                     )}
 
                     <button

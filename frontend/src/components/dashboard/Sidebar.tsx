@@ -1,14 +1,11 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  Water,
+  Home as HomeIcon,
   MapPoint,
   Bolt,
-  ChatRoundDots,
   User,
-  Database,
-  ChartSquare,
+  Shield,
   Logout,
-  UsersGroupRounded,
   History,
 } from "@solar-icons/react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -18,11 +15,10 @@ import { Logo } from "../ui/Logo";
 const ICON_SIZE = 24;
 
 const navItems = [
-  { to: "/dashboard", icon: Water, label: "Overview", end: true },
+  { to: "/dashboard", icon: HomeIcon, label: "Home", end: true },
   { to: "/spots", icon: MapPoint, label: "Spots" },
-  { to: "/triggers", icon: Bolt, label: "Triggers" },
+  { to: "/triggers", icon: Bolt, label: "Alerts" },
   { to: "/surf-log", icon: History, label: "Surf Log" },
-  { to: "/alerts", icon: ChatRoundDots, label: "Alerts" },
   { to: "/account", icon: User, label: "Account" },
 ];
 
@@ -77,63 +73,6 @@ export function Sidebar() {
                 {item.label}
               </NavLink>
             ))}
-
-            {/* Admin Section - only visible to admins */}
-            {isAdmin && (
-              <div className="pt-4 mt-4 border-t border-sidebar-border/50">
-                <div className="px-3 mb-2">
-                  <span className="text-xs font-semibold text-yellow-500 uppercase tracking-wider">Admin</span>
-                </div>
-                <NavLink
-                  to="/admin/spots"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
-                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
-                    }`
-                  }
-                >
-                  <Database size={ICON_SIZE} weight="BoldDuotone" />
-                  Spot Management
-                </NavLink>
-                <NavLink
-                  to="/admin/users"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
-                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
-                    }`
-                  }
-                >
-                  <UsersGroupRounded size={ICON_SIZE} weight="BoldDuotone" />
-                  User Management
-                </NavLink>
-                <NavLink
-                  to="/admin/investment"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
-                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
-                    }`
-                  }
-                >
-                  <ChartSquare size={ICON_SIZE} weight="BoldDuotone" />
-                  Investment
-                </NavLink>
-                <NavLink
-                  to="/dashboard?onboarding=true"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
-                      ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
-                      : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
-                    }`
-                  }
-                >
-                  <Bolt size={ICON_SIZE} weight="BoldDuotone" />
-                  Test Onboarding
-                </NavLink>
-              </div>
-            )}
           </nav>
 
           {/* Bottom Section */}
@@ -153,6 +92,20 @@ export function Sidebar() {
               >
                 <accountItem.icon size={ICON_SIZE} weight="BoldDuotone" className="group-hover:text-foreground transition-colors" />
                 {accountItem.label}
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                    ? "bg-yellow-500/20 text-yellow-500 shadow-sm"
+                    : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+                  }`
+                }
+              >
+                <Shield size={ICON_SIZE} weight="BoldDuotone" className="group-hover:text-yellow-500 transition-colors" />
+                Admin
               </NavLink>
             )}
             <button

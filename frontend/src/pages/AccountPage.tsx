@@ -8,7 +8,16 @@ import {
   Card as CardIcon,
   Home,
   Logout,
+  Sun,
+  Moon,
+  Bolt,
+  ClockCircle,
+  History3,
+  Lock,
+  Calendar,
+  Bell,
 } from '@solar-icons/react';
+import { motion } from 'framer-motion';
 import {
   Card,
   CardHeader,
@@ -20,14 +29,33 @@ import {
   Badge,
   DnaLogo,
   AddressAutocomplete,
+  Switch,
+  SegmentedControl,
 } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
-import { useProfile } from "../hooks";
+import { usePushNotification } from "../contexts/PushNotificationContext";
+import { useProfile, useAlertSettings } from "../hooks";
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function AccountPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, profile: authProfile } = useAuth();
   const { profile, isLoading, error, update } = useProfile(user?.id);
+  const { settings: alertSettings, isLoading: alertLoading, update: updateAlertSettings } = useAlertSettings(user?.id);
+  const {
+    isSupported: pushSupported,
+    isSubscribed: pushSubscribed,
+    permissionState: pushPermission,
+    isLoading: pushLoading,
+    isIosWithoutPwa,
+    subscribe: subscribeToPush,
+  } = usePushNotification();
   const navigate = useNavigate();
+
+  // Premium tier check
+  const canUsePremiumAlerts = ['premium', 'pro'].includes(
+    authProfile?.subscriptionTier?.toLowerCase() || ''
+  ) || authProfile?.isAdmin;
 
   // Local form state (initialized from profile)
   const [phone, setPhone] = useState("");
@@ -78,7 +106,51 @@ export function AccountPage() {
     navigate('/');
   };
 
-  if (authLoading || isLoading) {
+  // Alert settings handlers
+  const handleAlertToggle = async (
+    field: 'forecastAlertsEnabled' | 'liveAlertsEnabled' | 'twoDayForecastEnabled' | 'fiveDayForecastEnabled' | 'pushEnabled' | 'emailEnabled',
+    value: boolean
+  ) => {
+    if (!canUsePremiumAlerts && (field === 'twoDayForecastEnabled' || field === 'forecastAlertsEnabled' || field === 'fiveDayForecastEnabled')) {
+      return;
+    }
+    await updateAlertSettings({ [field]: value });
+  };
+
+  const handleEnablePush = async () => {
+    const success = await subscribeToPush();
+    if (success) {
+      await updateAlertSettings({ pushEnabled: true });
+    }
+  };
+
+  const handleModeChange = async (mode: 'solar' | 'clock' | 'always') => {
+    await updateAlertSettings({ windowMode: mode });
+  };
+
+  const handleWindowTimeChange = async (
+    field: 'windowStartTime' | 'windowEndTime',
+    value: string
+  ) => {
+    await updateAlertSettings({ [field]: value });
+  };
+
+  const handleDayToggle = async (day: string) => {
+    if (!alertSettings?.activeDays) return;
+    const newDays = alertSettings.activeDays.includes(day)
+      ? alertSettings.activeDays.filter(d => d !== day)
+      : [...alertSettings.activeDays, day];
+    await updateAlertSettings({ activeDays: newDays });
+  };
+
+  // Helper for glowing icon styles
+  const getIconStyle = (active: boolean) =>
+    `h-10 w-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${active
+      ? 'bg-primary-foreground text-muted-foreground shadow-md'
+      : 'bg-primary-foreground/20 text-muted-foreground/20'
+    }`;
+
+  if (authLoading || isLoading || alertLoading) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl flex items-center justify-center min-h-[400px]">
         <DnaLogo className="w-16 h-16" />
@@ -120,11 +192,367 @@ export function AccountPage() {
           </p>
         </div>
 
+        {/* Alert Types Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="w-2 h-2 bg-destructive animate-pulse rounded-full" />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Alert Types</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Night Before Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!alertSettings?.forecastAlertsEnabled)}>
+                      <Moon weight="BoldDuotone" size={32} />
+                    </div>
+                    {canUsePremiumAlerts ? (
+                      <Switch
+                        checked={alertSettings?.forecastAlertsEnabled ?? true}
+                        onChange={(checked) => handleAlertToggle('forecastAlertsEnabled', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                        <Lock size={12} weight="Bold" />
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">Night Before</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Final confirmation. Received at 6pm the night before conditions arrive.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Live Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className="tech-card h-full">
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!alertSettings?.liveAlertsEnabled)}>
+                      <Bolt weight="BoldDuotone" size={32} />
+                    </div>
+                    <Switch
+                      checked={alertSettings?.liveAlertsEnabled ?? true}
+                      onChange={(checked) => handleAlertToggle('liveAlertsEnabled', checked)}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">Live Data</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Real-time buoy monitoring. Instant alerts when conditions trigger.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Five Days Out Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.05 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!alertSettings?.fiveDayForecastEnabled)}>
+                      <Calendar weight="BoldDuotone" size={32} />
+                    </div>
+                    {canUsePremiumAlerts ? (
+                      <Switch
+                        checked={alertSettings?.fiveDayForecastEnabled ?? false}
+                        onChange={(checked) => handleAlertToggle('fiveDayForecastEnabled', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                        <Lock size={12} weight="Bold" />
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">5 Days Out</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Early planning alert. Get notified 5 days before good conditions arrive.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Two Days Before Alerts */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative group h-full"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/50 transition-colors group-hover:bg-primary z-10 rounded-l" />
+              <Card className={`tech-card h-full ${!canUsePremiumAlerts ? 'opacity-75 grayscale-[0.5]' : ''}`}>
+                <CardContent className="pt-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={getIconStyle(!!alertSettings?.twoDayForecastEnabled)}>
+                      <History3 weight="BoldDuotone" size={32} />
+                    </div>
+                    {canUsePremiumAlerts ? (
+                      <Switch
+                        checked={alertSettings?.twoDayForecastEnabled ?? false}
+                        onChange={(checked) => handleAlertToggle('twoDayForecastEnabled', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-secondary text-xs font-mono font-bold text-muted-foreground">
+                        <Lock size={12} weight="Bold" />
+                        PREMIUM
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold">2 Days Out</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4 h-12">
+                      Early warning check. Received at 12pm, two days before conditions arrive.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Surveillance Window Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className={`w-2 h-2 rounded-full ${alertSettings?.windowMode !== 'always' ? 'bg-primary animate-pulse' : 'bg-primary'}`} />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Surveillance Window</h2>
+          </div>
+
+          <Card className="tech-card overflow-hidden">
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-6">
+                {/* Mode Selector */}
+                <SegmentedControl
+                  options={[
+                    { value: 'solar', label: 'Solar Cycle' },
+                    { value: 'clock', label: 'Fixed Hours' },
+                    { value: 'always', label: '24/7 Active' },
+                  ]}
+                  value={alertSettings?.windowMode || 'solar'}
+                  onChange={(val) => handleModeChange(val as 'solar' | 'clock' | 'always')}
+                />
+
+                {/* Day Selector */}
+                <div className="flex justify-between gap-1 sm:gap-2">
+                  {DAYS.map((day) => {
+                    const isActive = alertSettings?.activeDays?.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => handleDayToggle(day)}
+                        className={`
+                          flex-1 aspect-square sm:aspect-auto sm:h-10
+                          flex items-center justify-center rounded-md font-mono text-xs font-bold transition-all
+                          ${isActive
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-white/5 bg-muted/20'
+                          }
+                        `}
+                      >
+                        {day.slice(0, 2)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Mode Content */}
+                <div className="min-h-12 flex items-center">
+                  {alertSettings?.windowMode === 'solar' && (
+                    <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <Sun weight="BoldDuotone" size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">Follow the Sun</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Alerts are active from <span className="text-primary font-mono">Sunrise</span> to <span className="text-primary font-mono">Sunset</span> based on each spot's location.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {alertSettings?.windowMode === 'clock' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-2">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <ClockCircle weight="BoldDuotone" size={20} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-sm">Fixed Schedule</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Set specific active hours
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={alertSettings?.windowStartTime ?? '06:00'}
+                            onChange={(e) => handleWindowTimeChange('windowStartTime', e.target.value)}
+                            className="w-24 font-mono text-center bg-background"
+                          />
+                          <span className="text-muted-foreground font-mono">→</span>
+                          <Input
+                            type="time"
+                            value={alertSettings?.windowEndTime ?? '22:00'}
+                            onChange={(e) => handleWindowTimeChange('windowEndTime', e.target.value)}
+                            className="w-24 font-mono text-center bg-background"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {alertSettings?.windowMode === 'always' && (
+                    <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <Bolt weight="BoldDuotone" size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">Always On</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Active 24/7 on selected days.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Notification Channels Section */}
+        <div className="w-full mb-8">
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="w-2 h-2 bg-blue-500 animate-pulse rounded-full" />
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+              Notification Channels
+            </h2>
+          </div>
+
+          <Card className="tech-card">
+            <CardContent className="pt-6 space-y-4">
+              {/* Push Notifications */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={getIconStyle(!!(pushSubscribed && alertSettings?.pushEnabled))}>
+                    <Bell weight="BoldDuotone" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Push Notifications</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {isIosWithoutPwa
+                        ? 'Add to Home Screen for push on iOS'
+                        : !pushSupported
+                          ? 'Not supported in this browser'
+                          : pushPermission === 'denied'
+                            ? 'Blocked in browser settings'
+                            : pushSubscribed
+                              ? 'Enabled on this device'
+                              : 'Get instant alerts on this device'}
+                    </p>
+                  </div>
+                </div>
+                {pushSupported && pushPermission !== 'denied' && !isIosWithoutPwa && (
+                  pushSubscribed ? (
+                    <Switch
+                      checked={alertSettings?.pushEnabled ?? false}
+                      onChange={(checked) => handleAlertToggle('pushEnabled', checked)}
+                      disabled={pushLoading}
+                    />
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEnablePush}
+                      disabled={pushLoading}
+                    >
+                      Enable
+                    </Button>
+                  )
+                )}
+              </div>
+
+              {/* Email */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={getIconStyle(alertSettings?.emailEnabled ?? true)}>
+                    <Letter weight="BoldDuotone" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">Email</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Receive alerts to your email address
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={alertSettings?.emailEnabled ?? true}
+                  onChange={(checked) => handleAlertToggle('emailEnabled', checked)}
+                />
+              </div>
+
+              {/* SMS - Coming Soon */}
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg opacity-50">
+                <div className="flex items-center gap-3">
+                  <div className={getIconStyle(false)}>
+                    <Phone weight="BoldDuotone" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">SMS</h3>
+                    <p className="text-xs text-muted-foreground">Coming soon</p>
+                  </div>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Contact Info */}
         <div className="w-full mb-8">
           <div className="flex items-center gap-3 mb-4 px-1">
             <div className={`w-2 h-2 rounded-full bg-primary animate-pulse`} />
-            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Contact Info</h2>
+            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Contact</h2>
           </div>
           <Card className="mb-6 lg:mb-8 bg-card/60 backdrop-blur-sm border-primary/20">
             <CardHeader>
@@ -219,56 +647,6 @@ export function AccountPage() {
               {/* <p className="text-xs text-muted-foreground mt-2">
                 Optional. Leave blank if you don't want traffic info in alerts.
               </p> */}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Notification Channels - Coming Soon */}
-        <div className="w-full mb-8 opacity-50 pointer-events-none">
-          <div className="flex items-center gap-3 mb-4 px-1">
-            <div className={`w-2 h-2 rounded-full bg-amber-500/50`} />
-            <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Channels</h2>
-            <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
-          </div>
-          <Card className="mb-6 lg:mb-8 bg-card/60 backdrop-blur-sm border-muted">
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Notification Channels</CardTitle>
-              <CardDescription className="text-sm">How you receive surf alerts</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* SMS - Primary */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 gap-3 border border-border bg-secondary/20 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center">
-                    <Phone weight="Bold" size={20} className="text-muted-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-muted-foreground">SMS</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Instant texts when conditions match triggers
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Email - Fallback */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 gap-3 border border-border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <Letter weight="Bold" size={20} className="text-muted-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-muted-foreground">Email</p>
-                    </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      Email notifications for surf alerts
-                    </p>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>

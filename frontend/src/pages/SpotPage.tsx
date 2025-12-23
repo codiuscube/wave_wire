@@ -13,6 +13,7 @@ import {
   getRecommendedBuoysWithScoring,
   formatDistance,
   type BuoyRecommendation,
+  NOAA_BUOYS,
 } from "../data/noaaBuoys";
 import { Reorder, useDragControls } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
@@ -20,8 +21,15 @@ import { useUserSpots, useProfile, useMinimumLoading, useSurfSpots } from "../ho
 import { showSuccess } from "../lib/toast";
 import type { UserSpot } from "../lib/mappers";
 
+// Create a lookup map for buoy names
+const BUOY_NAME_MAP = new Map(NOAA_BUOYS.map(b => [b.id.toUpperCase(), b.name]));
+
 // Convert UserSpot (DB) to SpotOption (UI)
-function userSpotToSpotOption(userSpot: UserSpot): SpotOption {
+function userSpotToSpotOption(userSpot: UserSpot): SpotOption & { buoyName?: string } {
+  // Look up buoy name from NOAA buoys data
+  const buoyId = userSpot.buoyId?.toUpperCase();
+  const buoyName = buoyId ? BUOY_NAME_MAP.get(buoyId) : undefined;
+
   return {
     id: userSpot.id,
     name: userSpot.name,
@@ -29,6 +37,7 @@ function userSpotToSpotOption(userSpot: UserSpot): SpotOption {
     lat: userSpot.latitude || undefined,
     lon: userSpot.longitude || undefined,
     buoyId: userSpot.buoyId || undefined,
+    buoyName: buoyName,
     icon: userSpot.icon || undefined,
     masterSpotId: userSpot.masterSpotId || undefined,
   };
@@ -36,7 +45,7 @@ function userSpotToSpotOption(userSpot: UserSpot): SpotOption {
 
 // Draggable Spot Card Component
 interface DraggableSpotCardProps {
-  spot: SpotOption;
+  spot: SpotOption & { buoyName?: string };
   userSpot: UserSpot;
   onDelete: () => void;
   onIconClick: () => void;
@@ -183,7 +192,7 @@ function DraggableSpotCard({
                   title={(spot as any).buoy?.timestamp ? `Data from: ${new Date((spot as any).buoy.timestamp).toLocaleString()}` : "No data timestamp"}
                 />
                 <span className="font-mono text-sm uppercase tracking-wide truncate">
-                  {(spot as any).buoyName || `Station ${spot.buoyId}`}
+                  {spot.buoyName || `Station ${spot.buoyId}`}
                 </span>
               </div>
               <Pen weight="Bold" size={16} className="shrink-0 ml-2" />

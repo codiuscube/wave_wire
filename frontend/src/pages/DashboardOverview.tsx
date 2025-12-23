@@ -14,6 +14,10 @@ import { AddCircle, MenuDots, CheckCircle, MinusCircle, Target } from '@solar-ic
 import { AVAILABLE_ICONS } from '../components/ui/IconPickerModal';
 import type { UserSpot, SentAlert } from '../lib/mappers';
 import { DnaLogo } from '../components/ui/DnaLogo';
+import { NOAA_BUOYS } from '../data/noaaBuoys';
+
+// Create a lookup map for buoy names
+const BUOY_NAME_MAP = new Map(NOAA_BUOYS.map(b => [b.id.toUpperCase(), b.name]));
 
 // Convert UserSpot to base spot format for the dashboard
 interface BaseSpot {
@@ -38,6 +42,10 @@ function userSpotToBaseSpot(userSpot: UserSpot): BaseSpot | null {
   // Skip spots without coordinates
   if (!userSpot.latitude || !userSpot.longitude) return null;
 
+  // Look up buoy name from NOAA buoys data
+  const buoyId = userSpot.buoyId?.toUpperCase();
+  const buoyName = buoyId ? BUOY_NAME_MAP.get(buoyId) : undefined;
+
   return {
     id: userSpot.id,
     name: userSpot.name,
@@ -47,6 +55,7 @@ function userSpotToBaseSpot(userSpot: UserSpot): BaseSpot | null {
     oceanLat: userSpot.oceanLat ?? undefined,
     oceanLon: userSpot.oceanLon ?? undefined,
     buoyId: userSpot.buoyId || undefined,
+    buoyName: buoyName,
     status: 'unknown',
     triggersMatched: 0,
     icon: userSpot.icon || undefined,
@@ -284,6 +293,7 @@ export function DashboardOverview() {
   const {
     data: buoyDataMap,
     isLoading: buoyLoading,
+    errors: buoyErrors,
   } = useMultipleBuoyData(buoyIds);
 
   // Fetch live forecast data
@@ -295,18 +305,19 @@ export function DashboardOverview() {
   // Merge live data with base spots
   const userSpots: Spot[] = useMemo(() => {
     return baseSpots.map((baseSpot) => {
-      const buoyData = baseSpot.buoyId
-        ? buoyDataMap.get(baseSpot.buoyId.toUpperCase())
-        : null;
+      const buoyId = baseSpot.buoyId?.toUpperCase();
+      const buoyData = buoyId ? buoyDataMap.get(buoyId) : null;
+      const buoyError = buoyId ? buoyErrors.get(buoyId) : null;
       const forecastData = forecastDataMap.get(baseSpot.id);
 
       return {
         ...baseSpot,
         buoy: buoyData ?? undefined,
+        buoyError: buoyError,
         forecast: forecastData ?? undefined,
       };
     });
-  }, [baseSpots, buoyDataMap, forecastDataMap]);
+  }, [baseSpots, buoyDataMap, buoyErrors, forecastDataMap]);
 
   // Loading state
   const isLoading = useMinimumLoading(authLoading || spotsLoading);
@@ -470,14 +481,15 @@ export function DashboardOverview() {
                     const baseSpot = userSpotToBaseSpot(dbSpot);
                     if (!baseSpot) return null;
 
-                    const buoyData = baseSpot.buoyId
-                      ? buoyDataMap.get(baseSpot.buoyId.toUpperCase())
-                      : null;
+                    const buoyId = baseSpot.buoyId?.toUpperCase();
+                    const buoyData = buoyId ? buoyDataMap.get(buoyId) : null;
+                    const buoyError = buoyId ? buoyErrors.get(buoyId) : null;
                     const forecastData = forecastDataMap.get(baseSpot.id);
 
                     const spot: Spot = {
                       ...baseSpot,
                       buoy: buoyData ?? undefined,
+                      buoyError: buoyError,
                       forecast: forecastData ?? undefined,
                     };
 

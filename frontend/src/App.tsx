@@ -13,7 +13,6 @@ import {
   DashboardOverview,
   TriggersPage,
   SpotPage,
-  AlertsPage,
   AccountPage,
   LoginPage,
   SignupPage,
@@ -44,6 +43,9 @@ function App() {
                     <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/investment" element={<InvestmentPage />} />
 
+                    {/* Onboarding test route (redirects to dashboard with onboarding param) */}
+                    <Route path="/onboarding" element={<Navigate to="/dashboard?onboarding=true" replace />} />
+
                     {/* Protected Dashboard Routes */}
                     <Route
                       element={
@@ -56,7 +58,7 @@ function App() {
                       <Route path="/triggers" element={<TriggersPage />} />
                       <Route path="/spots" element={<SpotPage />} />
                       <Route path="/surf-log" element={<SurfLogPage />} />
-                      <Route path="/alerts" element={<AlertsPage />} />
+                      <Route path="/alerts" element={<Navigate to="/account" replace />} />
                       <Route path="/account" element={<AccountPage />} />
                     </Route>
 

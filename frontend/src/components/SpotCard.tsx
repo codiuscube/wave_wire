@@ -92,6 +92,7 @@ export interface Spot {
   buoyId?: string;
   buoyName?: string;
   buoy?: BuoyData;
+  buoyError?: string | null;
   forecast?: ForecastData;
   status?: "epic" | "good" | "fair" | "poor" | "unknown";
   triggersMatched?: number;
@@ -543,8 +544,15 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
               </div>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center p-4 border border-dashed border-border/20 rounded">
-              <p className="font-mono text-sm text-muted-foreground/50">NO SIGNAL</p>
+            <div className="h-full flex flex-col items-center justify-center p-4 border border-dashed border-border/20 rounded gap-1">
+              <p className="font-mono text-sm text-muted-foreground/50">
+                {spot.buoyId ? 'NO SIGNAL' : 'NO BUOY'}
+              </p>
+              {spot.buoyError && (
+                <p className="font-mono text-xs text-muted-foreground/30 text-center max-w-[200px]">
+                  {spot.buoyError}
+                </p>
+              )}
             </div>
           )}
         </div>
