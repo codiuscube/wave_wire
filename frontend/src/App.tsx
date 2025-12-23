@@ -31,69 +31,69 @@ function App() {
         <AuthProvider>
           <PushNotificationProvider>
             <ThemeProvider>
-            <Toaster position="bottom-center" richColors closeButton />
-            <LocationProvider>
-            <SurfTechLayout>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/investment" element={<InvestmentPage />} />
+              <Toaster position="bottom-center" richColors closeButton />
+              <LocationProvider>
+                <SurfTechLayout>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route path="/investment" element={<InvestmentPage />} />
 
-                {/* Protected Dashboard Routes */}
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <DashboardLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="/dashboard" element={<DashboardOverview />} />
-                  <Route path="/triggers" element={<TriggersPage />} />
-                  <Route path="/spots" element={<SpotPage />} />
-                  <Route path="/alerts" element={<AlertsPage />} />
-                  <Route path="/account" element={<AccountPage />} />
-                </Route>
+                    {/* Protected Dashboard Routes */}
+                    <Route
+                      element={
+                        <ProtectedRoute>
+                          <DashboardLayout />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route path="/dashboard" element={<DashboardOverview />} />
+                      <Route path="/triggers" element={<TriggersPage />} />
+                      <Route path="/spots" element={<SpotPage />} />
+                      <Route path="/alerts" element={<AlertsPage />} />
+                      <Route path="/account" element={<AccountPage />} />
+                    </Route>
 
-                {/* Admin Routes (protected by isAdmin check in component) */}
-                <Route path="/admin" element={<Navigate to="/admin/spots" replace />} />
-                <Route
-                  path="/admin/spots"
-                  element={
-                    <ProtectedRoute>
-                      <AdminSpotsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/spots/:id"
-                  element={
-                    <ProtectedRoute>
-                      <AdminSpotDetailPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/users"
-                  element={
-                    <ProtectedRoute>
-                      <UserManagementPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/investment"
-                  element={
-                    <ProtectedRoute>
-                      <InvestmentPage />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </SurfTechLayout>
-            </LocationProvider>
+                    {/* Admin Routes (protected by isAdmin check in component) */}
+                    <Route path="/admin" element={<Navigate to="/admin/spots" replace />} />
+                    <Route
+                      path="/admin/spots"
+                      element={
+                        <ProtectedRoute>
+                          <AdminSpotsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/spots/:id"
+                      element={
+                        <ProtectedRoute>
+                          <AdminSpotDetailPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/users"
+                      element={
+                        <ProtectedRoute>
+                          <UserManagementPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/investment"
+                      element={
+                        <ProtectedRoute>
+                          <InvestmentPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </SurfTechLayout>
+              </LocationProvider>
             </ThemeProvider>
           </PushNotificationProvider>
         </AuthProvider>

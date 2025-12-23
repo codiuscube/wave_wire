@@ -31,16 +31,24 @@ export interface SpotLocalsKnowledge {
 }
 
 // Wave model types - these must match Open-Meteo Marine API parameter values
-// Only includes models verified to work with the API
+// Verified from: https://open-meteo.com/en/docs/marine-weather-api
 export type WaveModel =
   | 'best_match'
+  | 'ncep_gfswave025'
+  | 'ncep_gfswave016'
   | 'ecmwf_wam'
-  | 'meteofrance_wave';
+  | 'meteofrance_wave'
+  | 'ewam'
+  | 'gwam';
 
 export const WAVE_MODEL_OPTIONS: { value: WaveModel; label: string; description: string }[] = [
   { value: 'best_match', label: 'Best Match (Recommended)', description: 'Automatically picks the best model for your spot\'s location' },
+  { value: 'ncep_gfswave025', label: 'GFS Wave (US)', description: 'NOAA model. Best for US coasts, updates every 6 hours' },
+  { value: 'ncep_gfswave016', label: 'GFS Wave High-Res (US)', description: 'Higher resolution NOAA model. Better coastal detail for US' },
   { value: 'ecmwf_wam', label: 'ECMWF WAM', description: 'European model with high accuracy. Excellent for Atlantic swells' },
   { value: 'meteofrance_wave', label: 'MeteoFrance Wave', description: 'French model, strong for European Atlantic and Mediterranean' },
+  { value: 'ewam', label: 'DWD Europe', description: 'German regional model. Best for North Sea and Baltic spots' },
+  { value: 'gwam', label: 'DWD Global', description: 'German global model. Good general coverage worldwide' },
 ];
 
 export interface TriggerTier {
