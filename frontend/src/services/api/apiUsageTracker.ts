@@ -139,7 +139,7 @@ export function checkRateLimitStatus(usage: {
       warningLevel = 'critical';
       limitingFactor = check.name;
       break;
-    } else if (check.percent >= 70 && warningLevel !== 'critical') {
+    } else if (check.percent >= 70 && warningLevel === 'ok') {
       warningLevel = 'warning';
       limitingFactor = check.name;
     }

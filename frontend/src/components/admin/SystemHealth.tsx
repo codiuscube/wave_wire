@@ -510,7 +510,7 @@ function calculateOpenMeteoUsage(stats: SystemStats): OpenMeteoUsage {
   };
 }
 
-function getOpenMeteoWarningLevel(usage: OpenMeteoUsage): WarningLevel {
+function _getOpenMeteoWarningLevel(usage: OpenMeteoUsage): WarningLevel {
   // Check if any limit is critical (>= 90%)
   if (usage.minutePercent >= 90 || usage.hourPercent >= 90 ||
       usage.dayPercent >= 90 || usage.monthPercent >= 90) {
@@ -524,7 +524,7 @@ function getOpenMeteoWarningLevel(usage: OpenMeteoUsage): WarningLevel {
   return 'ok';
 }
 
-function getOpenMeteoWarningMessage(level: WarningLevel, usage: OpenMeteoUsage): string {
+function _getOpenMeteoWarningMessage(level: WarningLevel, usage: OpenMeteoUsage): string {
   const criticalLimits: string[] = [];
   const warningLimits: string[] = [];
 
