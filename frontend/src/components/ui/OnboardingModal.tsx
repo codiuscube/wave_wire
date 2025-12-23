@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { VerifiedCheck, AltArrowRight, Home, MapPoint, Bolt, Water } from '@solar-icons/react';
 import { Button } from "./Button";
-import { Input } from "./Input";
 import { Sheet } from "./Sheet";
+import { AddressAutocomplete } from "./AddressAutocomplete";
+import type { AddressSuggestion } from "../../services/api/addressService";
 import { AddSpotContent } from "./AddSpotContent";
 import { TriggerForm } from "./TriggerForm";
 import { useUserSpots, useProfile } from "../../hooks";
@@ -69,6 +70,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
     const [step, setStep] = useState<OnboardingStep>("welcome");
     const [address, setAddress] = useState("");
+    const [homeLat, setHomeLat] = useState<number | null>(null);
+    const [homeLon, setHomeLon] = useState<number | null>(null);
     const [createdSpotId, setCreatedSpotId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -78,6 +81,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
         const { error: updateError } = await updateProfile({
             homeAddress: address,
+            homeLat: homeLat,
+            homeLon: homeLon,
         });
 
         setLoading(false);
@@ -191,11 +196,14 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Home Address</label>
-                                <Input
+                                <AddressAutocomplete
                                     value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
-                                    placeholder="e.g., 123 Surf St, Santa Cruz, CA"
-                                    autoFocus
+                                    onChange={setAddress}
+                                    onAddressSelect={(suggestion: AddressSuggestion) => {
+                                        setHomeLat(suggestion.lat);
+                                        setHomeLon(suggestion.lon);
+                                    }}
+                                    placeholder="Start typing your address..."
                                 />
                             </div>
                             <Button

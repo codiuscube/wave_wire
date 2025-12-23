@@ -220,6 +220,7 @@ export function DirectionSelector({
             <div
                 ref={containerRef}
                 className="relative w-48 h-48 sm:w-56 sm:h-56 touch-none"
+                data-vaul-no-drag
             >
                 {/* Background Circle */}
                 <div className="absolute inset-0 rounded-full border-2 border-dashed border-zinc-800" />

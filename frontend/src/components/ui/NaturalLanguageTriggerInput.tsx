@@ -84,9 +84,9 @@ export function NaturalLanguageTriggerInput({
       </Drawer.Trigger>
 
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[60]" />
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-[110]" />
         <Drawer.Content
-          className="right-0 sm:right-2 top-0 sm:top-2 bottom-0 sm:bottom-2 fixed outline-none flex w-full sm:w-[400px] lg:w-[450px] z-[61]"
+          className="right-0 sm:right-2 top-0 sm:top-2 bottom-0 sm:bottom-2 fixed outline-none flex w-full sm:w-[400px] lg:w-[450px] z-[111]"
           style={{
             '--initial-transform': 'calc(100% + 8px)',
           } as React.CSSProperties}
