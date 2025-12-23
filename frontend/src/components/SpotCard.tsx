@@ -8,7 +8,7 @@ import { useTideData, useUserPreferences } from "../hooks";
 import { useAuth } from "../contexts/AuthContext";
 import { TideChart } from "./TideChart";
 import type { WaveModel } from "../types";
-import { WAVE_MODEL_OPTIONS } from "../types";
+import { getWaveModelsForLocation } from "../types";
 
 // Scrambled placeholder text generator for skeleton loading
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -116,12 +116,22 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
   const { preferences, update: updatePreferences } = useUserPreferences(user?.id);
   const [selectedModel, setSelectedModel] = useState<WaveModel>('best_match');
 
+  // Get wave models available for this spot's location
+  const availableModels = useMemo(() => {
+    if (spot.lat === undefined || spot.lon === undefined) {
+      return getWaveModelsForLocation(0, 0); // Default to global models
+    }
+    return getWaveModelsForLocation(spot.lat, spot.lon);
+  }, [spot.lat, spot.lon]);
+
   // Initialize model from user preferences when loaded
   useEffect(() => {
     if (preferences?.defaultWaveModel) {
-      setSelectedModel(preferences.defaultWaveModel as WaveModel);
+      // Only use the saved preference if it's available for this location
+      const isAvailable = availableModels.some(m => m.value === preferences.defaultWaveModel);
+      setSelectedModel(isAvailable ? preferences.defaultWaveModel as WaveModel : 'best_match');
     }
-  }, [preferences?.defaultWaveModel]);
+  }, [preferences?.defaultWaveModel, availableModels]);
 
   // Track if user has explicitly changed the model (vs initial load)
   const [userChangedModel, setUserChangedModel] = useState(false);
@@ -333,7 +343,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
           <div className="mb-4 border-l-2  border-muted pl-3 space-y-2">
             <div className="flex gap-4">
               <Select
-                options={WAVE_MODEL_OPTIONS.map(m => ({
+                options={availableModels.map(m => ({
                   value: m.value,
                   label: m.label,
                   shortLabel: m.value === 'best_match' ? 'BEST MATCH' : m.label.toUpperCase().replace(' WAVE', '').replace('METEO', 'MF').replace('REANALYSIS', '')

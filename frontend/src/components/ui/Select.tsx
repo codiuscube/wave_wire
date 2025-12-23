@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AltArrowDown } from '@solar-icons/react';
 
 interface Option {
@@ -27,19 +28,36 @@ export function Select({
   disabled = false
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const ref = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(opt => opt.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      if (
+        ref.current && !ref.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        minWidth: Math.max(rect.width, 160),
+      });
+    }
+  }, [isOpen]);
 
   const baseButtonClasses = "flex items-center justify-between transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-50";
   const variantClasses = variant === 'default'
@@ -62,8 +80,12 @@ export function Select({
         <AltArrowDown weight="Bold" size={12} className={`opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-1 min-w-[160px] rounded-sm border border-border bg-popover p-1 shadow-md">
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="z-50 rounded-sm border border-border bg-popover p-1 shadow-md"
+        >
           {options.map((option) => (
             <button
               key={option.value}
@@ -78,7 +100,8 @@ export function Select({
               {option.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

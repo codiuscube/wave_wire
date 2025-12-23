@@ -51,6 +51,45 @@ export const WAVE_MODEL_OPTIONS: { value: WaveModel; label: string; description:
   { value: 'gwam', label: 'DWD Global', description: 'German global model. Good general coverage worldwide' },
 ];
 
+/**
+ * Returns wave models available for a given location.
+ * Filters out regional models that don't have coverage for the coordinates.
+ *
+ * Coverage regions:
+ * - best_match, ecmwf_wam, gwam: Global (always available)
+ * - ncep_gfswave025/016: Americas & Pacific (lon < -30° or lon > 100°)
+ * - meteofrance_wave: European Atlantic & Med (lat 20-75°, lon -40° to 45°)
+ * - ewam: North Sea & Baltic (lat 45-70°, lon -15° to 35°)
+ */
+export function getWaveModelsForLocation(lat: number, lon: number): typeof WAVE_MODEL_OPTIONS {
+  return WAVE_MODEL_OPTIONS.filter(option => {
+    switch (option.value) {
+      // Global models - always available
+      case 'best_match':
+      case 'ecmwf_wam':
+      case 'gwam':
+        return true;
+
+      // NOAA GFS - Americas and Pacific
+      case 'ncep_gfswave025':
+      case 'ncep_gfswave016':
+        // Western hemisphere (Americas) or Western Pacific
+        return lon < -30 || lon > 100;
+
+      // MeteoFrance - European Atlantic and Mediterranean
+      case 'meteofrance_wave':
+        return lat >= 20 && lat <= 75 && lon >= -40 && lon <= 45;
+
+      // DWD EWAM - North Sea and Baltic (narrow regional)
+      case 'ewam':
+        return lat >= 45 && lat <= 70 && lon >= -15 && lon <= 35;
+
+      default:
+        return true;
+    }
+  });
+}
+
 export interface TriggerTier {
   id: string;
   name: string;

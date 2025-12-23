@@ -9,7 +9,7 @@ import { SegmentedControl } from "./SegmentedControl";
 import { DirectionSelector } from "./DirectionSelector";
 import { NaturalLanguageTriggerInput } from "./NaturalLanguageTriggerInput";
 import type { TriggerTier, SurfSpot, WaveModel } from "../../types";
-import { WAVE_MODEL_OPTIONS } from "../../types";
+import { getWaveModelsForLocation, WAVE_MODEL_OPTIONS } from "../../types";
 import { getOffshoreWindow, getSwellWindow } from "../../data/noaaBuoys";
 import { generateTriggerSummary, getTideLabel } from "../../lib/triggerUtils";
 
@@ -368,6 +368,14 @@ export function TriggerForm({
     const [defaultMinSwell, defaultMaxSwell] = spot
         ? getSwellWindow(spot.region, spot.country, spot.lat)
         : [0, 360];
+
+    // Get wave models available for this spot's location
+    const availableModels = useMemo(() => {
+        if (!spot?.lat || !spot?.lon) {
+            return WAVE_MODEL_OPTIONS; // Fall back to all models if no coordinates
+        }
+        return getWaveModelsForLocation(spot.lat, spot.lon);
+    }, [spot?.lat, spot?.lon]);
 
     const [trigger, setTrigger] = useState<Partial<TriggerTier>>({
         name: "",
@@ -1007,7 +1015,7 @@ export function TriggerForm({
                             <Select
                                 value={trigger.waveModel || 'best_match'}
                                 onChange={(val) => setTrigger(prev => ({ ...prev, waveModel: val as WaveModel }))}
-                                options={WAVE_MODEL_OPTIONS.map(m => ({
+                                options={availableModels.map(m => ({
                                     value: m.value,
                                     label: m.label
                                 }))}
