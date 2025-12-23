@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Bolt, QuestionCircle, AddCircle, CloseCircle, HamburgerMenu, AltArrowDown } from '@solar-icons/react';
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Bolt, QuestionCircle, AddCircle, CloseCircle, HamburgerMenu, AltArrowDown, History } from '@solar-icons/react';
 import { Reorder, useDragControls, AnimatePresence, motion } from "framer-motion";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -8,10 +9,14 @@ import { DualSlider } from "./DualSlider";
 import { SegmentedControl } from "./SegmentedControl";
 import { DirectionSelector } from "./DirectionSelector";
 import { NaturalLanguageTriggerInput } from "./NaturalLanguageTriggerInput";
+import { SessionPicker } from "./SessionPicker";
 import type { TriggerTier, SurfSpot, WaveModel } from "../../types";
 import { getWaveModelsForLocation, WAVE_MODEL_OPTIONS } from "../../types";
 import { getOffshoreWindow, getSwellWindow } from "../../data/noaaBuoys";
 import { generateTriggerSummary, getTideLabel } from "../../lib/triggerUtils";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSurfSessions } from "../../hooks";
+import type { SurfSession } from "../../lib/mappers";
 
 const emojiOptions = [
     { value: "🔥", label: "🔥 Fire" },
@@ -340,6 +345,52 @@ function DraggableField({ field, fieldConfig, onRemove }: DraggableFieldProps) {
     );
 }
 
+// Convert surf session conditions to trigger parameters with appropriate ranges
+function sessionToTriggerParams(session: SurfSession): Partial<TriggerTier> {
+    const c = session.conditions;
+    if (!c) return {};
+
+    const params: Partial<TriggerTier> = {};
+
+    // Wave height: session value -1 to +2 ft
+    if (c.waveHeight != null) {
+        params.minHeight = Math.max(0, c.waveHeight - 1);
+        params.maxHeight = Math.min(15, c.waveHeight + 2);
+    }
+
+    // Wave period: session value -2 to +2 s
+    if (c.wavePeriod != null) {
+        params.minPeriod = Math.max(0, c.wavePeriod - 2);
+        params.maxPeriod = Math.min(25, c.wavePeriod + 2);
+    }
+
+    // Swell direction: session value +/- 22 degrees (one compass point)
+    if (c.swellDirection != null) {
+        params.minSwellDirection = (c.swellDirection - 22 + 360) % 360;
+        params.maxSwellDirection = (c.swellDirection + 22) % 360;
+    }
+
+    // Wind speed: session value + 5 mph headroom (allow up to this wind)
+    if (c.windSpeed != null) {
+        params.minWindSpeed = 0;
+        params.maxWindSpeed = Math.min(35, c.windSpeed + 5);
+    }
+
+    // Tide state from session
+    if (c.tideState) {
+        params.tideType = c.tideState;
+    }
+
+    // Set condition based on session quality
+    if (session.quality === 'epic') {
+        params.condition = 'epic';
+    } else if (session.quality === 'good') {
+        params.condition = 'good';
+    }
+
+    return params;
+}
+
 interface TriggerFormProps {
     initialData?: TriggerTier;
     spotId: string;
@@ -347,6 +398,7 @@ interface TriggerFormProps {
     lockedCondition?: 'epic' | 'good' | 'fair';
     autofillData?: Partial<TriggerTier>;
     onSubmit: (trigger: TriggerTier) => void;
+    onCancel?: () => void;
     className?: string;
 }
 
@@ -355,6 +407,7 @@ export function TriggerForm({
     spotId,
     spot,
     onSubmit,
+    onCancel,
     lockedCondition,
     autofillData,
     className = "",
@@ -376,6 +429,11 @@ export function TriggerForm({
         }
         return getWaveModelsForLocation(spot.lat, spot.lon);
     }, [spot?.lat, spot?.lon]);
+
+    // Get user's surf sessions for "Fill from Session" feature
+    const { user } = useAuth();
+    const { sessions: allSessions } = useSurfSessions(user?.id, spotId);
+    const [isSessionPickerOpen, setIsSessionPickerOpen] = useState(false);
 
     const [trigger, setTrigger] = useState<Partial<TriggerTier>>({
         name: "",
@@ -431,6 +489,21 @@ export function TriggerForm({
         const hasBuoyTrigger = initialData?.buoyTriggerEnabled;
         return !!(hasCustomModel || hasBuoyTrigger);
     });
+
+    // Tooltip state for notification message help icon
+    const [messageTooltipVisible, setMessageTooltipVisible] = useState(false);
+    const [messageTooltipStyle, setMessageTooltipStyle] = useState<React.CSSProperties>({});
+    const messageTooltipRef = useRef<HTMLDivElement>(null);
+
+    const handleMessageTooltipEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMessageTooltipStyle({
+            position: 'fixed',
+            bottom: window.innerHeight - rect.top + 8,
+            right: window.innerWidth - rect.right,
+        });
+        setMessageTooltipVisible(true);
+    };
 
     const toggleWind = (expanded: boolean) => {
         setWindExpanded(expanded);
@@ -722,17 +795,44 @@ export function TriggerForm({
         }
     }, []);
 
+    // Handler for "Fill from Session" selection
+    const handleSessionSelect = useCallback((session: SurfSession) => {
+        const params = sessionToTriggerParams(session);
+        setTrigger(prev => ({ ...prev, ...params }));
+
+        // Auto-expand sections based on what was filled
+        if (params.minWindSpeed !== undefined || params.maxWindSpeed !== undefined) {
+            setWindExpanded(true);
+        }
+        if (params.tideType !== undefined && params.tideType !== 'any') {
+            setTideExpanded(true);
+        }
+    }, []);
+
     return (
         <div className={`flex flex-col h-full bg-card ${className}`}>
             <div className="flex-1 overflow-y-auto p-6 pb-32 space-y-8 min-h-0">
-                {/* AI Assistant - Only for new triggers */}
+                {/* AI Assistant & Fill from Session - Only for new triggers */}
                 {!initialData && (
-                    <NaturalLanguageTriggerInput
-                        spotName={spotName}
-                        spotRegion={spot?.region}
-                        spotId={spot?.id}
-                        onParsed={handleAIParsed}
-                    />
+                    <div className="space-y-3">
+                        <NaturalLanguageTriggerInput
+                            spotName={spotName}
+                            spotRegion={spot?.region}
+                            spotId={spot?.id}
+                            onParsed={handleAIParsed}
+                        />
+                        {/* Fill from Session button - only show if user has sessions for this spot */}
+                        {allSessions.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setIsSessionPickerOpen(true)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-border bg-secondary/20 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                            >
+                                <History size={16} weight="Bold" />
+                                <span className="text-sm font-medium">Fill from Past Session</span>
+                            </button>
+                        )}
+                    </div>
                 )}
 
                 {/* Basic Info */}
@@ -1121,11 +1221,22 @@ export function TriggerForm({
                             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs">7</span>
                             Notification Message
                         </h3>
-                        <div className="group relative">
-                            <QuestionCircle weight="Bold" size={16} className="text-muted-foreground cursor-help" />
-                            <div className="absolute right-0 bottom-full mb-2 w-64 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg hidden group-hover:block z-50 border">
-                                Customize the text message you'll receive when this trigger fires.
-                            </div>
+                        <div
+                            ref={messageTooltipRef}
+                            className="relative cursor-help"
+                            onMouseEnter={handleMessageTooltipEnter}
+                            onMouseLeave={() => setMessageTooltipVisible(false)}
+                        >
+                            <QuestionCircle weight="Bold" size={16} className="text-muted-foreground" />
+                            {messageTooltipVisible && createPortal(
+                                <div
+                                    style={messageTooltipStyle}
+                                    className="w-64 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg z-50 border"
+                                >
+                                    Customize the text message you'll receive when this trigger fires.
+                                </div>,
+                                document.body
+                            )}
                         </div>
                     </div>
 
@@ -1259,8 +1370,28 @@ export function TriggerForm({
                         <Bolt weight="Bold" size={16} className="mr-2" />
                         {initialData ? "Save Changes" : "Create Trigger"}
                     </Button>
+
+                    {onCancel && (
+                        <Button
+                            className="w-full"
+                            variant="ghost"
+                            onClick={onCancel}
+                            size="lg"
+                        >
+                            Cancel
+                        </Button>
+                    )}
                 </div>
             </div>
+
+            {/* Session Picker Modal */}
+            <SessionPicker
+                isOpen={isSessionPickerOpen}
+                onClose={() => setIsSessionPickerOpen(false)}
+                onSelect={handleSessionSelect}
+                sessions={allSessions}
+                spotName={spotName}
+            />
         </div >
     );
 }

@@ -21,7 +21,9 @@ import {
   AdminSpotsPage,
   AdminSpotDetailPage,
   UserManagementPage,
+  SystemHealthPage,
   InvestmentPage,
+  SurfLogPage,
 } from './pages';
 
 function App() {
@@ -53,6 +55,7 @@ function App() {
                       <Route path="/dashboard" element={<DashboardOverview />} />
                       <Route path="/triggers" element={<TriggersPage />} />
                       <Route path="/spots" element={<SpotPage />} />
+                      <Route path="/surf-log" element={<SurfLogPage />} />
                       <Route path="/alerts" element={<AlertsPage />} />
                       <Route path="/account" element={<AccountPage />} />
                     </Route>
@@ -80,6 +83,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <UserManagementPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/health"
+                      element={
+                        <ProtectedRoute>
+                          <SystemHealthPage />
                         </ProtectedRoute>
                       }
                     />

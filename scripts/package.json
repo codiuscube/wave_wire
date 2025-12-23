@@ -5,11 +5,14 @@
   "private": true,
   "scripts": {
     "alerts": "tsx run-alerts.ts",
-    "test-eval": "tsx test-evaluator.ts"
+    "test-eval": "tsx test-evaluator.ts",
+    "compute-ocean-coords": "tsx compute-ocean-coords.ts",
+    "apply-ocean-coords": "tsx apply-ocean-coords.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@supabase/supabase-js": "^2.47.2",
+    "dotenv": "^17.2.3",
     "onesignal-node": "^3.4.0",
     "resend": "^4.0.1"
   },

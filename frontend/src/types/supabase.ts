@@ -162,6 +162,33 @@ export type Database = {
           },
         ]
       }
+      api_usage: {
+        Row: {
+          call_count: number
+          endpoint: string | null
+          id: string
+          recorded_at: string
+          service: string
+          source: string | null
+        }
+        Insert: {
+          call_count?: number
+          endpoint?: string | null
+          id?: string
+          recorded_at?: string
+          service: string
+          source?: string | null
+        }
+        Update: {
+          call_count?: number
+          endpoint?: string | null
+          id?: string
+          recorded_at?: string
+          service?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -429,6 +456,70 @@ export type Database = {
           },
         ]
       }
+      surf_sessions: {
+        Row: {
+          conditions: Json | null
+          created_at: string | null
+          crowd: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          quality: string
+          session_date: string
+          spot_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string | null
+          crowd: string
+          duration_minutes: number
+          id?: string
+          notes?: string | null
+          quality: string
+          session_date: string
+          spot_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string | null
+          crowd?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          quality?: string
+          session_date?: string
+          spot_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surf_sessions_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "user_spots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surf_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_user_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surf_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       surf_spots: {
         Row: {
           buoy_id: string | null
@@ -441,6 +532,8 @@ export type Database = {
           locals_knowledge: Json | null
           lon: number
           name: string
+          ocean_lat: number | null
+          ocean_lon: number | null
           region: string
           source: string | null
           submitted_by: string | null
@@ -458,6 +551,8 @@ export type Database = {
           locals_knowledge?: Json | null
           lon: number
           name: string
+          ocean_lat?: number | null
+          ocean_lon?: number | null
           region: string
           source?: string | null
           submitted_by?: string | null
@@ -475,6 +570,8 @@ export type Database = {
           locals_knowledge?: Json | null
           lon?: number
           name?: string
+          ocean_lat?: number | null
+          ocean_lon?: number | null
           region?: string
           source?: string | null
           submitted_by?: string | null
@@ -761,6 +858,8 @@ export type Database = {
           longitude: number | null
           master_spot_id: string | null
           name: string
+          ocean_lat: number | null
+          ocean_lon: number | null
           region: string | null
           sort_order: number | null
           updated_at: string | null
@@ -776,6 +875,8 @@ export type Database = {
           longitude?: number | null
           master_spot_id?: string | null
           name: string
+          ocean_lat?: number | null
+          ocean_lon?: number | null
           region?: string | null
           sort_order?: number | null
           updated_at?: string | null
@@ -791,6 +892,8 @@ export type Database = {
           longitude?: number | null
           master_spot_id?: string | null
           name?: string
+          ocean_lat?: number | null
+          ocean_lon?: number | null
           region?: string | null
           sort_order?: number | null
           updated_at?: string | null
@@ -879,12 +982,33 @@ export type Database = {
         }
         Relationships: []
       }
+      api_usage_stats: {
+        Row: {
+          calls_last_30_days: number | null
+          calls_last_day: number | null
+          calls_last_hour: number | null
+          calls_last_minute: number | null
+          last_call_at: string | null
+          service: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cleanup_old_api_usage: { Args: never; Returns: undefined }
       email_has_account: { Args: { check_email: string }; Returns: boolean }
       generate_referral_code: { Args: never; Returns: string }
       get_referrer_id: { Args: { code: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      log_api_usage: {
+        Args: {
+          p_call_count?: number
+          p_endpoint?: string
+          p_service: string
+          p_source?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

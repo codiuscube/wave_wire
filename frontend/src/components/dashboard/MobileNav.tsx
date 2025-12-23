@@ -9,7 +9,8 @@ import {
     Database,
     ChartSquare,
     UsersGroupRounded,
-    Logout
+    Logout,
+    History,
 } from "@solar-icons/react";
 import { useState, useRef } from "react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,6 +24,7 @@ const navItems = [
     { to: "/dashboard", icon: Water, label: "Overview", end: true },
     { to: "/spots", icon: MapPoint, label: "Spots" },
     { to: "/triggers", icon: Bolt, label: "Triggers" },
+    { to: "/surf-log", icon: History, label: "Log" },
     { to: "/alerts", icon: ChatRoundDots, label: "Alerts" },
 ];
 

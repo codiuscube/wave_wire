@@ -1,15 +1,36 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import {
+  getOpenMeteoUsage,
+  checkRateLimitStatus,
+  OPENMETEO_LIMITS,
+} from '../../services/api/apiUsageTracker';
 
 interface SystemStats {
   userCount: number;
   triggerCount: number;
   uniqueSpotsWithTriggers: number;
   alertsSent30Days: number;
+  totalSpots: number;
+}
+
+interface ActualApiUsage {
+  callsLastMinute: number;
+  callsLastHour: number;
+  callsLastDay: number;
+  callsLast30Days: number;
+  lastCallAt: Date | null;
+  minutePercent: number;
+  hourPercent: number;
+  dayPercent: number;
+  monthPercent: number;
+  warningLevel: 'ok' | 'warning' | 'critical';
+  limitingFactor: string | null;
 }
 
 export function SystemHealth() {
   const [stats, setStats] = useState<SystemStats | null>(null);
+  const [actualUsage, setActualUsage] = useState<ActualApiUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,13 +40,15 @@ export function SystemHealth() {
       setError(null);
 
       try {
-        // Fetch counts in parallel
-        const [usersResult, triggersResult, spotsResult, alertsResult] = await Promise.all([
+        // Fetch counts and API usage in parallel
+        const [usersResult, triggersResult, spotsResult, alertsResult, totalSpotsResult, openMeteoUsageData] = await Promise.all([
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
           supabase.from('triggers').select('id', { count: 'exact', head: true }).eq('enabled', true),
           supabase.from('triggers').select('spot_id').eq('enabled', true),
           supabase.from('sent_alerts').select('id', { count: 'exact', head: true })
             .gte('sent_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+          supabase.from('surf_spots').select('id', { count: 'exact', head: true }),
+          getOpenMeteoUsage(),
         ]);
 
         // Count unique spots
@@ -36,6 +59,14 @@ export function SystemHealth() {
           triggerCount: triggersResult.count ?? 0,
           uniqueSpotsWithTriggers: uniqueSpots,
           alertsSent30Days: alertsResult.count ?? 0,
+          totalSpots: totalSpotsResult.count ?? 0,
+        });
+
+        // Process actual API usage
+        const rateLimitStatus = checkRateLimitStatus(openMeteoUsageData);
+        setActualUsage({
+          ...openMeteoUsageData,
+          ...rateLimitStatus,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load stats');
@@ -45,10 +76,16 @@ export function SystemHealth() {
     }
 
     fetchStats();
+
+    // Refresh every 30 seconds to keep usage data current
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Calculate estimated GitHub Actions usage
   const estimatedUsage = stats ? calculateGitHubActionsUsage(stats) : null;
+  // Calculate estimated OpenMeteo API usage (for comparison)
+  const estimatedOpenMeteo = stats ? calculateOpenMeteoUsage(stats) : null;
 
   if (loading) {
     return (
@@ -73,6 +110,16 @@ export function SystemHealth() {
 
   const warningLevel = getWarningLevel(estimatedUsage.percentUsed);
 
+  // Format relative time for last API call
+  const formatLastCall = (date: Date | null): string => {
+    if (!date) return 'No data yet';
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+  };
+
   return (
     <div className="p-6 border border-border/30 bg-card/60">
       <h3 className="font-mono text-base tracking-widest text-muted-foreground uppercase mb-6">
@@ -87,10 +134,160 @@ export function SystemHealth() {
         <StatBox label="Alerts (30d)" value={stats.alertsSent30Days} />
       </div>
 
+      {/* OpenMeteo API Usage Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-mono text-sm tracking-wider text-muted-foreground uppercase">
+            Open-Meteo API Usage (Free Tier)
+          </h4>
+          <div className="flex items-center gap-4">
+            {actualUsage?.lastCallAt && (
+              <span className="text-xs font-mono text-muted-foreground">
+                Last call: {formatLastCall(actualUsage.lastCallAt)}
+              </span>
+            )}
+            <a
+              href="https://open-meteo.com/en/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-mono text-primary/70 hover:text-primary underline"
+            >
+              Terms of Use
+            </a>
+          </div>
+        </div>
+
+        {/* Actual Usage (if available) or Estimated */}
+        {actualUsage && (actualUsage.callsLastDay > 0 || actualUsage.callsLast30Days > 0) ? (
+          <>
+            {/* Actual Usage Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                Live Tracking
+              </span>
+            </div>
+
+            {/* OpenMeteo Rate Limit Bars - Actual Data */}
+            <div className="space-y-4">
+              <RateLimitBar
+                label="Per Minute"
+                current={actualUsage.callsLastMinute}
+                limit={OPENMETEO_LIMITS.perMinute}
+                warning={actualUsage.minutePercent >= 70}
+                critical={actualUsage.minutePercent >= 90}
+              />
+              <RateLimitBar
+                label="Per Hour"
+                current={actualUsage.callsLastHour}
+                limit={OPENMETEO_LIMITS.perHour}
+                warning={actualUsage.hourPercent >= 70}
+                critical={actualUsage.hourPercent >= 90}
+              />
+              <RateLimitBar
+                label="Per Day (24h)"
+                current={actualUsage.callsLastDay}
+                limit={OPENMETEO_LIMITS.perDay}
+                warning={actualUsage.dayPercent >= 70}
+                critical={actualUsage.dayPercent >= 90}
+              />
+              <RateLimitBar
+                label="Per Month (30d)"
+                current={actualUsage.callsLast30Days}
+                limit={OPENMETEO_LIMITS.perMonth}
+                warning={actualUsage.monthPercent >= 70}
+                critical={actualUsage.monthPercent >= 90}
+              />
+            </div>
+
+            {/* Warning Message */}
+            {actualUsage.warningLevel !== 'ok' && (
+              <div className={`mt-4 p-3 rounded ${getWarningBgColor(actualUsage.warningLevel)}`}>
+                <p className={`font-mono text-sm ${getWarningTextColor(actualUsage.warningLevel)}`}>
+                  {actualUsage.warningLevel === 'critical'
+                    ? `Critical: Approaching Open-Meteo ${actualUsage.limitingFactor} limit. Consider upgrading to a paid API plan.`
+                    : `Warning: ${actualUsage.limitingFactor} usage is elevated. Monitor closely.`}
+                </p>
+              </div>
+            )}
+
+            {/* Comparison with Estimates */}
+            {estimatedOpenMeteo && (
+              <div className="mt-4 p-3 bg-muted/20 rounded">
+                <p className="font-mono text-xs text-muted-foreground">
+                  <span className="font-semibold">Estimated daily:</span> ~{estimatedOpenMeteo.estimatedCallsPerDay.toLocaleString()} calls
+                  {' '}
+                  <span className="text-muted-foreground/60">
+                    ({estimatedOpenMeteo.triggerRuns} trigger runs × {estimatedOpenMeteo.callsPerRun} + ~{estimatedOpenMeteo.dashboardViewsPerDay} dashboard views)
+                  </span>
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* No tracking data yet - show estimates */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                Estimated (no tracking data yet)
+              </span>
+            </div>
+
+            {estimatedOpenMeteo && (
+              <>
+                <div className="space-y-4">
+                  <RateLimitBar
+                    label="Per Minute (peak)"
+                    current={estimatedOpenMeteo.peakCallsPerMinute}
+                    limit={OPENMETEO_LIMITS.perMinute}
+                    warning={estimatedOpenMeteo.minutePercent >= 70}
+                    critical={estimatedOpenMeteo.minutePercent >= 90}
+                  />
+                  <RateLimitBar
+                    label="Per Hour (avg)"
+                    current={estimatedOpenMeteo.estimatedCallsPerHour}
+                    limit={OPENMETEO_LIMITS.perHour}
+                    warning={estimatedOpenMeteo.hourPercent >= 70}
+                    critical={estimatedOpenMeteo.hourPercent >= 90}
+                  />
+                  <RateLimitBar
+                    label="Per Day (est)"
+                    current={estimatedOpenMeteo.estimatedCallsPerDay}
+                    limit={OPENMETEO_LIMITS.perDay}
+                    warning={estimatedOpenMeteo.dayPercent >= 70}
+                    critical={estimatedOpenMeteo.dayPercent >= 90}
+                  />
+                  <RateLimitBar
+                    label="Per Month (est)"
+                    current={estimatedOpenMeteo.estimatedCallsPerMonth}
+                    limit={OPENMETEO_LIMITS.perMonth}
+                    warning={estimatedOpenMeteo.monthPercent >= 70}
+                    critical={estimatedOpenMeteo.monthPercent >= 90}
+                  />
+                </div>
+
+                <div className="mt-4 p-3 bg-muted/20 rounded">
+                  <p className="font-mono text-xs text-muted-foreground">
+                    <span className="font-semibold">Estimation basis:</span> {estimatedOpenMeteo.triggerRuns} trigger runs/day × {estimatedOpenMeteo.callsPerRun} API calls/run + ~{estimatedOpenMeteo.dashboardViewsPerDay} dashboard views/day
+                  </p>
+                  <p className="font-mono text-xs text-muted-foreground/60 mt-1">
+                    Run the migration to enable live API tracking.
+                  </p>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
       {/* GitHub Actions Usage */}
       <div className="space-y-3">
+        <h4 className="font-mono text-sm tracking-wider text-muted-foreground uppercase mb-4">
+          GitHub Actions Usage
+        </h4>
         <div className="flex items-center justify-between text-sm">
-          <span className="font-mono text-muted-foreground">Est. GitHub Actions Usage</span>
+          <span className="font-mono text-muted-foreground">Est. Monthly Usage</span>
           <span className="font-mono">
             {estimatedUsage.estimatedMinutes.toLocaleString()} / 2,000 min
           </span>
@@ -117,6 +314,40 @@ export function SystemHealth() {
             </p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function RateLimitBar({
+  label,
+  current,
+  limit,
+  warning,
+  critical
+}: {
+  label: string;
+  current: number;
+  limit: number;
+  warning: boolean;
+  critical: boolean;
+}) {
+  const percent = Math.min((current / limit) * 100, 100);
+  const color = critical ? 'bg-destructive' : warning ? 'bg-yellow-500' : 'bg-primary';
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs font-mono">
+        <span className="text-muted-foreground">{label}</span>
+        <span className={critical ? 'text-destructive' : warning ? 'text-yellow-500' : ''}>
+          {current.toLocaleString()} / {limit.toLocaleString()}
+        </span>
+      </div>
+      <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-500 ${color}`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );
@@ -211,4 +442,111 @@ function getWarningMessage(level: WarningLevel, userCount: number): string {
     default:
       return '';
   }
+}
+
+// OpenMeteo Usage Calculation
+interface OpenMeteoUsage {
+  // Raw estimates
+  peakCallsPerMinute: number;
+  estimatedCallsPerHour: number;
+  estimatedCallsPerDay: number;
+  estimatedCallsPerMonth: number;
+  // Percentages
+  minutePercent: number;
+  hourPercent: number;
+  dayPercent: number;
+  monthPercent: number;
+  // For breakdown display
+  triggerRuns: number;
+  callsPerRun: number;
+  dashboardViewsPerDay: number;
+}
+
+function calculateOpenMeteoUsage(stats: SystemStats): OpenMeteoUsage {
+  // Each forecast fetch = 2 API calls (marine + weather)
+  const CALLS_PER_FORECAST = 2;
+
+  // Background trigger evaluation runs (every 2 hours during daytime = ~10 runs/day)
+  const TRIGGER_RUNS_PER_DAY = 10;
+
+  // Each trigger run fetches forecasts for all unique spots with triggers
+  const callsPerTriggerRun = stats.uniqueSpotsWithTriggers * CALLS_PER_FORECAST;
+
+  // Dashboard viewing estimates:
+  // - Assume 20% of users view dashboard daily
+  // - Each dashboard view loads ~3 spots on average
+  // - Users may reload 2-3 times per session
+  const activeUsersPerDay = Math.ceil(stats.userCount * 0.2);
+  const avgSpotsPerUser = Math.min(3, stats.totalSpots / Math.max(stats.userCount, 1));
+  const reloadsPerSession = 2;
+  const dashboardCallsPerDay = activeUsersPerDay * avgSpotsPerUser * reloadsPerSession * CALLS_PER_FORECAST;
+
+  // Total daily calls
+  const triggerCallsPerDay = TRIGGER_RUNS_PER_DAY * callsPerTriggerRun;
+  const estimatedCallsPerDay = triggerCallsPerDay + dashboardCallsPerDay;
+
+  // Hourly estimate (spread across 12 active hours)
+  const estimatedCallsPerHour = Math.ceil(estimatedCallsPerDay / 12);
+
+  // Monthly estimate
+  const estimatedCallsPerMonth = estimatedCallsPerDay * 30;
+
+  // Peak minute estimate (worst case: all trigger fetches at once + some dashboard)
+  // Trigger run happens in parallel, so all spot fetches happen in the same minute
+  const peakCallsPerMinute = callsPerTriggerRun + Math.ceil(dashboardCallsPerDay / (12 * 60));
+
+  return {
+    peakCallsPerMinute,
+    estimatedCallsPerHour,
+    estimatedCallsPerDay: Math.round(estimatedCallsPerDay),
+    estimatedCallsPerMonth: Math.round(estimatedCallsPerMonth),
+    minutePercent: (peakCallsPerMinute / OPENMETEO_LIMITS.perMinute) * 100,
+    hourPercent: (estimatedCallsPerHour / OPENMETEO_LIMITS.perHour) * 100,
+    dayPercent: (estimatedCallsPerDay / OPENMETEO_LIMITS.perDay) * 100,
+    monthPercent: (estimatedCallsPerMonth / OPENMETEO_LIMITS.perMonth) * 100,
+    triggerRuns: TRIGGER_RUNS_PER_DAY,
+    callsPerRun: callsPerTriggerRun,
+    dashboardViewsPerDay: Math.round(dashboardCallsPerDay / CALLS_PER_FORECAST),
+  };
+}
+
+function getOpenMeteoWarningLevel(usage: OpenMeteoUsage): WarningLevel {
+  // Check if any limit is critical (>= 90%)
+  if (usage.minutePercent >= 90 || usage.hourPercent >= 90 ||
+      usage.dayPercent >= 90 || usage.monthPercent >= 90) {
+    return 'critical';
+  }
+  // Check if any limit is warning (>= 70%)
+  if (usage.minutePercent >= 70 || usage.hourPercent >= 70 ||
+      usage.dayPercent >= 70 || usage.monthPercent >= 70) {
+    return 'warning';
+  }
+  return 'ok';
+}
+
+function getOpenMeteoWarningMessage(level: WarningLevel, usage: OpenMeteoUsage): string {
+  const criticalLimits: string[] = [];
+  const warningLimits: string[] = [];
+
+  if (usage.minutePercent >= 90) criticalLimits.push('per-minute');
+  else if (usage.minutePercent >= 70) warningLimits.push('per-minute');
+
+  if (usage.hourPercent >= 90) criticalLimits.push('hourly');
+  else if (usage.hourPercent >= 70) warningLimits.push('hourly');
+
+  if (usage.dayPercent >= 90) criticalLimits.push('daily');
+  else if (usage.dayPercent >= 70) warningLimits.push('daily');
+
+  if (usage.monthPercent >= 90) criticalLimits.push('monthly');
+  else if (usage.monthPercent >= 70) warningLimits.push('monthly');
+
+  if (level === 'critical') {
+    return `Critical: Approaching Open-Meteo ${criticalLimits.join(', ')} limit(s). Consider upgrading to a paid API plan or implementing request caching/batching.`;
+  }
+
+  if (level === 'warning') {
+    return `Warning: ${warningLimits.join(', ')} usage is elevated. Monitor closely and consider optimization strategies.`;
+  }
+
+  return '';
 }

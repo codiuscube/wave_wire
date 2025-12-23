@@ -323,6 +323,52 @@ CREATE INDEX idx_trigger_matches_user ON public.trigger_matches(user_id);
 
 ---
 
+### `surf_sessions`
+
+User's logged surf sessions with auto-fetched conditions.
+
+```sql
+CREATE TABLE public.surf_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  spot_id UUID NOT NULL REFERENCES public.user_spots(id) ON DELETE CASCADE,
+  session_date TIMESTAMPTZ NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  quality TEXT NOT NULL CHECK (quality IN ('flat', 'poor', 'fair', 'good', 'epic')),
+  crowd TEXT NOT NULL CHECK (crowd IN ('empty', 'light', 'moderate', 'crowded', 'packed')),
+  notes TEXT,
+  conditions JSONB,  -- auto-fetched wave/wind/tide snapshot (typed as SessionConditions)
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for fast filtering
+CREATE INDEX idx_surf_sessions_user ON public.surf_sessions(user_id);
+CREATE INDEX idx_surf_sessions_spot ON public.surf_sessions(spot_id);
+CREATE INDEX idx_surf_sessions_date ON public.surf_sessions(session_date DESC);
+```
+
+**Conditions JSONB Schema (SessionConditions):**
+```typescript
+{
+  waveHeight: number | null;      // feet
+  wavePeriod: number | null;      // seconds
+  swellDirection: number | null;  // degrees (0-360)
+  windSpeed: number | null;       // mph
+  windDirection: number | null;   // degrees (0-360)
+  tideHeight: number | null;      // feet
+  tideState: 'rising' | 'falling' | null;
+  waterTemp: number | null;       // fahrenheit
+  fetchedAt: string;              // ISO timestamp
+  source: 'live' | 'historical';  // data source indicator
+}
+```
+
+**RLS Policies:**
+- Users can CRUD their own sessions
+
+---
+
 ## Cache Tables (Planned)
 
 ### `buoy_readings`
@@ -614,6 +660,7 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251223000001_add_wave_model_to_triggers.sql` | Add wave_model column to triggers for forecast model selection |
 | `20251223000002_add_default_wave_model.sql` | Add default_wave_model to user_preferences for dashboard display |
 | `20251223000003_add_buoy_trigger_fields.sql` | Add buoy trigger fields (buoy_trigger_enabled, buoy height/period ranges, buoy_trigger_mode) |
+| `20251223200001_create_surf_sessions.sql` | Add surf_sessions table for logging sessions with auto-fetched conditions |
 
 ---
 
@@ -630,5 +677,6 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | sent_alerts | Own | System | - | - |
 | trigger_matches | Own | Service role | Service role | - |
 | push_subscriptions | Own | Own | Own | Own |
+| surf_sessions | Own | Own | Own | Own |
 | waitlist | Admin only | Anyone | Admin only | Admin only |
 | admin_user_stats | Admin only | - | - | - |

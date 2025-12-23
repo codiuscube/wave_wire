@@ -85,6 +85,10 @@ export interface Spot {
   region?: string;
   lat?: number;
   lon?: number;
+  /** Offshore latitude for wave model queries (hits ocean grid point) */
+  oceanLat?: number;
+  /** Offshore longitude for wave model queries (hits ocean grid point) */
+  oceanLon?: number;
   buoyId?: string;
   buoyName?: string;
   buoy?: BuoyData;
@@ -165,13 +169,18 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
       return;
     }
 
+    // Use ocean coordinates if available (for coarse-grid models like GFS)
+    // Ocean coords are nudged offshore to hit valid ocean grid points
+    const queryLat = spot.oceanLat ?? spot.lat;
+    const queryLon = spot.oceanLon ?? spot.lon;
+
     let cancelled = false;
     setIsLoadingForecast(true);
     setForecastError(null);
 
-    console.log('[SpotCard] Fetching forecast with model:', selectedModel, 'time:', forecastTime);
+    console.log('[SpotCard] Fetching forecast with model:', selectedModel, 'time:', forecastTime, 'coords:', queryLat, queryLon);
 
-    fetchForecastDataForTime(spot.lat, spot.lon, forecastTime, selectedModel)
+    fetchForecastDataForTime(queryLat, queryLon, forecastTime, selectedModel)
       .then((result) => {
         if (!cancelled) {
           console.log('[SpotCard] Forecast result:', result.data?.primary);
@@ -193,7 +202,7 @@ export function SpotCard({ spot, buoyLoading = false, forecastLoading = false, h
     return () => {
       cancelled = true;
     };
-  }, [forecastTime, spot.lat, spot.lon, spot.forecast, selectedModel, userChangedModel]);
+  }, [forecastTime, spot.lat, spot.lon, spot.oceanLat, spot.oceanLon, spot.forecast, selectedModel, userChangedModel]);
 
   // Format last updated time
   const formatLastUpdated = (date: Date | null): string => {

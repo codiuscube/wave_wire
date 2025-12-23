@@ -37,6 +37,10 @@ export interface SurfSpot {
   name: string;
   lat: number;
   lon: number;
+  /** Offshore latitude for wave model queries (hits ocean grid point) */
+  oceanLat?: number | null;
+  /** Offshore longitude for wave model queries (hits ocean grid point) */
+  oceanLon?: number | null;
   region: string;
   countryGroup: 'USA' | 'Mexico' | 'Central America' | 'Canada';
   country: string | null;
@@ -56,6 +60,10 @@ export interface UserSpot {
   name: string;
   latitude: number | null;
   longitude: number | null;
+  /** Offshore latitude for wave model queries (hits ocean grid point) */
+  oceanLat?: number | null;
+  /** Offshore longitude for wave model queries (hits ocean grid point) */
+  oceanLon?: number | null;
   region: string | null;
   buoyId: string | null;
   icon: string | null;
@@ -254,6 +262,8 @@ export function mapSurfSpot(row: DbSurfSpot): SurfSpot {
     name: row.name,
     lat: row.lat,
     lon: row.lon,
+    oceanLat: (row as unknown as Record<string, unknown>).ocean_lat as number | null ?? null,
+    oceanLon: (row as unknown as Record<string, unknown>).ocean_lon as number | null ?? null,
     region: row.region,
     countryGroup: row.country_group as SurfSpot['countryGroup'],
     country: row.country,
@@ -275,6 +285,8 @@ export function mapUserSpot(row: DbUserSpot): UserSpot {
     name: row.name,
     latitude: row.latitude,
     longitude: row.longitude,
+    oceanLat: (row as unknown as Record<string, unknown>).ocean_lat as number | null ?? null,
+    oceanLon: (row as unknown as Record<string, unknown>).ocean_lon as number | null ?? null,
     region: row.region,
     buoyId: row.buoy_id,
     icon: row.icon,
@@ -629,5 +641,87 @@ export function toDbAlertSettingsUpdate(
   if (settings.pushEnabled !== undefined) update.push_enabled = settings.pushEnabled;
   if (settings.emailEnabled !== undefined) update.email_enabled = settings.emailEnabled;
   if (settings.smsEnabled !== undefined) update.sms_enabled = settings.smsEnabled;
+  return update;
+}
+
+// =============================================================================
+// Surf Sessions Types & Mappers
+// =============================================================================
+
+/** Typed conditions snapshot auto-fetched from APIs */
+export interface SessionConditions {
+  waveHeight: number | null;      // feet
+  wavePeriod: number | null;      // seconds
+  swellDirection: number | null;  // degrees (0-360)
+  windSpeed: number | null;       // mph
+  windDirection: number | null;   // degrees (0-360)
+  tideHeight: number | null;      // feet
+  tideState: 'rising' | 'falling' | null;
+  waterTemp: number | null;       // fahrenheit
+  fetchedAt: string;              // ISO timestamp
+  source: 'live' | 'historical';  // data source indicator
+}
+
+export type SessionQuality = 'flat' | 'poor' | 'fair' | 'good' | 'epic';
+export type SessionCrowd = 'empty' | 'light' | 'moderate' | 'crowded' | 'packed';
+
+export interface SurfSession {
+  id: string;
+  userId: string;
+  spotId: string;
+  sessionDate: string;  // ISO timestamp
+  durationMinutes: number;
+  quality: SessionQuality;
+  crowd: SessionCrowd;
+  notes: string | null;
+  conditions: SessionConditions | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+type DbSurfSession = Tables<'surf_sessions'>;
+
+export function mapSurfSession(row: DbSurfSession): SurfSession {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    spotId: row.spot_id,
+    sessionDate: row.session_date,
+    durationMinutes: row.duration_minutes,
+    quality: row.quality as SessionQuality,
+    crowd: row.crowd as SessionCrowd,
+    notes: row.notes,
+    conditions: row.conditions as SessionConditions | null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function toDbSurfSessionInsert(
+  session: Omit<SurfSession, 'id' | 'createdAt' | 'updatedAt'>
+): TablesInsert<'surf_sessions'> {
+  return {
+    user_id: session.userId,
+    spot_id: session.spotId,
+    session_date: session.sessionDate,
+    duration_minutes: session.durationMinutes,
+    quality: session.quality,
+    crowd: session.crowd,
+    notes: session.notes,
+    conditions: session.conditions as Json,
+  };
+}
+
+export function toDbSurfSessionUpdate(
+  session: Partial<Omit<SurfSession, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
+): TablesUpdate<'surf_sessions'> {
+  const update: TablesUpdate<'surf_sessions'> = {};
+  if (session.spotId !== undefined) update.spot_id = session.spotId;
+  if (session.sessionDate !== undefined) update.session_date = session.sessionDate;
+  if (session.durationMinutes !== undefined) update.duration_minutes = session.durationMinutes;
+  if (session.quality !== undefined) update.quality = session.quality;
+  if (session.crowd !== undefined) update.crowd = session.crowd;
+  if (session.notes !== undefined) update.notes = session.notes;
+  if (session.conditions !== undefined) update.conditions = session.conditions as Json;
   return update;
 }

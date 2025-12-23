@@ -18,7 +18,7 @@ import {
   ClipboardList,
 } from '@solar-icons/react';
 import { Button, Input, DnaLogo } from "../components/ui";
-import { AdminHeader, UserDetailModal, InviteUserModal, WaitlistTab, SystemHealth } from "../components/admin";
+import { AdminHeader, UserDetailModal, InviteUserModal, WaitlistTab } from "../components/admin";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import type { AdminUserStats } from "../lib/mappers";
@@ -201,11 +201,6 @@ export function UserManagementPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <AdminHeader />
-
-        {/* System Health */}
-        <div className="mb-6">
-          <SystemHealth />
-        </div>
 
         {/* Page Description */}
         <div className="mb-6 flex items-center justify-between">

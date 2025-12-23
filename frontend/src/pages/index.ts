@@ -10,4 +10,6 @@ export { ResetPasswordPage } from './ResetPasswordPage';
 export { AdminSpotsPage } from './AdminSpotsPage';
 export { AdminSpotDetailPage } from './AdminSpotDetailPage';
 export { UserManagementPage } from './UserManagementPage';
+export { SystemHealthPage } from './SystemHealthPage';
 export { InvestmentPage } from './InvestmentPage';
+export { SurfLogPage } from './SurfLogPage';

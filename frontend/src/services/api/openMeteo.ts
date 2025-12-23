@@ -1,5 +1,6 @@
 import type { ForecastData, SwellComponent } from '../../components/SpotCard';
 import type { WaveModel } from '../../types';
+import { logApiUsage, type ApiSource } from './apiUsageTracker';
 
 // Unit conversion constants
 const METERS_TO_FEET = 3.28084;
@@ -132,7 +133,8 @@ export interface ForecastFetchResult {
 export async function fetchForecastData(
   lat: number,
   lon: number,
-  model?: WaveModel
+  model?: WaveModel,
+  source: ApiSource = 'dashboard'
 ): Promise<ForecastFetchResult> {
   const cacheKey = getCacheKey(lat, lon, model);
   const modelParam = getModelParam(model);
@@ -168,6 +170,10 @@ export async function fetchForecastData(
         `forecast_days=3&timezone=auto`
       ),
     ]);
+
+    // Log API usage (2 calls: marine + weather)
+    logApiUsage('openmeteo_marine', 1, source);
+    logApiUsage('openmeteo_weather', 1, source);
 
     if (!marineResponse.ok) {
       return {
@@ -252,7 +258,8 @@ export async function fetchForecastDataForTime(
   lat: number,
   lon: number,
   time: ForecastTime,
-  model?: WaveModel
+  model?: WaveModel,
+  source: ApiSource = 'dashboard'
 ): Promise<ForecastFetchResult> {
   const cacheKey = `${getCacheKey(lat, lon, model)}:${time}`;
   const modelParam = getModelParam(model);
@@ -288,6 +295,10 @@ export async function fetchForecastDataForTime(
         `forecast_days=3&timezone=auto`
       ),
     ]);
+
+    // Log API usage (2 calls: marine + weather)
+    logApiUsage('openmeteo_marine', 1, source);
+    logApiUsage('openmeteo_weather', 1, source);
 
     if (!marineResponse.ok || !weatherResponse.ok) {
       return {

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
     MapPoint,
     Routing,
@@ -35,6 +36,7 @@ interface AddSpotContentProps {
     className?: string;
     /** User's home location for showing nearby spots */
     userLocation?: { lat: number; lon: number } | null;
+    onCancel?: () => void;
 }
 
 // Calculate distance between two points using Haversine formula (returns km)
@@ -55,11 +57,15 @@ export function AddSpotContent({
     onAddSpot,
     className = "",
     userLocation,
+    onCancel,
 }: AddSpotContentProps) {
     const [activeTab, setActiveTab] = useState<"popular" | "custom">("popular");
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedRegion, setSelectedRegion] = useState<CountryGroup>("USA");
     const [regionDropdownOpen, setRegionDropdownOpen] = useState(false);
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+    const regionButtonRef = useRef<HTMLButtonElement>(null);
+    const regionDropdownRef = useRef<HTMLDivElement>(null);
     const [isMapOpen, setIsMapOpen] = useState(false);
     const [customSpot, setCustomSpot] = useState({
         name: "",
@@ -209,6 +215,33 @@ export function AddSpotContent({
 
     const currentRegionLabel = COUNTRY_GROUP_LABELS[selectedRegion];
 
+    // Handle click outside for region dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                regionButtonRef.current && !regionButtonRef.current.contains(event.target as Node) &&
+                regionDropdownRef.current && !regionDropdownRef.current.contains(event.target as Node)
+            ) {
+                setRegionDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Calculate dropdown position when it opens
+    useEffect(() => {
+        if (regionDropdownOpen && regionButtonRef.current) {
+            const rect = regionButtonRef.current.getBoundingClientRect();
+            setDropdownStyle({
+                position: 'fixed',
+                top: rect.bottom + 4,
+                left: rect.left,
+                minWidth: Math.max(rect.width, 224), // 224px = w-56
+            });
+        }
+    }, [regionDropdownOpen]);
+
     return (
         <div className={`flex flex-col h-full bg-card ${className}`}>
             {/* Scrollable Content */}
@@ -239,343 +272,359 @@ export function AddSpotContent({
 
                 {/* Content */}
                 <div className="p-6">
-                {activeTab === "popular" ? (
-                    <>
-                        {/* Region Filter + Search */}
-                        <div className="flex gap-3 mb-6">
-                            {/* Region Dropdown */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setRegionDropdownOpen(!regionDropdownOpen)}
-                                    className="flex items-center gap-2 px-3 py-2 bg-secondary/20 border border-border/50 rounded-sm hover:bg-secondary/30 transition-colors font-mono text-sm"
-                                >
-                                    <span>{currentRegionLabel.flag}</span>
-                                    <span className="uppercase tracking-wider">{currentRegionLabel.label}</span>
-                                    <AltArrowDown weight="Bold" size={16} className={`transition-transform ${regionDropdownOpen ? 'rotate-180' : ''}`} />
-                                </button>
+                    {activeTab === "popular" ? (
+                        <>
+                            {/* Region Filter + Search */}
+                            <div className="flex gap-3 mb-6">
+                                {/* Region Dropdown */}
+                                <div className="relative">
+                                    <button
+                                        ref={regionButtonRef}
+                                        onClick={() => setRegionDropdownOpen(!regionDropdownOpen)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-secondary/20 border border-border/50 rounded-sm hover:bg-secondary/30 transition-colors font-mono text-sm"
+                                    >
+                                        <span>{currentRegionLabel.flag}</span>
+                                        <span className="uppercase tracking-wider">{currentRegionLabel.label}</span>
+                                        <AltArrowDown weight="Bold" size={16} className={`transition-transform ${regionDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
 
-                                {regionDropdownOpen && (
-                                    <div className="absolute top-full left-0 mt-1 w-56 bg-card border border-border/50 rounded-sm shadow-lg z-20">
-                                        {(Object.entries(COUNTRY_GROUP_LABELS) as [CountryGroup, typeof currentRegionLabel][]).map(
-                                            ([key, { label, flag, count }]) => (
-                                                <button
-                                                    key={key}
-                                                    onClick={() => {
-                                                        setSelectedRegion(key);
-                                                        setRegionDropdownOpen(false);
-                                                        setSearchQuery("");
-                                                    }}
-                                                    className={`w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors font-mono text-sm ${selectedRegion === key ? 'bg-primary/10 text-primary' : ''
+                                    {regionDropdownOpen && createPortal(
+                                        <div
+                                            ref={regionDropdownRef}
+                                            style={dropdownStyle}
+                                            className="bg-card border border-border/50 rounded-sm shadow-lg z-50"
+                                        >
+                                            {(Object.entries(COUNTRY_GROUP_LABELS) as [CountryGroup, typeof currentRegionLabel][]).map(
+                                                ([key, { label, flag, count }]) => (
+                                                    <button
+                                                        key={key}
+                                                        onClick={() => {
+                                                            setSelectedRegion(key);
+                                                            setRegionDropdownOpen(false);
+                                                            setSearchQuery("");
+                                                        }}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors font-mono text-sm ${selectedRegion === key ? 'bg-primary/10 text-primary' : ''
+                                                            }`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <span>{flag}</span>
+                                                            <span className="uppercase tracking-wider">{label}</span>
+                                                        </span>
+                                                        <span className="text-muted-foreground/60 text-xs">
+                                                            {count} spots
+                                                        </span>
+                                                    </button>
+                                                )
+                                            )}
+                                        </div>,
+                                        document.body
+                                    )}
+                                </div>
+
+                                {/* Search Input */}
+                                <div className="relative flex-1">
+                                    <Magnifer weight="Bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        placeholder={`SEARCH ${currentRegionLabel.count} SPOTS...`}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10 font-mono text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Search Results, Nearby Spots, or Prompt */}
+                            <div className="space-y-3">
+                                {searchQuery.length < MIN_SEARCH_LENGTH && nearbySpots.length > 0 ? (
+                                    // Show nearby spots when user has location set
+                                    <>
+                                        <p className="font-mono text-xs text-muted-foreground/60 uppercase mb-4">
+                                            Spots near you
+                                        </p>
+                                        {nearbySpots.map((spot) => {
+                                            const saved = isSpotSaved(spot.id);
+                                            const distanceMiles = Math.round(spot.distance * 0.621371);
+                                            return (
+                                                <div
+                                                    key={spot.id}
+                                                    className={`flex items-center justify-between p-4 rounded-sm transition-all ${saved
+                                                        ? "bg-muted/20"
+                                                        : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
                                                         }`}
                                                 >
-                                                    <span className="flex items-center gap-2">
-                                                        <span>{flag}</span>
-                                                        <span className="uppercase tracking-wider">{label}</span>
-                                                    </span>
-                                                    <span className="text-muted-foreground/60 text-xs">
-                                                        {count} spots
-                                                    </span>
-                                                </button>
-                                            )
+                                                    <div className="flex items-center gap-4 min-w-0">
+                                                        {(() => {
+                                                            const savedSpot = getSavedSpot(spot.id);
+                                                            const iconKey = savedSpot?.icon as keyof typeof AVAILABLE_ICONS | undefined;
+                                                            const IconComponent = iconKey && AVAILABLE_ICONS[iconKey] ? AVAILABLE_ICONS[iconKey] : MapPoint;
+                                                            return (
+                                                                <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
+                                                                    <IconComponent weight="BoldDuotone" size={20} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]" />
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
+                                                                    {spot.name}
+                                                                </h4>
+                                                                <span className="font-mono text-xs text-muted-foreground/50">
+                                                                    {distanceMiles} mi
+                                                                </span>
+                                                            </div>
+                                                            <p className="font-mono text-xs text-muted-foreground/60 uppercase">
+                                                                {spot.region}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    {saved ? (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled
+                                                            className="shrink-0 font-mono text-xs uppercase opacity-50 cursor-not-allowed"
+                                                        >
+                                                            <VerifiedCheck weight="Bold" size={16} className="mr-2" />
+                                                            Added
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleAddSpot(spot)}
+                                                            className="shrink-0 font-mono text-xs uppercase"
+                                                        >
+                                                            <AddCircle weight="Bold" size={16} className="mr-2" />
+                                                            Add
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : searchQuery.length < MIN_SEARCH_LENGTH ? (
+                                    // Show search prompt before user types (no nearby spots available)
+                                    <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
+                                        <Magnifer weight="BoldDuotone" size={32} className="mx-auto mb-4 text-muted-foreground/30" />
+                                        <p className="font-mono text-sm text-muted-foreground/70">
+                                            Start typing to search {currentRegionLabel.count} spots...
+                                        </p>
+                                        <p className="font-mono text-xs mt-3 text-muted-foreground/50">
+                                            <span className="text-primary">TIP:</span> Try "Malibu", "Pipeline", or a state name
+                                        </p>
+                                    </div>
+                                ) : isLoading ? (
+                                    // Show loading state
+                                    <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
+                                        <div className="w-8 h-8 mx-auto mb-4 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+                                        <p className="font-mono text-sm text-muted-foreground/70">
+                                            Searching spots...
+                                        </p>
+                                    </div>
+                                ) : filteredSpots.length > 0 ? (
+                                    // Show search results
+                                    <>
+                                        <p className="font-mono text-xs text-muted-foreground/60 uppercase mb-4">
+                                            Showing {filteredSpots.length} result{filteredSpots.length !== 1 ? 's' : ''} for "{searchQuery}"
+                                        </p>
+                                        {filteredSpots.slice(0, 50).map((spot) => {
+                                            const saved = isSpotSaved(spot.id);
+                                            return (
+                                                <div
+                                                    key={spot.id}
+                                                    className={`flex items-center justify-between p-4 rounded-sm transition-all ${saved
+                                                        ? "border-primary/50 bg-muted/20"
+                                                        : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-4 min-w-0">
+                                                        {(() => {
+                                                            const savedSpot = getSavedSpot(spot.id);
+                                                            const iconKey = savedSpot?.icon as keyof typeof AVAILABLE_ICONS | undefined;
+                                                            const IconComponent = iconKey && AVAILABLE_ICONS[iconKey] ? AVAILABLE_ICONS[iconKey] : MapPoint;
+                                                            return (
+                                                                <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
+                                                                    <IconComponent weight="BoldDuotone" size={20} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]" />
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
+                                                                    {spot.name}
+                                                                </h4>
+                                                            </div>
+                                                            <p className="font-mono text-xs text-muted-foreground/60 uppercase">
+                                                                {spot.region}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    {saved ? (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled
+                                                            className="shrink-0 font-mono text-xs uppercase opacity-50 cursor-not-allowed"
+                                                        >
+                                                            <VerifiedCheck weight="Bold" size={16} className="mr-2" />
+                                                            Added
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleAddSpot(spot)}
+                                                            className="shrink-0 font-mono text-xs uppercase"
+                                                        >
+                                                            <AddCircle weight="Bold" size={16} className="mr-2" />
+                                                            Add
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                        {filteredSpots.length > 50 && (
+                                            <p className="font-mono text-xs text-muted-foreground/50 text-center py-2">
+                                                Showing first 50 results. Refine your search for more specific results.
+                                            </p>
                                         )}
+                                    </>
+                                ) : (
+                                    // No results found
+                                    <div className="text-center py-12 text-muted-foreground/50 border border-dashed border-border/50 rounded-sm">
+                                        <p className="font-mono text-sm uppercase">No signals found</p>
+                                        <p className="font-mono text-xs mt-2 opacity-60">
+                                            Try a different search term or region
+                                        </p>
                                     </div>
                                 )}
                             </div>
+                        </>
+                    ) : (
+                        /* Custom Location Form */
+                        <div className="space-y-6">
+                            {/* AI Assistant */}
+                            <NaturalLanguageSpotInput onParsed={handleAIParsed} />
 
-                            {/* Search Input */}
-                            <div className="relative flex-1">
-                                <Magnifer weight="Bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder={`SEARCH ${currentRegionLabel.count} SPOTS...`}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 font-mono text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Search Results, Nearby Spots, or Prompt */}
-                        <div className="space-y-3">
-                            {searchQuery.length < MIN_SEARCH_LENGTH && nearbySpots.length > 0 ? (
-                                // Show nearby spots when user has location set
-                                <>
-                                    <p className="font-mono text-xs text-muted-foreground/60 uppercase mb-4">
-                                        Spots near you
-                                    </p>
-                                    {nearbySpots.map((spot) => {
-                                        const saved = isSpotSaved(spot.id);
-                                        const distanceMiles = Math.round(spot.distance * 0.621371);
-                                        return (
-                                            <div
-                                                key={spot.id}
-                                                className={`flex items-center justify-between p-4 rounded-sm transition-all ${saved
-                                                    ? "bg-muted/20"
-                                                    : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-4 min-w-0">
-                                                    {(() => {
-                                                        const savedSpot = getSavedSpot(spot.id);
-                                                        const iconKey = savedSpot?.icon as keyof typeof AVAILABLE_ICONS | undefined;
-                                                        const IconComponent = iconKey && AVAILABLE_ICONS[iconKey] ? AVAILABLE_ICONS[iconKey] : MapPoint;
-                                                        return (
-                                                            <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
-                                                                <IconComponent weight="BoldDuotone" size={20} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]" />
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                    <div className="min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
-                                                                {spot.name}
-                                                            </h4>
-                                                            <span className="font-mono text-xs text-muted-foreground/50">
-                                                                {distanceMiles} mi
-                                                            </span>
-                                                        </div>
-                                                        <p className="font-mono text-xs text-muted-foreground/60 uppercase">
-                                                            {spot.region}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                {saved ? (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        disabled
-                                                        className="shrink-0 font-mono text-xs uppercase opacity-50 cursor-not-allowed"
-                                                    >
-                                                        <VerifiedCheck weight="Bold" size={16} className="mr-2" />
-                                                        Added
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleAddSpot(spot)}
-                                                        className="shrink-0 font-mono text-xs uppercase"
-                                                    >
-                                                        <AddCircle weight="Bold" size={16} className="mr-2" />
-                                                        Add
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </>
-                            ) : searchQuery.length < MIN_SEARCH_LENGTH ? (
-                                // Show search prompt before user types (no nearby spots available)
-                                <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
-                                    <Magnifer weight="BoldDuotone" size={32} className="mx-auto mb-4 text-muted-foreground/30" />
-                                    <p className="font-mono text-sm text-muted-foreground/70">
-                                        Start typing to search {currentRegionLabel.count} spots...
-                                    </p>
-                                    <p className="font-mono text-xs mt-3 text-muted-foreground/50">
-                                        <span className="text-primary">TIP:</span> Try "Malibu", "Pipeline", or a state name
-                                    </p>
-                                </div>
-                            ) : isLoading ? (
-                                // Show loading state
-                                <div className="text-center py-12 border border-dashed border-border/50 rounded-sm">
-                                    <div className="w-8 h-8 mx-auto mb-4 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
-                                    <p className="font-mono text-sm text-muted-foreground/70">
-                                        Searching spots...
-                                    </p>
-                                </div>
-                            ) : filteredSpots.length > 0 ? (
-                                // Show search results
-                                <>
-                                    <p className="font-mono text-xs text-muted-foreground/60 uppercase mb-4">
-                                        Showing {filteredSpots.length} result{filteredSpots.length !== 1 ? 's' : ''} for "{searchQuery}"
-                                    </p>
-                                    {filteredSpots.slice(0, 50).map((spot) => {
-                                        const saved = isSpotSaved(spot.id);
-                                        return (
-                                            <div
-                                                key={spot.id}
-                                                className={`flex items-center justify-between p-4 rounded-sm transition-all ${saved
-                                                    ? "border-primary/50 bg-muted/20"
-                                                    : "border-border/50 bg-secondary/10 hover:bg-secondary/20 hover:border-border"
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-4 min-w-0">
-                                                    {(() => {
-                                                        const savedSpot = getSavedSpot(spot.id);
-                                                        const iconKey = savedSpot?.icon as keyof typeof AVAILABLE_ICONS | undefined;
-                                                        const IconComponent = iconKey && AVAILABLE_ICONS[iconKey] ? AVAILABLE_ICONS[iconKey] : MapPoint;
-                                                        return (
-                                                            <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-md border border-cyan-500/50 bg-cyan-950/30 text-cyan-50 shadow-[0_0_20px_-5px_rgba(6,182,212,0.3)] backdrop-blur-sm ring-1 ring-cyan-500/20">
-                                                                <IconComponent weight="BoldDuotone" size={20} className="text-cyan-400 drop-shadow-[0_0_3px_rgba(34,211,238,0.5)]" />
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                    <div className="min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-mono text-sm uppercase tracking-wider text-foreground/90 truncate">
-                                                                {spot.name}
-                                                            </h4>
-                                                        </div>
-                                                        <p className="font-mono text-xs text-muted-foreground/60 uppercase">
-                                                            {spot.region}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                {saved ? (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        disabled
-                                                        className="shrink-0 font-mono text-xs uppercase opacity-50 cursor-not-allowed"
-                                                    >
-                                                        <VerifiedCheck weight="Bold" size={16} className="mr-2" />
-                                                        Added
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleAddSpot(spot)}
-                                                        className="shrink-0 font-mono text-xs uppercase"
-                                                    >
-                                                        <AddCircle weight="Bold" size={16} className="mr-2" />
-                                                        Add
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    {filteredSpots.length > 50 && (
-                                        <p className="font-mono text-xs text-muted-foreground/50 text-center py-2">
-                                            Showing first 50 results. Refine your search for more specific results.
-                                        </p>
-                                    )}
-                                </>
-                            ) : (
-                                // No results found
-                                <div className="text-center py-12 text-muted-foreground/50 border border-dashed border-border/50 rounded-sm">
-                                    <p className="font-mono text-sm uppercase">No signals found</p>
-                                    <p className="font-mono text-xs mt-2 opacity-60">
-                                        Try a different search term or region
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    /* Custom Location Form */
-                    <div className="space-y-6">
-                        {/* AI Assistant */}
-                        <NaturalLanguageSpotInput onParsed={handleAIParsed} />
-
-                        <div>
-                            <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                Spot Name
-                            </label>
-                            <Input
-                                placeholder="E.G., CLASSIFIED SECTOR 7"
-                                value={customSpot.name}
-                                onChange={(e) =>
-                                    setCustomSpot({ ...customSpot, name: e.target.value })
-                                }
-                                className="font-mono"
-                            />
-                        </div>
-
-                        <div className="space-y-4">
                             <div>
                                 <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                    Search Address
+                                    Spot Name
                                 </label>
-                                <AddressAutocomplete
-                                    value=""
-                                    onChange={() => { }} // Managed internally by component for now, or could link to a state if needed
-                                    onAddressSelect={handleAddressSelect}
-                                    placeholder="SEARCH ADDRESS OR COORDINATES..."
+                                <Input
+                                    placeholder="E.G., CLASSIFIED SECTOR 7"
+                                    value={customSpot.name}
+                                    onChange={(e) =>
+                                        setCustomSpot({ ...customSpot, name: e.target.value })
+                                    }
                                     className="font-mono"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-4">
                                 <div>
                                     <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                        Latitude
+                                        Search Address
                                     </label>
-                                    <Input
-                                        placeholder="29.0469"
-                                        value={customSpot.lat}
-                                        onChange={(e) =>
-                                            setCustomSpot({ ...customSpot, lat: e.target.value })
-                                        }
+                                    <AddressAutocomplete
+                                        value=""
+                                        onChange={() => { }} // Managed internally by component for now, or could link to a state if needed
+                                        onAddressSelect={handleAddressSelect}
+                                        placeholder="SEARCH ADDRESS OR COORDINATES..."
                                         className="font-mono"
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                        Longitude
-                                    </label>
-                                    <Input
-                                        placeholder="-95.2882"
-                                        value={customSpot.lon}
-                                        onChange={(e) =>
-                                            setCustomSpot({ ...customSpot, lon: e.target.value })
-                                        }
-                                        className="font-mono"
-                                    />
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                                            Latitude
+                                        </label>
+                                        <Input
+                                            placeholder="29.0469"
+                                            value={customSpot.lat}
+                                            onChange={(e) =>
+                                                setCustomSpot({ ...customSpot, lat: e.target.value })
+                                            }
+                                            className="font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                                            Longitude
+                                        </label>
+                                        <Input
+                                            placeholder="-95.2882"
+                                            value={customSpot.lon}
+                                            onChange={(e) =>
+                                                setCustomSpot({ ...customSpot, lon: e.target.value })
+                                            }
+                                            className="font-mono"
+                                        />
+                                    </div>
                                 </div>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full font-mono text-xs uppercase"
+                                    onClick={() => setIsMapOpen(true)}
+                                >
+                                    <MapPoint weight="BoldDuotone" size={16} className="mr-2" />
+                                    Adjust on Map
+                                </Button>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
+                                    Swell Exposure
+                                </label>
+                                <p className="text-xs font-mono text-muted-foreground/60 mb-3">
+                                    Select the ocean/coast this spot faces for better buoy recommendations
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {exposureOptions.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() => setCustomSpot({ ...customSpot, exposure: option.value })}
+                                            className={`px-3 py-2 text-left font-mono text-xs uppercase tracking-wider border transition-colors ${customSpot.exposure === option.value
+                                                ? "border-primary bg-primary/10 text-primary"
+                                                : "border-border/50 bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:border-border"
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-secondary/10 border border-border/50 rounded-sm">
+                                <p className="text-xs font-mono text-muted-foreground/80">
+                                    <span className="text-primary mr-2">TIP:</span>
+                                    Swell exposure helps recommend buoys that are upstream of incoming waves.
+                                </p>
                             </div>
 
                             <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full font-mono text-xs uppercase"
-                                onClick={() => setIsMapOpen(true)}
+                                className="w-full"
+                                onClick={handleAddCustomSpot}
+                                disabled={!customSpot.name || !customSpot.lat || !customSpot.lon}
                             >
-                                <MapPoint weight="BoldDuotone" size={16} className="mr-2" />
-                                Adjust on Map
+                                <AddCircle weight="Bold" size={16} className="mr-2" />
+                                INITIALIZE SPOT
                             </Button>
-                        </div>
 
-                        <div>
-                            <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 block">
-                                Swell Exposure
-                            </label>
-                            <p className="text-xs font-mono text-muted-foreground/60 mb-3">
-                                Select the ocean/coast this spot faces for better buoy recommendations
-                            </p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {exposureOptions.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        onClick={() => setCustomSpot({ ...customSpot, exposure: option.value })}
-                                        className={`px-3 py-2 text-left font-mono text-xs uppercase tracking-wider border transition-colors ${customSpot.exposure === option.value
-                                            ? "border-primary bg-primary/10 text-primary"
-                                            : "border-border/50 bg-secondary/10 text-muted-foreground hover:bg-secondary/20 hover:border-border"
-                                            }`}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
+                            {onCancel && (
+                                <Button
+                                    className="w-full mt-3"
+                                    variant="ghost"
+                                    onClick={onCancel}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
                         </div>
-
-                        <div className="p-4 bg-secondary/10 border border-border/50 rounded-sm">
-                            <p className="text-xs font-mono text-muted-foreground/80">
-                                <span className="text-primary mr-2">TIP:</span>
-                                Swell exposure helps recommend buoys that are upstream of incoming waves.
-                            </p>
-                        </div>
-
-                        <Button
-                            className="w-full"
-                            onClick={handleAddCustomSpot}
-                            disabled={!customSpot.name || !customSpot.lat || !customSpot.lon}
-                        >
-                            <AddCircle weight="Bold" size={16} className="mr-2" />
-                            INITIALIZE SPOT
-                        </Button>
-                    </div>
-                )}
+                    )}
                 </div>
             </div>
 

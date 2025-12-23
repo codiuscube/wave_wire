@@ -22,6 +22,10 @@ interface BaseSpot {
   region: string;
   lat: number;
   lon: number;
+  /** Offshore latitude for wave model queries */
+  oceanLat?: number;
+  /** Offshore longitude for wave model queries */
+  oceanLon?: number;
   buoyId?: string;
   buoyName?: string;
   status?: 'epic' | 'good' | 'fair' | 'poor' | 'unknown';
@@ -40,6 +44,8 @@ function userSpotToBaseSpot(userSpot: UserSpot): BaseSpot | null {
     region: userSpot.region || 'Unknown Region',
     lat: userSpot.latitude,
     lon: userSpot.longitude,
+    oceanLat: userSpot.oceanLat ?? undefined,
+    oceanLon: userSpot.oceanLon ?? undefined,
     buoyId: userSpot.buoyId || undefined,
     status: 'unknown',
     triggersMatched: 0,

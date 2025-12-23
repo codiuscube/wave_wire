@@ -44,3 +44,14 @@ export {
   type AddressSuggestion,
   type AddressSearchResult,
 } from './addressService';
+
+// API usage tracking service
+export {
+  logApiUsage,
+  getApiUsageStats,
+  getOpenMeteoUsage,
+  checkRateLimitStatus,
+  OPENMETEO_LIMITS,
+  type ApiService,
+  type ApiSource,
+} from './apiUsageTracker';

@@ -108,6 +108,51 @@ When users create custom spots:
 
 ---
 
+## System Health Monitoring
+
+**Route:** `/admin/health`
+
+### Overview
+
+Real-time monitoring of API usage and infrastructure limits to prevent service disruptions.
+
+### Open-Meteo API Usage
+
+Tracks estimated API calls against Open-Meteo free tier limits:
+
+| Limit Type | Free Tier Limit |
+|------------|-----------------|
+| Per Minute | 600 calls |
+| Per Hour | 5,000 calls |
+| Per Day | 10,000 calls |
+| Per Month | 300,000 calls |
+
+**Estimation Factors:**
+- Background trigger runs (10/day × API calls per unique spot)
+- Dashboard views (20% daily active users × avg spots × reloads)
+- Each forecast fetch = 2 API calls (marine + weather endpoints)
+
+**Warning Levels:**
+- OK (green): < 70% of any limit
+- Warning (yellow): 70-89% of any limit
+- Critical (red): >= 90% of any limit
+
+**Commercial Use Notice:** Per Open-Meteo terms, the free tier is for non-commercial use only. Commercial apps require a paid API subscription.
+
+### GitHub Actions Usage
+
+Estimates monthly GitHub Actions minutes for scheduled trigger evaluation jobs:
+- Based on spot fetches, trigger evaluations, and message generation
+- 2,000 free minutes/month on GitHub Free tier
+
+### Stats Grid
+
+| Users | Triggers | Spots | Alerts (30d) |
+|-------|----------|-------|--------------|
+| Total user count | Active enabled triggers | Unique spots with triggers | Alerts sent last 30 days |
+
+---
+
 ## Admin User Management
 
 **Route:** `/admin/users`
@@ -456,6 +501,64 @@ After signup, users see:
 
 ---
 
+## Surf Log
+
+### Overview
+
+Track your surf sessions with automatically fetched ocean conditions. Use logged sessions to populate trigger forms with data-backed settings.
+
+**Route:** `/surf-log`
+
+### Data Captured
+
+| Field | Description |
+|-------|-------------|
+| **Spot** | Selected from user's saved spots |
+| **Date & Time** | When you surfed (datetime picker) |
+| **Quality** | Flat, Poor, Fair, Good, or Epic |
+| **Crowd** | Empty, Light, Moderate, Crowded, or Packed |
+| **Duration** | 30min to 3+ hours |
+| **Notes** | Optional free-text notes |
+| **Conditions** | Auto-fetched: wave height, period, swell direction, wind, tide |
+
+### Conditions Auto-Fetch
+
+When a user selects a spot and date/time:
+1. Frontend calls `/api/fetch-conditions` with lat, lon, timestamp, timezone
+2. API fetches historical wave/wind data from Open-Meteo Marine
+3. API fetches tide data from NOAA CO-OPS (US spots only)
+4. Conditions snapshot is stored with the session
+
+**Data Sources:**
+- **Wave/Wind**: Open-Meteo Marine API (global coverage)
+- **Tide**: NOAA CO-OPS tide predictions (US coastal spots only)
+
+**International Spots:** Tide data is skipped for non-US spots since NOAA CO-OPS only covers US waters.
+
+### Trigger Integration: "Fill from Session"
+
+When creating a new trigger, users can click "Fill from Past Session" to auto-populate form fields based on a logged session's conditions:
+
+**Conversion Logic:**
+- Wave height: session value -1ft to +2ft
+- Wave period: session value -2s to +2s
+- Swell direction: session value ± 22° (one compass point)
+- Wind speed: 0 to session value + 5mph (headroom)
+- Tide state: from session (rising/falling)
+- Condition tier: based on session quality (good/epic)
+
+**Example:** Logged a "Good" session at 4ft @ 12s → Trigger fills with 3-6ft @ 10-14s
+
+### UI Features
+
+- **Session List**: Shows all sessions, newest first
+- **Spot Filter**: Filter by spot or view all
+- **Quality Badges**: Color-coded (Epic=amber, Good=green, Fair=blue, Poor/Flat=gray)
+- **Floating Add Button**: Quick access to log new session
+- **Edit/Delete**: Modify or remove sessions
+
+---
+
 ## Files Reference
 
 ### Core Data Files
@@ -479,9 +582,14 @@ After signup, users see:
 | `UserDetailModal.tsx` | Admin user detail view |
 | `UpgradeModal.tsx` | Subscription upgrade prompt |
 | `AdminHeader.tsx` | Admin panel navigation |
+| `SystemHealth.tsx` | API usage and infrastructure monitoring |
 | `WaitlistModal.tsx` | Waitlist signup with referral tracking |
 | `WaitlistTab.tsx` | Admin waitlist management |
 | `BetaAccess.tsx` | Landing page beta access section |
+| `SurfSessionCard.tsx` | Display logged surf session |
+| `SurfSessionForm.tsx` | Form for logging/editing sessions |
+| `SurfSessionModal.tsx` | Sheet wrapper for session form |
+| `SessionPicker.tsx` | "Fill from Session" picker for triggers |
 
 ### Pages
 
@@ -490,9 +598,11 @@ After signup, users see:
 | `DashboardOverview.tsx` | `/dashboard` |
 | `SpotPage.tsx` | `/spots` |
 | `TriggersPage.tsx` | `/triggers` |
+| `SurfLogPage.tsx` | `/surf-log` |
 | `AlertsPage.tsx` | `/alerts` |
 | `AccountPage.tsx` | `/account` |
 | `AdminSpotsPage.tsx` | `/admin/spots` |
 | `AdminSpotDetailPage.tsx` | `/admin/spots/:id` |
 | `UserManagementPage.tsx` | `/admin/users` |
+| `SystemHealthPage.tsx` | `/admin/health` |
 | `InvestmentPage.tsx` | `/admin/investment` |
