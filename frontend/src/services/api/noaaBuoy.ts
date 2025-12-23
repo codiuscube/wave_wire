@@ -169,10 +169,12 @@ const STALE_DATA_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48 hours - data older th
 // Fetch buoy data for a station
 export async function fetchBuoyData(stationId: string): Promise<BuoyFetchResult> {
   const normalizedId = stationId.toUpperCase();
+  console.log(`[Buoy ${normalizedId}] Fetching buoy data...`);
 
   // Check cache first
   const cached = cache.get(normalizedId);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    console.log(`[Buoy ${normalizedId}] Using cached data`);
     return {
       data: cached.data,
       error: null,
@@ -196,9 +198,12 @@ export async function fetchBuoyData(stationId: string): Promise<BuoyFetchResult>
     }
 
     const text = await response.text();
+    console.log(`[Buoy ${normalizedId}] Response length: ${text.length}, first 300 chars:`, text.substring(0, 300));
     const parsedRows = parseNOAAText(text);
+    console.log(`[Buoy ${normalizedId}] Parsed ${parsedRows.length} rows`);
 
     if (parsedRows.length === 0) {
+      console.log(`[Buoy ${normalizedId}] No valid rows parsed`);
       return {
         data: cached?.data ?? null,
         error: 'No valid data found for this buoy',
@@ -207,45 +212,68 @@ export async function fetchBuoyData(stationId: string): Promise<BuoyFetchResult>
       };
     }
 
-    // Get most recent reading (first row after headers)
-    const latestRow = parsedRows[0];
-    const buoyData = transformToBuoyData(latestRow);
+    // Find the most recent row with valid wave height data
+    // NOAA sometimes has MM (missing) values for the most recent reading
+    let validRow: ParsedBuoyRow | null = null;
+    for (const row of parsedRows) {
+      if (row.waveHeight !== null) {
+        validRow = row;
+        break;
+      }
+    }
 
-    if (!buoyData) {
+    console.log(`[Buoy ${normalizedId}] First row:`, {
+      timestamp: parsedRows[0].timestamp,
+      waveHeight: parsedRows[0].waveHeight,
+    });
+
+    if (!validRow) {
+      console.log(`[Buoy ${normalizedId}] No rows with valid wave height found in ${parsedRows.length} rows`);
       return {
         data: cached?.data ?? null,
-        error: 'Buoy data unavailable (all values missing)',
+        error: 'Buoy data unavailable (all readings missing wave height)',
         isStale: !!cached,
-        rawTimestamp: cached?.rawTimestamp ?? null,
+        rawTimestamp: parsedRows[0]?.timestamp ?? cached?.rawTimestamp ?? null,
       };
     }
 
+    console.log(`[Buoy ${normalizedId}] Valid row found:`, {
+      timestamp: validRow.timestamp,
+      waveHeight: validRow.waveHeight,
+      wavePeriod: validRow.wavePeriod,
+      waterTemp: validRow.waterTemp,
+    });
+
+    const buoyData = transformToBuoyData(validRow);
+    console.log(`[Buoy ${normalizedId}] Transformed:`, buoyData);
+
     // Check if data is too old (>48 hours) - treat as no signal
-    const dataAge = Date.now() - latestRow.timestamp.getTime();
+    const dataAge = Date.now() - validRow.timestamp.getTime();
     if (dataAge > STALE_DATA_THRESHOLD_MS) {
+      console.log(`[Buoy ${normalizedId}] Data too old: ${Math.round(dataAge / (1000 * 60 * 60))} hours`);
       return {
         data: null,
         error: 'Buoy offline - last reading over 48 hours ago',
         isStale: true,
-        rawTimestamp: latestRow.timestamp,
+        rawTimestamp: validRow.timestamp,
       };
     }
 
     // Update cache
     cache.set(normalizedId, {
-      data: buoyData,
+      data: buoyData!,
       timestamp: Date.now(),
-      rawTimestamp: latestRow.timestamp,
+      rawTimestamp: validRow.timestamp,
     });
 
     return {
       data: buoyData,
       error: null,
       isStale: false,
-      rawTimestamp: latestRow.timestamp,
+      rawTimestamp: validRow.timestamp,
     };
   } catch (error) {
-    console.error(`Error fetching buoy ${normalizedId}:`, error);
+    console.error(`[Buoy ${normalizedId}] Fetch error:`, error);
     return {
       data: cached?.data ?? null,
       error: error instanceof Error ? error.message : 'Network error',

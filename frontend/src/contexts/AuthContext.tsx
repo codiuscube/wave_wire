@@ -35,12 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false); // Changed default to false, set to true only when fetching
+  const [_isLoadingProfile, setIsLoadingProfile] = useState(false); // Changed default to false, set to true only when fetching
 
   const isAdmin = profile?.isAdmin ?? false;
 
-  // Combined loading state - true until both auth AND profile are loaded
-  const loading = isLoadingAuth || (!!user && !profile && isLoadingProfile);
+  // Combined loading state - only wait for auth, not profile (profile loads in background)
+  // This prevents mobile Safari hanging on profile fetch from blocking the app
+  const loading = isLoadingAuth;
 
   // Fetch full profile
   const fetchProfile = useCallback(async (userId: string) => {
@@ -56,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching profile:', error.message);
         setProfile(null);
       } else if (data) {
-        // Import mapProfile is needed here, need to check imports
         const { mapProfile } = await import('../lib/mappers');
         setProfile(mapProfile(data));
       }
@@ -69,8 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Timeout for getSession - mobile browsers can hang indefinitely on IndexedDB
+    const timeoutId = setTimeout(() => {
+      setIsLoadingAuth(false);
+    }, 5000);
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeoutId);
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoadingAuth(false);
@@ -78,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
       }
+    }).catch(() => {
+      clearTimeout(timeoutId);
+      setIsLoadingAuth(false);
     });
 
     // Listen for auth changes
@@ -88,7 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoadingAuth(false);
 
         if (session?.user) {
-          // Only fetch if we don't have it or if user changed
           fetchProfile(session.user.id);
         } else {
           setProfile(null);
@@ -96,7 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   // Use refs or stable references for auth functions if they don't depend on state, 

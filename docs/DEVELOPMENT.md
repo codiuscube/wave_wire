@@ -82,14 +82,21 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 ### Server-side (Vercel environment)
 
 ```env
-# For future traffic integration
-GOOGLE_ROUTES_API_KEY=your-api-key
-
-# Supabase service role (for edge functions)
+# Supabase service role (for API routes)
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Anthropic API (for AI message generation)
 ANTHROPIC_API_KEY=sk-ant-...
+
+# For future traffic integration
+GOOGLE_ROUTES_API_KEY=your-api-key
+```
+
+### Frontend Push Notifications
+
+```env
+# OneSignal (web push)
+VITE_ONESIGNAL_APP_ID=your-onesignal-app-id
 ```
 
 ### GitHub Actions Secrets
@@ -101,6 +108,8 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ANTHROPIC_API_KEY=sk-ant-...
 RESEND_API_KEY=re_...
+ONESIGNAL_APP_ID=your-onesignal-app-id
+ONESIGNAL_API_KEY=your-onesignal-rest-api-key
 ```
 
 ---
@@ -208,6 +217,8 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ANTHROPIC_API_KEY=sk-ant-...
 RESEND_API_KEY=re_...
+ONESIGNAL_APP_ID=your-onesignal-app-id
+ONESIGNAL_API_KEY=your-onesignal-rest-api-key
 ```
 
 **Script structure:**
@@ -216,6 +227,38 @@ RESEND_API_KEY=re_...
 - `scripts/lib/evaluator.ts` - Evaluates triggers against conditions
 - `scripts/lib/messenger.ts` - Generates alert messages (AI + templates)
 - `scripts/lib/emailer.ts` - Sends emails via Resend API
+- `scripts/lib/pushNotifier.ts` - Sends push notifications via OneSignal API
+
+---
+
+## OneSignal Setup
+
+OneSignal provides web push notifications. Set up is required for push alerts.
+
+### Create OneSignal App
+
+1. Create account at [onesignal.com](https://onesignal.com)
+2. Create new app (select "Web Push")
+3. Configure your domain (e.g., `wave-wire.com`)
+4. Note the **App ID** and **REST API Key**
+
+### Configure Frontend
+
+1. Add `VITE_ONESIGNAL_APP_ID` to `.env`
+2. The SDK worker file is at `frontend/public/OneSignalSDKWorker.js`
+3. Push context initializes on app load (`PushNotificationContext.tsx`)
+
+### Configure Backend (Scripts)
+
+1. Add `ONESIGNAL_APP_ID` and `ONESIGNAL_API_KEY` to GitHub Secrets
+2. The alert runner uses `pushNotifier.ts` to send notifications
+
+### iOS PWA Requirement
+
+iOS Safari requires the app to be installed as a PWA (add to home screen) before push notifications work. The app displays a `PwaInstallBanner` component when:
+- User is on iOS
+- App is not installed as PWA
+- User tries to enable push notifications
 
 ---
 

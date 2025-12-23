@@ -251,6 +251,21 @@ The dashboard displays forecast data using the user's preferred model:
 - Affects all SpotCards in the dashboard view
 - Triggers still use their individually configured models
 
+### Region-Based Model Filtering
+
+Wave models are automatically filtered based on the spot's geographic location:
+
+| Model | Regions |
+|-------|---------|
+| GFS Wave | Americas, Pacific Ocean |
+| ECMWF WAM | Global (always available) |
+| MeteoFrance Wave | European Atlantic, Mediterranean |
+| DWD Europe (EWAM) | North Sea, Baltic Sea |
+| DWD Global (GWAM) | Global (always available) |
+| ERA5 Ocean | Global (always available) |
+
+**Implementation:** `getWaveModelsForLocation(lat, lon)` returns only models relevant to the spot's coordinates. This prevents users from selecting models that don't cover their region.
+
 ### Buoy Trigger Option
 
 For spots with linked buoys, users can enable buoy-based triggers in addition to forecast-based triggers:
@@ -556,6 +571,113 @@ When creating a new trigger, users can click "Fill from Past Session" to auto-po
 - **Quality Badges**: Color-coded (Epic=amber, Good=green, Fair=blue, Poor/Flat=gray)
 - **Floating Add Button**: Quick access to log new session
 - **Edit/Delete**: Modify or remove sessions
+
+---
+
+## Push Notifications
+
+### Overview
+
+Wave-Wire supports web push notifications via OneSignal for real-time alert delivery. Push notifications work on desktop browsers and mobile PWAs.
+
+### Platform Support
+
+| Platform | Support | Notes |
+|----------|---------|-------|
+| Desktop Chrome | ✅ Full | Works immediately |
+| Desktop Firefox | ✅ Full | Works immediately |
+| Desktop Safari | ✅ Full | Works immediately |
+| Android Chrome | ✅ Full | Works immediately |
+| iOS Safari | ⚠️ PWA only | Must install to home screen first |
+
+### Notification Channels
+
+Users can enable/disable notification channels in Alert Settings:
+
+| Channel | Default | Notes |
+|---------|---------|-------|
+| Push | Off | Browser push notifications |
+| Email | On | Resend API delivery |
+| SMS | Off | Future: pending Twilio A2P |
+
+### OneSignal Integration
+
+**Player ID Flow:**
+1. User enables push notifications
+2. Browser shows permission prompt
+3. OneSignal assigns a player ID
+4. Player ID stored in `push_subscriptions` table
+5. Alert runner sends to player ID via OneSignal REST API
+
+**iOS PWA Requirement:**
+iOS requires the app to be installed as a PWA (add to home screen) before push notifications work. The app shows a PWA install banner on iOS when push is requested.
+
+### Database Tables
+
+- `push_subscriptions` - Stores OneSignal player IDs per user/device
+- `alert_settings.push_enabled` - User's push preference
+- `sent_alerts.onesignal_id` - Delivery tracking
+
+---
+
+## Dashboard Spot Management
+
+### Drag-and-Drop Reordering
+
+Users can reorder spots on the dashboard by dragging them:
+
+1. Tap/click the drag handle on any spot card
+2. Drag to new position
+3. Order saves automatically to `user_spots.sort_order`
+
+**Technical:** Uses `@dnd-kit/core` for accessible drag-and-drop.
+
+### Visibility Toggling
+
+Users can hide spots from the dashboard without deleting them:
+
+1. Open spot menu (three dots)
+2. Select "Hide from Dashboard"
+3. Spot remains in database but `hidden_on_dashboard = true`
+4. Can unhide from Spots page
+
+**Use Case:** Keep a spot for triggers but reduce dashboard clutter.
+
+---
+
+## Custom Spot Creation
+
+### Address Autocomplete
+
+When adding a custom spot, users can:
+
+1. Type an address or location name
+2. See autocomplete suggestions (Google Places API)
+3. Select a suggestion to auto-fill lat/lon
+4. Nearby existing spots shown as alternatives
+
+### Map Picker
+
+Interactive map for precise spot placement:
+
+1. Click "Pick on Map" in custom spot form
+2. Map opens centered on user's home location
+3. Click/tap to place marker
+4. Coordinates auto-fill in form
+
+### Natural Language AI Input
+
+Users can describe spots in plain English:
+
+**Example inputs:**
+- "The beach near my house"
+- "Rockaway Beach, Queens"
+- "27.8° N, 97.1° W"
+
+The AI parser (`/api/parse-spot`) extracts:
+- Spot name
+- Coordinates (if provided)
+- Region inference
 
 ---
 

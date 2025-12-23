@@ -180,6 +180,50 @@ https://marine-api.open-meteo.com/v1/marine
 - Omit `models` parameter for automatic best-match selection
 - Example: `&models=gfs_wave` for GFS Wave model
 
+### Region-Based Model Filtering
+
+Not all models cover all regions. The app filters available models based on spot coordinates:
+
+```typescript
+function getWaveModelsForLocation(lat: number, lon: number): WaveModel[] {
+  const models: WaveModel[] = [
+    { value: 'best_match', label: 'Best Match', global: true },
+    { value: 'ecmwf_wam', label: 'ECMWF WAM', global: true },
+    { value: 'gwam', label: 'DWD Global', global: true },
+    { value: 'era5_ocean', label: 'ERA5 Ocean', global: true },
+  ];
+
+  // GFS Wave: Americas and Pacific
+  if (lon < -30 || lon > 100) {
+    models.push({ value: 'gfs_wave', label: 'GFS Wave' });
+  }
+
+  // MeteoFrance: European Atlantic, Mediterranean
+  if (lat > 25 && lat < 65 && lon > -30 && lon < 45) {
+    models.push({ value: 'mfwam', label: 'MeteoFrance Wave' });
+  }
+
+  // DWD EWAM: North Sea, Baltic
+  if (lat > 45 && lat < 65 && lon > -5 && lon < 30) {
+    models.push({ value: 'ewam', label: 'DWD Europe' });
+  }
+
+  return models;
+}
+```
+
+**Model Coverage Map:**
+
+| Model | Coverage Area |
+|-------|---------------|
+| Best Match | Auto-selects based on location |
+| GFS Wave | Americas (Atlantic & Pacific coasts), Pacific Ocean |
+| ECMWF WAM | Global |
+| MeteoFrance Wave | European Atlantic (Portugal to Norway), Mediterranean |
+| DWD EWAM | North Sea, Baltic Sea, NW European coast |
+| DWD GWAM | Global |
+| ERA5 Ocean | Global (historical reanalysis) |
+
 ### Parsed Interface
 
 ```typescript

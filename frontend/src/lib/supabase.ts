@@ -7,4 +7,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    // Use localStorage instead of default (which uses IndexedDB)
+    // IndexedDB can hang indefinitely on mobile Safari
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token',
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+})

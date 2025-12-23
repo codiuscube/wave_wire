@@ -144,12 +144,14 @@ export function useMultipleBuoyData(
       return;
     }
 
+    console.log('[useBuoyData] Fetching data for stations:', stationIds);
     setIsLoading(true);
 
     try {
       const results = await Promise.all(
         stationIds.map(async (id) => {
           const result = await fetchBuoyData(id);
+          console.log(`[useBuoyData] Result for ${id}:`, { hasData: !!result.data, error: result.error });
           return { id: id.toUpperCase(), result };
         })
       );

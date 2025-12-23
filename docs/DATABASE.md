@@ -95,11 +95,16 @@ CREATE TABLE public.user_spots (
   buoy_id TEXT,
   buoy_name TEXT,
   icon TEXT DEFAULT 'waves',
+  sort_order INTEGER DEFAULT 0,              -- For dashboard ordering
+  hidden_on_dashboard BOOLEAN DEFAULT FALSE, -- Hide from dashboard view
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   UNIQUE(user_id, master_spot_id)
 );
+
+-- Indexes
+CREATE INDEX idx_user_spots_hidden ON user_spots(user_id, hidden_on_dashboard);
 ```
 
 **RLS Policies:**
@@ -366,6 +371,64 @@ CREATE INDEX idx_surf_sessions_date ON public.surf_sessions(session_date DESC);
 
 **RLS Policies:**
 - Users can CRUD their own sessions
+
+---
+
+### `push_subscriptions`
+
+Stores OneSignal push notification subscriptions per user device.
+
+```sql
+CREATE TABLE public.push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  onesignal_player_id TEXT NOT NULL,
+  device_type TEXT,  -- 'web', 'ios_pwa', 'android_pwa'
+  browser TEXT,      -- 'chrome', 'safari', 'firefox', 'edge'
+  is_active BOOLEAN DEFAULT true,
+  last_used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, onesignal_player_id)
+);
+
+-- Indexes
+CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
+CREATE INDEX idx_push_subscriptions_active ON push_subscriptions(user_id, is_active) WHERE is_active = true;
+```
+
+**RLS Policies:**
+- Users can CRUD their own subscriptions
+
+---
+
+### `api_usage`
+
+Tracks API calls to external services for rate limit monitoring.
+
+```sql
+CREATE TABLE api_usage (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  service text NOT NULL,           -- 'openmeteo_marine', 'openmeteo_weather', etc.
+  endpoint text,                   -- Optional: specific endpoint called
+  call_count integer NOT NULL DEFAULT 1,
+  recorded_at timestamptz NOT NULL DEFAULT now(),
+  source text                      -- 'dashboard', 'trigger_eval', 'script', etc.
+);
+
+-- Indexes
+CREATE INDEX idx_api_usage_service_time ON api_usage (service, recorded_at DESC);
+CREATE INDEX idx_api_usage_recorded_at ON api_usage (recorded_at DESC);
+```
+
+**View:** `api_usage_stats` aggregates calls by service with time buckets (last minute, hour, day, 30 days).
+
+**Function:** `log_api_usage(service, call_count, source, endpoint)` for logging API calls.
+
+**RLS Policies:**
+- Admins can view
+- Authenticated users can insert
+- Service role has full access
 
 ---
 
@@ -653,14 +716,24 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | `20251219210000_add_spot_sort_order.sql` | Spot sort order for user_spots |
 | `20251221000001_allow_user_spot_submissions.sql` | User spot submissions |
 | `20251221100000_add_waitlist_table.sql` | Waitlist table |
+| `20251221110000_add_hidden_on_dashboard.sql` | Add hidden_on_dashboard column to user_spots |
+| `20251221110001_add_email_exists_function.sql` | Add email_exists() function for waitlist |
+| `20251221120000_repair_hidden_on_dashboard.sql` | Repair hidden_on_dashboard column |
 | `20251222000001_create_trigger_matches.sql` | Add trigger_matches table for alert queue |
 | `20251222000002_add_alert_columns.sql` | Add last_fired_at/enabled to triggers, resend_id/match_id to sent_alerts, timezone to profiles |
 | `20251222000003_add_waitlist_referrals.sql` | Add referral system to waitlist (referral_code, referred_by, referral_count) |
-| `20251222000006_add_push_notifications.sql` | Add push_subscriptions table, channel preferences (push_enabled, email_enabled, sms_enabled) to alert_settings, onesignal_id to sent_alerts |
-| `20251223000001_add_wave_model_to_triggers.sql` | Add wave_model column to triggers for forecast model selection |
-| `20251223000002_add_default_wave_model.sql` | Add default_wave_model to user_preferences for dashboard display |
-| `20251223000003_add_buoy_trigger_fields.sql` | Add buoy trigger fields (buoy_trigger_enabled, buoy height/period ranges, buoy_trigger_mode) |
-| `20251223200001_create_surf_sessions.sql` | Add surf_sessions table for logging sessions with auto-fetched conditions |
+| `20251222000004_fix_alert_settings_creation.sql` | Fix alert_settings auto-creation |
+| `20251222000005_add_sent_alerts_match_id.sql` | Add match_id to sent_alerts |
+| `20251222000006_add_push_notifications.sql` | Add push_subscriptions table, channel preferences, onesignal_id |
+| `20251223000001_add_wave_model_to_triggers.sql` | Add wave_model column to triggers |
+| `20251223000002_add_default_wave_model.sql` | Add default_wave_model to user_preferences |
+| `20251223000003_add_buoy_trigger_fields.sql` | Add buoy trigger fields |
+| `20251223000004_fix_wave_model_values.sql` | Fix wave_model enum values |
+| `20251223000005_fix_wave_model_values_v2.sql` | Additional wave_model fixes |
+| `20251223000006_expand_wave_model_options.sql` | Add more wave model options |
+| `20251223000007_add_ocean_coordinates.sql` | Add ocean_lat/ocean_lon to user_spots |
+| `20251223100000_create_api_usage_table.sql` | Add api_usage table and stats view |
+| `20251223200001_create_surf_sessions.sql` | Add surf_sessions table for session logging |
 
 ---
 
@@ -673,10 +746,12 @@ LEFT JOIN (SELECT user_id, COUNT(*) AS alerts_sent, MAX(sent_at) AS last_alert_s
 | user_spots | Own | Own (limited) | Own | Own |
 | triggers | Own | Own | Own | Own |
 | alert_schedules | Own | Own | Own | Own |
+| alert_settings | Own | Own | Own | Own |
 | user_preferences | Own | Own | Own | Own |
 | sent_alerts | Own | System | - | - |
 | trigger_matches | Own | Service role | Service role | - |
 | push_subscriptions | Own | Own | Own | Own |
 | surf_sessions | Own | Own | Own | Own |
+| api_usage | Admin only | Authenticated | - | - |
 | waitlist | Admin only | Anyone | Admin only | Admin only |
 | admin_user_stats | Admin only | - | - | - |

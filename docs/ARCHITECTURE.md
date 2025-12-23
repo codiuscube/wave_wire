@@ -66,10 +66,10 @@ This document describes the high-level architecture, data flow, and planned back
 │                       NOTIFICATION SERVICES                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│   ┌────────────────────┐              ┌────────────────────┐                 │
-│   │      Twilio        │              │     SendGrid       │                 │
-│   │      (SMS)         │              │     (Email)        │                 │
-│   └────────────────────┘              └────────────────────┘                 │
+│   ┌────────────────────┐   ┌────────────────────┐   ┌──────────────────┐    │
+│   │     OneSignal      │   │      Resend        │   │     Twilio       │    │
+│   │   (Web Push)       │   │     (Email)        │   │  (SMS - planned) │    │
+│   └────────────────────┘   └────────────────────┘   └──────────────────┘    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -115,40 +115,59 @@ React Components
 
 ---
 
-## Edge Function Structure (Planned)
+## Alert System Structure (GitHub Actions)
+
+The alert system runs via GitHub Actions cron jobs instead of Supabase Edge Functions for reliability and cost efficiency.
 
 ```
-supabase/functions/
-├── fetch-buoy-data/
-│   └── index.ts           # Fetches NOAA data for all unique buoy IDs
-├── fetch-forecast-data/
-│   └── index.ts           # Fetches Open-Meteo data for all spot locations
-├── check-alerts/
-│   └── index.ts           # Evaluates conditions against triggers, queues alerts
-├── process-alert-queue/
-│   └── index.ts           # Sends SMS/email, updates sent_alerts
-└── shared/
-    ├── noaa-client.ts     # NOAA API client
-    ├── openmeteo-client.ts # Open-Meteo API client
-    ├── trigger-matcher.ts # Logic to match conditions to user triggers
-    └── direction-utils.ts # Convert degrees to cardinal directions
+scripts/
+├── run-alerts.ts          # Main entry point (runs evaluation + processing)
+├── lib/
+│   ├── dataFetcher.ts     # Fetches buoy, forecast, tide, solar data
+│   ├── evaluator.ts       # Evaluates triggers against current conditions
+│   ├── messenger.ts       # Generates AI messages via Claude Haiku
+│   ├── emailer.ts         # Sends emails via Resend API
+│   └── pushNotifier.ts    # Sends push via OneSignal API
+└── package.json           # Script dependencies
+
+.github/workflows/
+└── run-alerts.yml         # Cron job: every 2 hours (6 AM - 10 PM)
 ```
+
+### Workflow
+
+1. **GitHub Actions** triggers `run-alerts.ts` every 2 hours
+2. **Evaluator** fetches all enabled triggers and their spot conditions
+3. **DataFetcher** retrieves current buoy/forecast data for each spot
+4. **Trigger matching** compares conditions against user thresholds
+5. **Messenger** generates personalized alert text via Claude Haiku
+6. **Delivery** sends via enabled channels (push, email, or both)
+7. **Recording** logs sent alerts to `sent_alerts` and `trigger_matches` tables
 
 ---
 
-## Cron Job Schedule (Planned)
+## Cron Job Schedule (GitHub Actions)
 
-Using Supabase's pg_cron extension:
+The alert system uses GitHub Actions scheduled workflows:
 
-| Job Name | Schedule | Purpose |
+| Workflow | Schedule | Purpose |
 |----------|----------|---------|
-| `fetch-buoy-data` | Every 30 min | Fetch NOAA buoy data for all unique buoy IDs |
-| `fetch-forecast-data` | Every 2 hours | Fetch Open-Meteo forecasts for all spot locations |
-| `night-before-check` | 8:00 PM daily | Check tomorrow's forecast, queue matching alerts |
-| `morning-reality-check` | 6:00 AM daily | Validate live buoy data, queue matching alerts |
-| `popup-check` | Every 2 hours (6AM-8PM) | Detect sudden condition changes |
-| `process-alert-queue` | Every 1 min | Send queued alerts via SMS/email |
-| `cleanup-old-data` | 3:00 AM daily | Remove stale cache entries |
+| `run-alerts.yml` | Every 2 hours (6AM-10PM user time) | Evaluate triggers and send alerts |
+
+### Surveillance Window
+
+Alerts only run during each user's configured surveillance window:
+
+- **Window Mode**: "all_day" or "custom"
+- **Custom Window**: User-defined start/end times (e.g., 6 AM - 8 PM)
+- **Active Days**: User selects which days to receive alerts
+- **Timezone**: User's local timezone for window calculations
+
+### Alert Deduplication
+
+Each trigger can only fire once per day to prevent spam:
+- `trigger_matches` table has unique index on `(trigger_id, DATE(matched_at))`
+- Upgraded conditions (Fair → Good → Epic) can override previous alerts
 
 ---
 

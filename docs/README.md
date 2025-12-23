@@ -35,10 +35,14 @@ The app will be available at `http://localhost:5173`
 | Styling | Tailwind CSS v4 |
 | Routing | React Router v7 |
 | Icons | Lucide React |
-| Backend | Supabase (Auth + Postgres + Edge Functions) |
+| Backend | Supabase (Auth + Postgres) |
+| Alert Processing | GitHub Actions (cron) |
 | Weather Data | Open-Meteo Marine API (free) |
 | Buoy Data | NOAA NDBC |
-| AI Messaging | Claude Haiku (planned) |
+| Tide Data | NOAA CO-OPS |
+| AI Messaging | Claude Haiku |
+| Email | Resend API |
+| Push Notifications | OneSignal |
 | SMS | Twilio (pending A2P approval) |
 
 ---
@@ -49,22 +53,29 @@ The app will be available at `http://localhost:5173`
 |---------|--------|-------|
 | Landing Page | Done | Marketing site with animated notifications |
 | Authentication | Done | Email/password via Supabase |
-| User Profiles | Done | Phone, address, subscription tier |
+| User Profiles | Done | Phone, address, home coordinates |
 | Surf Spots Database | Done | 1,225 pre-loaded spots (USA, Mexico, Central America, Canada) |
-| Admin Spot Management | Done | Verify, edit, add spots |
-| User Spots | Done | Add spots from database, assign buoys |
-| NOAA Buoy Integration | Done | Live data fetch with caching |
-| Open-Meteo Forecast | Done | Marine + weather API integration |
+| Admin Spot Management | Done | Verify, edit, add spots with locals knowledge |
+| User Spots | Done | Add spots from database, custom spots with map picker |
+| Custom Spot Creation | Done | Natural language AI parsing, address autocomplete, map picker |
+| Dashboard Spot Reordering | Done | Drag-and-drop reordering, visibility toggling |
+| NOAA Buoy Integration | Done | Live data fetch with "no signal" fallback |
+| Open-Meteo Forecast | Done | Marine + weather API, multiple wave models |
+| Wave Model Selection | Done | Per-spot and per-trigger model selection |
+| Region-Based Model Filtering | Done | Auto-filters models based on spot location |
 | Tide Data | Done | NOAA CO-OPS API integration |
-| Triggers System | In Progress | Define conditions per spot |
-| Alert Scheduling | Partial | UI done, backend not implemented |
-| Personality Selection | Partial | UI components exist, no dedicated page |
-| Edge Functions | Not Started | Data fetching, alert processing |
+| Triggers System | Done | Define conditions per spot with AI Magic Fill |
+| Buoy-Based Triggers | Done | Optional buoy conditions with AND/OR mode |
+| Alert Scheduling | Done | Surveillance windows, active days, 2/5-day forecasts |
+| Alert System Backend | Done | GitHub Actions cron job (every 2 hours) |
+| Push Notifications | Done | OneSignal web push (PWA required on iOS) |
+| Email Alerts | Done | Resend API with AI-generated messages |
+| Claude AI Messages | Done | Personality-driven alert text generation |
+| Locals Knowledge | Done | Spot-level optimal conditions for AI Magic Fill |
+| Surf Log | Done | Session tracking with auto-fetched conditions |
+| Waitlist & Referrals | Done | Pre-launch email capture with referral system |
 | SMS Alerts | Not Started | Pending Twilio A2P approval |
-| Email Fallback | Not Started | For free tier users |
-| Claude AI Messages | Not Started | Personality-driven alert text |
 | Traffic Integration | Not Started | Google Routes API planned |
-| Locals Knowledge | Not Started | Spot-level condition parameters |
 
 ---
 
@@ -118,11 +129,15 @@ homebreak-project/
 | `/signup` | Signup page | No |
 | `/reset-password` | Password reset | No |
 | `/dashboard` | Dashboard overview | Yes |
-| `/dashboard/spot` | Manage spots | Yes |
-| `/dashboard/triggers` | Configure triggers | Yes |
-| `/dashboard/alerts` | Alert schedule | Yes |
-| `/dashboard/account` | Account settings | Yes |
+| `/spots` | Manage spots | Yes |
+| `/triggers` | Configure triggers | Yes |
+| `/alerts` | Alert schedule | Yes |
+| `/surf-log` | Session tracking | Yes |
+| `/account` | Account settings | Yes |
 | `/admin/spots` | Admin spot management | Yes (admin) |
+| `/admin/spots/:id` | Admin spot detail/locals knowledge | Yes (admin) |
+| `/admin/users` | Admin user management | Yes (admin) |
+| `/admin/health` | System health monitoring | Yes (admin) |
 
 ---
 
